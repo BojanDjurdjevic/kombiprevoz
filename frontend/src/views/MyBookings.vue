@@ -65,6 +65,8 @@ const orders = useMyOrdersStore()
                         variant="elevated"
                         color="red-darken-4"
                         class="w-100"
+                        @click="orders.takeOrder(order)"
+                        :to="{name: 'uredi'}"
                     >
                         Uredi
                     </v-btn>

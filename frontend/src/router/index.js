@@ -6,6 +6,7 @@ import SearchResult from '@/views/SearchResult.vue'
 import CitiesView from '@/views/CitiesView.vue'
 import CityBook from '@/views/CityBook.vue'
 import BookNow from '@/views/BookNow.vue'
+import ManageBooking from '@/views/ManageBooking.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -52,6 +53,11 @@ const router = createRouter({
       path: '/korpa',
       name: 'korpa',
       component: BookNow,
+    },
+    {
+      path: '/uredi',
+      name: 'uredi',
+      component: ManageBooking,
     },
   ],
 })
