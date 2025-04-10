@@ -62,13 +62,13 @@ const tours = useTourStore()
                   Ime:  {{ user.user.fullName }}
                 </v-text-field>
                 <v-label> Adresa Polaska: </v-label>
-                <v-autocomplete 
+                <v-combobox 
                     v-model="t.addressFrom"
-                ></v-autocomplete>
+                ></v-combobox>
                 <v-label>Adresa Dolaska:</v-label>
-                <v-autocomplete
+                <v-combobox
                     v-model="t.addressTo"
-                ></v-autocomplete>
+                ></v-combobox>
 
                 <v-label>Broj mesta:</v-label>
                 <v-number-input
