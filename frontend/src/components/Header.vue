@@ -30,7 +30,7 @@ const tours = useTourStore()
               <v-list-item-title ><v-btn variant="text" to="/destinacije">Destinacije</v-btn></v-list-item-title>
             </v-list-item>
             <v-list-item>
-              <v-list-item-title ><v-btn variant="text" to="/">Kontakt</v-btn></v-list-item-title>
+              <v-list-item-title ><v-btn variant="text" to="/kontakt">Kontakt</v-btn></v-list-item-title>
             </v-list-item>
           </v-list>
         </v-menu>
@@ -63,7 +63,7 @@ const tours = useTourStore()
           <v-btn variant="plain" to="/">Početna</v-btn>
           <v-btn variant="plain" to="/rezervacije">Moje Rezervacije</v-btn>
           <v-btn variant="plain" to="/destinacije">Destinacije</v-btn>
-          <v-btn variant="plain" to="/">Kontakt</v-btn>
+          <v-btn variant="plain" to="/kontakt">Kontakt</v-btn>
         </v-row>
 
         <v-spacer></v-spacer>

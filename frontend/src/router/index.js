@@ -7,6 +7,7 @@ import CitiesView from '@/views/CitiesView.vue'
 import CityBook from '@/views/CityBook.vue'
 import BookNow from '@/views/BookNow.vue'
 import ManageBooking from '@/views/ManageBooking.vue'
+import Contact from '@/views/Contact.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -23,6 +24,11 @@ const router = createRouter({
       // this generates a separate chunk (About.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
       component: () => import('../views/AboutView.vue'),
+    },
+    {
+      path: '/kontakt',
+      name: 'kontakt',
+      component: Contact,
     },
     {
       path: '/rezervacije',
