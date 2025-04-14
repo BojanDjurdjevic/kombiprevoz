@@ -24,5 +24,7 @@ import Header from './components/Header.vue';
 </template>
 
 <style scoped>
-
+  * {
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+  }
 </style>
