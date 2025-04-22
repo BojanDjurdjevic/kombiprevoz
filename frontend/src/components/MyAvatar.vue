@@ -1,17 +1,12 @@
 <script setup>
-  
-  const user = {
-    initials: 'BD',
-    fullName: 'Bojan Đurđević',
-    email: 'bojan@test.com',
-    address: 'Gavrila Principa 6',
-    phone: '062640273'
-  }
+  import { ref } from 'vue'
+  import { useUserStore } from '@/stores/user';
+  const user = useUserStore()
 </script>
 
 <template>
     <v-container
-          v-if="user"
+          v-if="user.user"
           width="10%"
           fluid
     >
@@ -26,7 +21,7 @@
                     color="green-darken-3"
                     size="large"
                   >
-                    <span class="text-h5">{{ user.initials }}</span>
+                    <span class="text-h5">{{ user.user.initials }}</span>
                   </v-avatar>
                 </v-btn>
               </template>
@@ -36,11 +31,11 @@
                     <v-avatar
                       color="green-darken-3"
                     >
-                      <span class="text-h5">{{ user.initials }}</span>
+                      <span class="text-h5">{{ user.user.initials }}</span>
                     </v-avatar>
-                    <h3>{{ user.fullName }}</h3>
+                    <h3>{{ user.user.fullName }}</h3>
                     <p class="text-caption mt-1">
-                      {{ user.email }}
+                      {{ user.user.email }}
                     </p>
                     <v-divider class="my-3"></v-divider>
                     <v-btn
@@ -100,6 +95,7 @@
                     <v-btn
                       variant="text"
                       rounded
+                      :to="{name: 'signin'}"
                     >
                       Registruj se
                     </v-btn>
