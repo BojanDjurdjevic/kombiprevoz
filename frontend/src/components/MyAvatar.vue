@@ -88,6 +88,7 @@
                     <v-btn
                       variant="text"
                       rounded
+                      :to="{name: 'login'}"
                     >
                       Uloguj se
                     </v-btn>

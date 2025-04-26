@@ -9,6 +9,7 @@ import BookNow from '@/views/BookNow.vue'
 import ManageBooking from '@/views/ManageBooking.vue'
 import Contact from '@/views/Contact.vue'
 import SignInView from '@/views/SignInView.vue'
+import LoginView from '@/views/LoginView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -70,6 +71,11 @@ const router = createRouter({
       path: '/registracija',
       name: 'signin',
       component: SignInView,
+    },
+    {
+      path: '/login',
+      name: 'login',
+      component: LoginView,
     },
   ],
 })

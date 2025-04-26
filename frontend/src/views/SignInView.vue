@@ -96,7 +96,7 @@ const { handleSubmit, handleReset } = useForm({
     <v-container class="d-flex justify-center align-center" height="95%">
         <v-card class="pa-6 d-flex justify-center align-center" 
             width="60%"
-            height="85%"
+            height="100%"
         >
             <v-form @submit.prevent="submit"
                 class="w-75 h-75"

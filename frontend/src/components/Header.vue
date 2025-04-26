@@ -4,10 +4,20 @@ import Search from './Search.vue';
 import MyAvatar from './MyAvatar.vue';
 import { useSearchStore } from '@/stores/search';
 import { useTourStore } from '@/stores/tours';
+import { useTheme } from 'vuetify'
 
 const active = ref(false)
 const search = useSearchStore()
 const tours = useTourStore()
+
+const darkTheme = ref(true)
+const theme = useTheme()
+
+function changeTheme() {
+  darkTheme.value = !darkTheme.value
+
+  theme.global.name.value = darkTheme.value ? 'dark' : 'light'
+}
 
 </script>
 
@@ -67,6 +77,14 @@ const tours = useTourStore()
         </v-row>
 
         <v-spacer></v-spacer>
+
+        <v-btn
+          @click="changeTheme"
+        >
+          <v-icon
+            :icon="darkTheme ? 'mdi-weather-night' : 'mdi-weather-sunny'"
+          ></v-icon>
+        </v-btn>
 
         <v-btn
           icon

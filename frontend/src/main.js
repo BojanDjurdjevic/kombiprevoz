@@ -18,6 +18,11 @@ import router from './router'
 const vuetify = createVuetify({
     components,
     directives,
+    defaults: {
+        theme: {
+            defaultTheme: "dark"
+        }
+    }
     
 })
 
