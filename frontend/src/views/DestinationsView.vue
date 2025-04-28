@@ -7,6 +7,8 @@
 
     const ass = "../assets/img/"
     const extension = '.png'
+
+    // https://cdn.vuetifyjs.com/images/cards/docks.jpg
 </script>
 
 <template>
@@ -29,6 +31,7 @@
             >
                 <v-card height="18rem" width="18rem" elevation="9" to="gradovi" 
                     class="rounded-xl"
+                    position="relative"
                     @click="dest.takeCountry(n.country)"
                 >
                     <v-img
@@ -36,7 +39,7 @@
                         height="100%"
                         
                         cover
-                        src="../assets/img/"
+                        src="https://cdn.vuetifyjs.com/images/cards/docks.jpg"
                     >
                         <template #sources>
                             <source srcset="https://cdn.vuetifyjs.com/images/cards/docks.jpg">
