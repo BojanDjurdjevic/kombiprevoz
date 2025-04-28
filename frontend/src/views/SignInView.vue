@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { useUserStore } from '@/stores/user';
 import { useDestStore } from '@/stores/destinations';
 import { useField, useForm } from 'vee-validate';
+import router from '@/router';
 
 const user = useUserStore()
 const dest = useDestStore()
@@ -11,6 +12,7 @@ const newUser = ref({
     initials: '',
     name: '',
     email: '',
+    password: '',
     town: '',
     address: '',
     phone: ''
@@ -33,6 +35,11 @@ const { handleSubmit, handleReset } = useForm({
 
         return 'Must be a valid e-mail.'
       },
+      password (value) {
+        if (/(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9])(?!.*\s).{8,20}/i.test(value)) return true
+
+        return 'Must be a valid password.'
+      },
       city (value) {
         if (value) return true
 
@@ -53,6 +60,7 @@ const { handleSubmit, handleReset } = useForm({
   const name = useField('name')
   const phone = useField('phone')
   const email = useField('email')
+  const password = useField('password')
   const city = useField('city')
   const address = useField('address')
   const checkbox = useField('checkbox')
@@ -74,10 +82,15 @@ const { handleSubmit, handleReset } = useForm({
         initials: init,
         fullName: values.name,
         email: values.email,
+        password: values.password,
         town: values.city,
         address: values.address,
         phone: values.phone
     }
+
+    router.push({
+      path: '/'
+    })
   })
 
   function makeInitials(str) {
@@ -106,12 +119,21 @@ const { handleSubmit, handleReset } = useForm({
                 :counter="10"
                 :error-messages="name.errorMessage.value"
                 label="Ime"
+                clearable
                 ></v-text-field>
 
                 <v-text-field
                 v-model="email.value.value"
                 :error-messages="email.errorMessage.value"
                 label="E-mail"
+                clearable
+                ></v-text-field>
+
+                <v-text-field
+                v-model="password.value.value"
+                :error-messages="password.errorMessage.value"
+                label="Lozinka"
+                clearable
                 ></v-text-field>
 
                 <v-text-field
@@ -119,6 +141,7 @@ const { handleSubmit, handleReset } = useForm({
                 :counter="7"
                 :error-messages="phone.errorMessage.value"
                 label="Broj telefona"
+                clearable
                 ></v-text-field>
 
                 <v-select
@@ -126,6 +149,7 @@ const { handleSubmit, handleReset } = useForm({
                 :error-messages="city.errorMessage.value"
                 :items="dest.cities.Srbija"
                 label="Grad"
+                clearable
                 ></v-select>
 
                 <v-combobox
@@ -133,6 +157,7 @@ const { handleSubmit, handleReset } = useForm({
                 :error-messages="address.errorMessage.value"
                 :items="items"
                 label="Adresa"
+                clearable
                 ></v-combobox>
 
                 <v-checkbox

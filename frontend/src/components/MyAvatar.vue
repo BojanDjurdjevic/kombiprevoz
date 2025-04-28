@@ -55,6 +55,7 @@
                     <v-btn
                       variant="text"
                       rounded
+                      @click="user.logout"
                     >
                       Izloguj se
                     </v-btn>

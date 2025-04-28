@@ -7,7 +7,13 @@ const orders = useMyOrdersStore()
 <template>
     <v-container>
         <div class="d-flex justify-space-between ma-2 pa-3">
-            <h1>Rezervacija broj: 0999</h1>
+            <div class="d-flex">
+                <v-btn
+                    icon="mdi-keyboard-backspace"
+                    to="/rezervacije"
+                ></v-btn>
+                <h1 class="ml-9">Rezervacija broj: 0999</h1>
+            </div>
             <h1> Ukupna Cena: {{ orders.oneOrder.price }} </h1>
         </div>
         <v-divider></v-divider>

@@ -1,3 +1,4 @@
+import router from "@/router";
 import { defineStore } from "pinia";
 import { ref } from 'vue'
 
@@ -5,8 +6,17 @@ import { ref } from 'vue'
 export const useUserStore = defineStore('user', () => {
     const user = ref()
 
+    function logout() {
+        user.value = null
+
+        router.push({
+            name: 'home'
+        })
+    }
+
     return {
         user,
+        logout,
     }
 })
 
