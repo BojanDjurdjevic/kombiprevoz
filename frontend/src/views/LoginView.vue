@@ -8,13 +8,32 @@ const logUser = ref({
 })
 
 function logSubmit() {
-    alert('Email: ' + logUser.value.email + "\n" + 'Pass: ' + logUser.value.password)
+    if(logUser.value.email && logUser.value.password) {
+        alert('Email: ' + logUser.value.email + "\n" + 'Pass: ' + logUser.value.password)
+    } else {
+        return
+    }
 }
 
 function clsData() {
     logUser.value = {
         email: null,
         password: null
+    }
+}
+
+const rules = {
+    required: (value) => !!value || "Obavezno polje.",
+    counter: (value) => value.length <= 21 || "Maksimum 21 karakter",
+    email: (value) => {
+        const pattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+        
+        return pattern.test(value) || 'Neadekvatan e-mail.'
+    },
+    password: (value) => {
+        const pattern = /(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9])(?!.*\s).{8,20}$/
+
+        return pattern.test(value) || 'Neadekvatna Lozinka. '
     }
 }
 
@@ -35,6 +54,7 @@ function clsData() {
                     prepend-icon="mdi-email"
                     type="email"
                     hint="Unesite email"
+                    :rules="[rules.required, rules.email]"
                     label="Email"
                     clearable
                 ></v-text-field>
@@ -44,6 +64,7 @@ function clsData() {
                     prepend-icon="mdi-key"
                     label="Lozinka"
                     hint="Unesite lozinku"
+                    :rules="[rules.required, rules.password]"
                     type="password"
                     clearable
                 ></v-text-field>
