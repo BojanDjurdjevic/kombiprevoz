@@ -4,6 +4,7 @@ import { useUserStore } from '@/stores/user';
 import { useDestStore } from '@/stores/destinations';
 import { useField, useForm } from 'vee-validate';
 import router from '@/router';
+import addApi from '../api/address';
 
 const user = useUserStore()
 const dest = useDestStore()
@@ -99,6 +100,16 @@ const { handleSubmit, handleReset } = useForm({
     return first
   }
 
+  async function handleAddress(query) {
+    console.log(query)
+    try {
+      let response = await addApi.getAddress(query)
+      console.log(response)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
 </script>
 
 <template>
@@ -158,6 +169,7 @@ const { handleSubmit, handleReset } = useForm({
                 :items="items"
                 label="Adresa"
                 clearable
+                @update:model-value="handleAddress(address.value.value)"
                 ></v-combobox>
 
                 <v-checkbox
