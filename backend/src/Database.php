@@ -2,6 +2,7 @@
 
 
 class Database {
+
     private $conn;
 
     public function connect() {
