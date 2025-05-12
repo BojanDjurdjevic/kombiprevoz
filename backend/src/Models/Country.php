@@ -57,7 +57,7 @@ class Country {
 
     }
 
-    public function addCountry() {
+    public function create() {
         $sql = "INSERT INTO countries 
                 SET name = :name"
         ;
@@ -65,7 +65,49 @@ class Country {
 
         $this->name = htmlspecialchars(strip_tags($this->name));
         $stmt->bindParam(':name', $this->name);
+
+        if($stmt->execute()) {
+            echo json_encode(
+                ['message' => 'Nova država je dodata.']
+            );
+        } else
+        json_encode(['message' => 'Trenutno nije moguće dodati državu']);
         
+    }
+
+    public function update() {
+        $sql = "UPDATE countries 
+                SET name = :name
+                WHERE id = :id"
+        ;
+        $stmt = $this->db->prepare($sql);
+
+        $this->id = htmlspecialchars(strip_tags($this->id));
+        $this->name = htmlspecialchars(strip_tags($this->name));
+        
+        $stmt->bindParam(':id', $this->id);
+        $stmt->bindParam(':name', $this->name);
+
+        if($stmt->execute()) {
+            echo json_encode(
+                ['message' => 'Država je izmenjena.']
+            );
+        } else
+        json_encode(['message' => 'Trenutno nije moguće izmeniti ovu državu']);
+    }
+
+    public function delete() {
+        $sql = "DELETE from countries WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        $this->id = htmlspecialchars(strip_tags($this->id));
+        $stmt->bindParam(':id', $this->id);
+
+        if($stmt->execute()) {
+            echo json_encode(
+                ['message' => 'Država je obrisana.']
+            );
+        } else
+        json_encode(['message' => 'Trenutno nije moguće obrisati ovu državu']);
     }
 
 }
