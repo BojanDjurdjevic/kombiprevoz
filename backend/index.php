@@ -16,7 +16,6 @@ $dotenv->load();
 
 $database = new Database();
 $db = $database->connect();
-//$country = new Models\Country($db);
 
 $data = json_decode((file_get_contents("php://input")));
 

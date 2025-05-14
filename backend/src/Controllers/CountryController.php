@@ -21,10 +21,10 @@ class CountryController {
         $request = $_SERVER['REQUEST_METHOD'];
 
         if($request === 'GET') {
-            if($this->data->country_id != "" || $this->data->country_id != null) {
-                $this->country->getCountry($this->data->country_id);
-            } else {
+            if($this->data->country_id == null) {
                 $this->country->getCountries();
+            } else {
+                $this->country->getCountry($this->data->country_id); 
             }
         } else if($request === 'POST') {
             
