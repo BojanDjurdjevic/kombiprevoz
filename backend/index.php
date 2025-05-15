@@ -1,5 +1,6 @@
 <?php
 
+use Controllers\CityController;
 use Controllers\CountryController;
 
 header('Access-Control-Allow-Origin: *');
@@ -20,10 +21,13 @@ $db = $database->connect();
 $data = json_decode((file_get_contents("php://input")));
 
 $countries = new CountryController($db, $data);
+$cities = new CityController($db, $data);
 
 
 if($data->country_id || $data->country_name) {
     $countries->handleRequest();
+} elseif($data->cities) {
+    $cities->handleRequest();
 }
 
 ?>
