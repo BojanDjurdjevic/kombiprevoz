@@ -5,9 +5,9 @@ namespace Models;
 use PDO;
 
 class City {
-    private $id;
-    private $country_id;
-    private $name;
+    public $id;
+    public $country_id;
+    public $name;
     private $db;
 
     public function __construct($db) 
@@ -64,6 +64,61 @@ class City {
         } else {
             echo json_encode(['cities' => 'Nije pronađen traženi grad.']);
         }
+    }
+
+    public function create()
+    {
+        $sql = "INSERT INTO cities
+                SET name = :name, country_id = :country_id
+        ";
+        $stmt = $this->db->prepare($sql);
+
+        $this->name = htmlspecialchars(strip_tags($this->name));
+        $this->country_id = htmlspecialchars(strip_tags($this->country_id));
+
+        $stmt->bindParam(':name', $this->name);
+        $stmt->bindParam(':country_id', $this->country_id);
+
+        if($stmt->execute()) {
+            echo json_encode(['msg' => 'Novi grad je uspešno upisan.']);
+        }
+    }
+
+    public function update() 
+    {
+        $sql = "UPDATE cities
+                SET name = :name, country_id = :country_id
+                WHERE id = :id
+        ";
+        $stmt = $this->db->prepare($sql);
+
+        $this->id = htmlspecialchars(strip_tags($this->id));
+        $this->name = htmlspecialchars(strip_tags($this->name));
+        $this->country_id = htmlspecialchars(strip_tags($this->country_id));
+
+        $stmt->bindParam(':id', $this->id);
+        $stmt->bindParam(':name', $this->name);
+        $stmt->bindParam(':country_id', $this->country_id);
+
+        if($stmt->execute()) {
+            echo json_encode(['msg' => 'Grad je uspešno izmenjen.']);
+        } else
+        echo json_encode(['msg' => 'Trenutno nije moguže izmeniti grad.']);
+    }
+
+    public function delete() {
+        $sql = "DELETE from cities WHERE cities.id = :id";
+        $stmt = $this->db->prepare($sql);
+
+        $this->id = htmlspecialchars(strip_tags($this->id));
+        $stmt->bindParam(':id', $this->id);
+
+        if($stmt->execute()) {
+            echo json_encode(
+                ['msg' => 'Grad je obrisan.']
+            );
+        } else
+        json_encode(['msg' => 'Trenutno nije moguće obrisati ovaj grad.']);
     }
 }
 

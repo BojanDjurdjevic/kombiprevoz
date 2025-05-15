@@ -7,7 +7,7 @@ use Models\City;
 class CityController {
     private $db;
     private $data;
-    private $city;
+    public $city;
     
     public function __construct($db, $data)
     {
@@ -32,13 +32,23 @@ class CityController {
                 }
                 break;
             case 'POST':
-
+                if(isset($this->data->cities->name) && isset($this->data->cities->country_id)) {
+                    $this->city->name = $this->data->cities->name;
+                    $this->city->country_id = $this->data->cities->country_id;
+                    $this->city->create();
+                }
                 break;
             case 'PUT':
-
+                if(isset($this->data->cities->id)) {
+                    $this->city->id = $this->data->cities->id;
+                    $this->city->update();
+                }
                 break;
             case 'DELETE':
-
+                if(isset($this->data->cities->id)) {
+                    $this->city->id = $this->data->cities->id;
+                    $this->city->delete();
+                }
                 break;
         }    
     }
