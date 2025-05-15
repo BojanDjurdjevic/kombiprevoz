@@ -24,9 +24,9 @@ $countries = new CountryController($db, $data);
 $cities = new CityController($db, $data);
 
 
-if($data->country_id || $data->country_name) {
+if(isset($data->country_id) || isset($data->country_name)) {
     $countries->handleRequest();
-} elseif($data->cities) {
+} elseif(isset($data->cities)) {
     $cities->handleRequest();
 }
 

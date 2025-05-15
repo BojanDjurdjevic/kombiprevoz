@@ -80,7 +80,7 @@ class City {
         $stmt->bindParam(':country_id', $this->country_id);
 
         if($stmt->execute()) {
-            echo json_encode(['msg' => 'Novi grad je uspešno upisan.']);
+            echo json_encode(['msg' => "Grad '$this->name' je uspešno dodat na listu."]);
         }
     }
 
