@@ -30,13 +30,39 @@ class TourController {
                 }
                 break;
             case 'POST':
-                
+                if(isset($this->data->tours)) {
+                    $this->tour->from_city = $this->data->tours->from_city;
+                    $this->tour->to_city = $this->data->tours->to_city;
+                    $this->tour->departures = $this->data->tours->departures;
+                    $this->tour->time = $this->data->tours->time;
+                    $this->tour->duration = $this->data->tours->duration;
+                    $this->tour->price = $this->data->tours->price;
+                    $this->tour->seats = $this->data->tours->seats;
+                    $this->tour->create();
+                }
                 break;
             case 'PUT':
-                
+                $this->tour->id = $this->data->tours->id;
+                $this->tour->from_city = $this->data->tours->from_city;
+                $this->tour->to_city = $this->data->tours->to_city;
+                $this->tour->departures = $this->data->tours->departures;
+                $this->tour->time = $this->data->tours->time;
+                $this->tour->duration = $this->data->tours->duration;
+                $this->tour->price = $this->data->tours->price;
+                $this->tour->seats = $this->data->tours->seats;
+                if(isset($this->data->tours->update)) {
+                    $this->tour->update();
+                }
                 break;
             case 'DELETE':
-                
+                $this->tour->id = $this->data->tours->id;
+                if(isset($this->data->tours->delete)) {
+                    $this->tour->delete();
+                } elseif(isset($this->data->tours->restore)) {
+                    $this->tour->restore();
+                } elseif(isset($this->data->tours->restoreAll)) {
+                    $this->tour->restoreAll();
+                }
                 break;
         }   
     }
