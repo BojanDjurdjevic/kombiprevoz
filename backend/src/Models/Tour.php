@@ -13,6 +13,7 @@ class Tour {
     public $duration;
     public $price;
     public $seats;
+    public $date;
     private $db;
 
     public function __construct($db)
@@ -45,27 +46,76 @@ class Tour {
     public function getMany() {
         $sql = "";
         if($this->from_city != "" && $this->to_city != "") {
-            $sql = "SELECT * from tours where from_city = '$this->from_city' and to_city = '$this->to_city'";
+            $sql = "SELECT tours.id from tours where from_city = '$this->from_city' and to_city = '$this->to_city' and deleted = 0";
         } elseif($this->from_city != "") {
-            $sql = "SELECT * from tours where from_city = '$this->from_city'";
+            $sql = "SELECT tours.id from tours where from_city = '$this->from_city' and deleted = 0";
         } elseif($this->to_city != "") {
-            $sql = "SELECT * from tours where to_city = '$this->to_city'";
+            $sql = "SELECT tours.id from tours where to_city = '$this->to_city' and deleted = 0";
         }
 
         
         $res = $this->db->query($sql);
         $num = $res->rowCount();
 
-        if($num > 0) {
-            $tours = [];
+        $tourIds = [];
 
+        if($num > 0) {
             while($row = $res->fetch(PDO::FETCH_OBJ)) {
-                array_push($tours, $row);
+                array_push($tourIds, $row->id);
             }
 
-            echo json_encode(["tours"=> $tours], JSON_PRETTY_PRINT);
+            echo json_encode(["tourID"=> $tourIds], JSON_PRETTY_PRINT);
         } else {
             echo json_encode(["msg"=> "Nema dostupnih vožnji prema zadatim parametrima."]);
+            exit();
+        }
+
+        $generated = '';
+        $orderSql = '';
+
+        if(isset($this->date) && $this->date != "") {
+            foreach ($tourIds as $id) {
+                $generated .= " tour_id = $id or";
+            }
+
+            $generated = substr($generated,0,-3);
+            $orderSql = 'SELECT orders.places, orders.date, tours.* from orders 
+                        INNER JOIN tours on tours.id = orders.tour_id
+                        WHERE'. $generated . " and date = '$this->date'
+                        "
+            ;
+
+            $resT = $this->db->query($orderSql);
+            $numT = $resT->rowCount();
+
+            if($numT > 0) {
+                $selTours = [];
+                $occupated = 0;
+                $available = 0;
+                $tour = [];
+                while($rowT = $resT->fetch(PDO::FETCH_OBJ)) {
+                    $occupated = $occupated + $rowT->places;
+                    $available = $rowT->seats - $occupated;
+                    $tour = [
+                        "available" => $available,
+                        "from" => $rowT->from_city,
+                        "to" => $rowT->to_city,
+                        "date" => $rowT->date,
+                        "time" => $rowT->time,
+                        "duration" => $rowT->duration,
+                        "price" => $rowT->price,
+                        "id" => $rowT->id
+                    ];
+                    
+                }
+
+                
+                array_push($selTours, $tour);
+                echo json_encode(['selectedTours' => $selTours], JSON_PRETTY_PRINT);
+            } else {
+                echo json_encode(["msg"=> "Nema dostupnih vožnji prema zadatim parametrima."]);
+                exit();
+            }
         }
     }
 

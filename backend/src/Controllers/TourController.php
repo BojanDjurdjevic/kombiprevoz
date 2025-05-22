@@ -29,6 +29,7 @@ class TourController {
                         if(isset($this->data->tours->search)) {
                             $this->tour->from_city = $this->data->tours->search->from_city;
                             $this->tour->to_city = $this->data->tours->search->to_city;
+                            $this->tour->date = $this->data->tours->search->date;
                             $this->tour->getMany();
                         } 
                     } 
