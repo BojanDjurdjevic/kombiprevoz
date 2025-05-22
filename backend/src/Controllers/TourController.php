@@ -55,7 +55,10 @@ class TourController {
                 }
                 break;
             case 'DELETE':
-                $this->tour->id = $this->data->tours->id;
+                if(isset($this->data->tours->id)) {
+                    $this->tour->id = $this->data->tours->id;
+                }
+                
                 if(isset($this->data->tours->delete)) {
                     $this->tour->delete();
                 } elseif(isset($this->data->tours->restore)) {

@@ -69,9 +69,9 @@ class Tour {
         $stmt->bindParam(':seats', $this->seats);
 
         if($stmt->execute()) {
-            echo json_encode(['msg' => "Vožnja od '$this->from_city' do '$this->to_city' je uspešno dodata."], JSON_PRETTY_PRINT);
+            echo json_encode(['msg' => "Vožnja od $this->from_city do $this->to_city je uspešno dodata."], JSON_PRETTY_PRINT);
         } else
-            echo json_encode(['msg' => "Vožnja od '$this->from_city' do '$this->to_city je uspešno dodata."], JSON_PRETTY_PRINT);
+            echo json_encode(['msg' => "Vožnja od $this->from_city do $this->to_city je uspešno dodata."], JSON_PRETTY_PRINT);
     }
 
     public function update()
@@ -83,7 +83,7 @@ class Tour {
         ";
         $stmt = $this->db->prepare($sql);
 
-        $this->from_city = htmlspecialchars(strip_tags($this->id));
+        $this->id = htmlspecialchars(strip_tags($this->id));
         $this->from_city = htmlspecialchars(strip_tags($this->from_city));
         $this->to_city = htmlspecialchars(strip_tags($this->to_city));
         $this->departures = htmlspecialchars(strip_tags($this->departures));
