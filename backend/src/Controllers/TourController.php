@@ -25,10 +25,9 @@ class TourController {
                     if($this->data->tours == 'all') {
                         $this->tour->getAll();
                     } else {
-                        //echo json_encode(['msg' => 'Šipak'], JSON_PRETTY_PRINT);
                         if(isset($this->data->tours->search)) {
-                            $this->tour->from_city = $this->data->tours->search->from_city;
-                            $this->tour->to_city = $this->data->tours->search->to_city;
+                            $this->tour->from_city = $this->data->tours->search->from;
+                            $this->tour->to_city = $this->data->tours->search->to;
                             $this->tour->date = $this->data->tours->search->date;
                             $this->tour->getMany();
                         } 
@@ -37,8 +36,8 @@ class TourController {
                 break;
             case 'POST':
                 if(isset($this->data->tours)) {
-                    $this->tour->from_city = $this->data->tours->from_city;
-                    $this->tour->to_city = $this->data->tours->to_city;
+                    $this->tour->from_city = $this->data->tours->from;
+                    $this->tour->to_city = $this->data->tours->to;
                     $this->tour->departures = $this->data->tours->departures;
                     $this->tour->time = $this->data->tours->time;
                     $this->tour->duration = $this->data->tours->duration;
@@ -49,8 +48,8 @@ class TourController {
                 break;
             case 'PUT':
                 $this->tour->id = $this->data->tours->id;
-                $this->tour->from_city = $this->data->tours->from_city;
-                $this->tour->to_city = $this->data->tours->to_city;
+                $this->tour->from_city = $this->data->tours->from;
+                $this->tour->to_city = $this->data->tours->to;
                 $this->tour->departures = $this->data->tours->departures;
                 $this->tour->time = $this->data->tours->time;
                 $this->tour->duration = $this->data->tours->duration;

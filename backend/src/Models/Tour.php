@@ -80,8 +80,8 @@ class Tour {
 
             $generated = substr($generated,0,-3);
             $orderSql = 'SELECT orders.places, orders.date, tours.* from orders 
-                        INNER JOIN tours on tours.id = orders.tour_id
-                        WHERE'. $generated . " and date = '$this->date'
+                        INNER JOIN tours on orders.tour_id = tours.id
+                        WHERE'. $generated . " and orders.date = '$this->date'
                         "
             ;
 
@@ -106,7 +106,9 @@ class Tour {
                         "price" => $rowT->price,
                         "id" => $rowT->id
                     ];
-                    
+
+                    echo json_encode(['row' => $rowT], JSON_PRETTY_PRINT);
+                    exit();
                 }
 
                 
