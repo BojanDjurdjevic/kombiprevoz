@@ -42,7 +42,32 @@ class Tour {
 
     }
 
+    public function getMany() {
+        $sql = "";
+        if($this->from_city != "" && $this->to_city != "") {
+            $sql = "SELECT * from tours where from_city = '$this->from_city' and to_city = '$this->to_city'";
+        } elseif($this->from_city != "") {
+            $sql = "SELECT * from tours where from_city = '$this->from_city'";
+        } elseif($this->to_city != "") {
+            $sql = "SELECT * from tours where to_city = '$this->to_city'";
+        }
 
+        
+        $res = $this->db->query($sql);
+        $num = $res->rowCount();
+
+        if($num > 0) {
+            $tours = [];
+
+            while($row = $res->fetch(PDO::FETCH_OBJ)) {
+                array_push($tours, $row);
+            }
+
+            echo json_encode(["tours"=> $tours], JSON_PRETTY_PRINT);
+        } else {
+            echo json_encode(["msg"=> "Nema dostupnih vožnji prema zadatim parametrima."]);
+        }
+    }
 
     public function create() 
     {

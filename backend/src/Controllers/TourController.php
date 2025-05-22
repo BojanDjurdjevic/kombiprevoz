@@ -25,7 +25,12 @@ class TourController {
                     if($this->data->tours == 'all') {
                         $this->tour->getAll();
                     } else {
-                        echo json_encode(['msg' => 'Šipak'], JSON_PRETTY_PRINT);
+                        //echo json_encode(['msg' => 'Šipak'], JSON_PRETTY_PRINT);
+                        if(isset($this->data->tours->search)) {
+                            $this->tour->from_city = $this->data->tours->search->from_city;
+                            $this->tour->to_city = $this->data->tours->search->to_city;
+                            $this->tour->getMany();
+                        } 
                     } 
                 }
                 break;
