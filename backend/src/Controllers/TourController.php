@@ -25,11 +25,17 @@ class TourController {
                     if($this->data->tours == 'all') {
                         $this->tour->getAll();
                     } else {
+                        if(isset($this->data->tours->days)) {
+                            $this->tour->from_city = $this->data->tours->days->from;
+                            $this->tour->to_city = $this->data->tours->days->to;
+                            $this->tour->getDays();
+                        }
                         if(isset($this->data->tours->search)) {
                             $this->tour->from_city = $this->data->tours->search->from;
                             $this->tour->to_city = $this->data->tours->search->to;
                             $this->tour->date = $this->data->tours->search->date;
-                            $this->tour->getMany();
+                            $this->tour->requestedSeats = $this->data->tours->search->seats;
+                            $this->tour->getBySearch();
                         } 
                     } 
                 }
