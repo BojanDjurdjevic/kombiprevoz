@@ -1,4 +1,5 @@
 <?php
+session_start();
 
 use Controllers\CityController;
 use Controllers\CountryController;
@@ -19,13 +20,14 @@ $dotenv->load();
 
 $database = new Database();
 $db = $database->connect();
+$sid = session_id();
 
 $data = json_decode((file_get_contents("php://input")));
 
 $countries = new CountryController($db, $data);
 $cities = new CityController($db, $data);
 $tours = new TourController($db, $data);
-$orders = new OrderController($db, $data);
+$orders = new OrderController($db, $data, $sid);
 
 
 if(isset($data->country_id) || isset($data->country_name)) {
