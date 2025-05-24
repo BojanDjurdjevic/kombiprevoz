@@ -37,6 +37,9 @@ class OrderController {
                             $this->order->user_id = $this->data->orders->userID;
                             $this->order->getByUser();
                         }
+                        if(isset($this->data->orders->from_date) && isset($this->data->orders->to_date)) {
+                            $this->order->getAllByDateRange($this->data->orders->from_date, $this->data->orders->to_date);
+                        }
                     } else
                     echo json_encode([
                         'status' => 401,

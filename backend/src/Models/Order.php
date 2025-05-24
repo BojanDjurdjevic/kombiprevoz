@@ -71,6 +71,14 @@ class Order {
         echo json_encode(['msg' => 'Nema rezervisanih vožnji za traženi datum.']);
     }
 
+    public function getAllByDateRange(? string $from, ? string $to)
+    {
+        echo json_encode([
+            'date_from'=> $from,
+            'date_to' => $to
+        ]);
+    }
+
     public function getByUser() 
     {
         $sql = "SELECT orders.id, orders.places, tours.from_city, 
