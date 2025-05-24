@@ -20,7 +20,7 @@ class OrderController {
 
     public function handleRequest()
     {
-        if($this->data->orders->sid == session_id()) {
+        if(isset($this->data->orders->sid) && $this->data->orders->sid == session_id()) {
             $request = $_SERVER['REQUEST_METHOD'];
 
             switch($request) {
@@ -51,6 +51,7 @@ class OrderController {
                         $this->order->add_from = $this->data->orders->create->add_from;
                         $this->order->add_to = $this->data->orders->create->add_to;
                         $this->order->date = $this->data->orders->create->date;
+                        $this->order->price = $this->data->orders->create->price;
                         $this->order->create();
                     }
                     break;
@@ -63,7 +64,8 @@ class OrderController {
             }    
         } else
         echo json_encode([
-            'msg' => 'Vaša sesija je istekla.'
+            'msg' => 'Vaša sesija je istekla.',
+            session_id()
         ], JSON_PRETTY_PRINT);
         
     }

@@ -12,6 +12,7 @@ class Order {
     public $add_from;
     public $add_to;
     public $date;
+    public $price;
     public $deleted;
     private $db;
 
@@ -25,7 +26,7 @@ class Order {
         $sql = "SELECT orders.id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
-                tours.price, users.name as user, users.email, users.phone
+                orders.total as price, users.name as user, users.email, users.phone
                 from orders 
                 INNER JOIN tours on orders.tour_id = tours.id
                 INNER JOIN users on orders.user_id = users.id
@@ -51,7 +52,7 @@ class Order {
         $sql = "SELECT orders.id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
-                tours.price, users.name as user, users.email, users.phone
+                orders.total as price, users.name as user, users.email, users.phone
                 from orders 
                 INNER JOIN tours on orders.tour_id = tours.id
                 INNER JOIN users on orders.user_id = users.id
@@ -75,7 +76,7 @@ class Order {
         $sql = "SELECT orders.id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
-                tours.price, users.name as user, users.email, users.phone
+                orders.total as price, users.name as user, users.email, users.phone
                 from orders 
                 INNER JOIN tours on orders.tour_id = tours.id
                 INNER JOIN users on orders.user_id = users.id
@@ -97,7 +98,7 @@ class Order {
     {
         $sql = "INSERT INTO orders SET
                 tour_id = :tour_id, user_id = :user_id, places = :places,
-                add_from = :add_from, add_to = :add_to, date = :date
+                add_from = :add_from, add_to = :add_to, date = :date, total = :price
         ";
         $stmt = $this->db->prepare($sql);
 
@@ -107,6 +108,7 @@ class Order {
         $this->add_from = htmlspecialchars(strip_tags($this->add_from));
         $this->add_to = htmlspecialchars(strip_tags($this->add_to));
         $this->date = htmlspecialchars(strip_tags($this->date));
+        $this->price = htmlspecialchars(strip_tags($this->price));
 
         $stmt->bindParam(':tour_id', $this->tour_id);
         $stmt->bindParam(':user_id', $this->user_id);
@@ -114,6 +116,7 @@ class Order {
         $stmt->bindParam(':add_from', $this->add_from);
         $stmt->bindParam(':add_to', $this->add_to);
         $stmt->bindParam(':date', $this->date);
+        $stmt->bindParam(':price', $this->price);
 
         if($stmt->execute()) {
             echo json_encode(['msg' => 'Uspešno ste rezervisali vožnju.'], JSON_PRETTY_PRINT);
