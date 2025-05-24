@@ -73,10 +73,56 @@ class Order {
 
     public function getAllByDateRange(? string $from, ? string $to)
     {
-        echo json_encode([
-            'date_from'=> $from,
-            'date_to' => $to
-        ]);
+        $now = date("Y-m-d");
+        $sql = "";
+        if(isset($from) && isset($to)) {
+            $sql = "SELECT orders.id, orders.places, tours.from_city, 
+                orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
+                orders.date, tours.time as pickuptime, tours.duration,
+                orders.total as price, users.name as user, users.email, users.phone
+                from orders 
+                INNER JOIN tours on orders.tour_id = tours.id
+                INNER JOIN users on orders.user_id = users.id
+                WHERE orders.date >= '$from' AND orders.date <= '$to' AND orders.deleted = 0
+                ORDER BY orders.date"
+            ;
+        } elseif(isset($from) && !isset($to)) {
+            $sql = "SELECT orders.id, orders.places, tours.from_city, 
+                orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
+                orders.date, tours.time as pickuptime, tours.duration,
+                orders.total as price, users.name as user, users.email, users.phone
+                from orders 
+                INNER JOIN tours on orders.tour_id = tours.id
+                INNER JOIN users on orders.user_id = users.id
+                WHERE orders.date >= '$from' AND orders.deleted = 0
+                ORDER BY orders.date"
+            ;
+        } elseif(!isset($from) && isset($to)) {
+            $sql = "SELECT orders.id, orders.places, tours.from_city, 
+                orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
+                orders.date, tours.time as pickuptime, tours.duration,
+                orders.total as price, users.name as user, users.email, users.phone
+                from orders 
+                INNER JOIN tours on orders.tour_id = tours.id
+                INNER JOIN users on orders.user_id = users.id
+                WHERE orders.date >= '$now' AND orders.date <= '$to' AND orders.deleted = 0
+                ORDER BY orders.date"
+            ;
+        }
+        
+        $res = $this->db->query($sql);
+        $num = $res->rowCount();
+
+        if($num > 0) {
+            $orders = [];
+            while($row = $res->fetch(PDO::FETCH_OBJ)) {
+                array_push($orders, $row);
+            }
+            echo json_encode([
+                'orders'=> $orders
+            ], JSON_PRETTY_PRINT);
+        } else
+        echo json_encode(['msg' => 'Nema rezervisanih vožnji za odabrane datume.'], JSON_PRETTY_PRINT);
     }
 
     public function getByUser() 
@@ -100,6 +146,56 @@ class Order {
             }
             echo json_encode(['orders' => $orders]);
         } 
+    }
+
+    public function getByTour() {
+        $sql = "SELECT orders.id, orders.places, tours.from_city, 
+                orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
+                orders.date, tours.time as pickuptime, tours.duration,
+                orders.total as price, users.name as user, users.email, users.phone
+                from orders 
+                INNER JOIN tours on orders.tour_id = tours.id
+                INNER JOIN users on orders.user_id = users.id
+                WHERE orders.tour_id = '$this->tour_id' AND orders.deleted = 0"
+        ;
+        $res = $this->db->query($sql);
+        $num = $res->rowCount();
+
+        if($num > 0) {
+            $orders = [];
+            while($row = $res->fetch(PDO::FETCH_OBJ)) {
+                array_push($orders, $row);
+            }
+            echo json_encode([
+                'orders'=> $orders
+            ], JSON_PRETTY_PRINT);
+        } else
+        echo json_encode(['msg' => 'Nema rezervisanih vožnji za odabrane destinacije.'], JSON_PRETTY_PRINT);
+    }
+
+    public function getByTourAndDate() {
+        $sql = "SELECT orders.id, orders.places, tours.from_city, 
+                orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
+                orders.date, tours.time as pickuptime, tours.duration,
+                orders.total as price, users.name as user, users.email, users.phone
+                from orders 
+                INNER JOIN tours on orders.tour_id = tours.id
+                INNER JOIN users on orders.user_id = users.id
+                WHERE orders.tour_id = '$this->tour_id' AND orders.date = '$this->date' AND orders.deleted = 0"
+        ;
+        $res = $this->db->query($sql);
+        $num = $res->rowCount();
+
+        if($num > 0) {
+            $orders = [];
+            while($row = $res->fetch(PDO::FETCH_OBJ)) {
+                array_push($orders, $row);
+            }
+            echo json_encode([
+                'orders'=> $orders
+            ], JSON_PRETTY_PRINT);
+        } else
+        echo json_encode(['msg' => 'Nema rezervisanih vožnji za odabrane datume.'], JSON_PRETTY_PRINT);
     }
 
     public function availability() {

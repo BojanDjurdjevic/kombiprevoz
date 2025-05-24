@@ -39,6 +39,19 @@ class OrderController {
                         }
                         if(isset($this->data->orders->from_date) && isset($this->data->orders->to_date)) {
                             $this->order->getAllByDateRange($this->data->orders->from_date, $this->data->orders->to_date);
+                        } elseif(isset($this->data->orders->from_date)) {
+                            $this->order->getAllByDateRange($this->data->orders->from_date, null);
+                        } elseif(isset($this->data->orders->to_date)) {
+                            $this->order->getAllByDateRange(null, $this->data->orders->to_date);
+                        }
+                        if(isset($this->data->orders->tour_id) && isset($this->data->orders->date)) {
+                            $this->order->tour_id = $this->data->orders->tour_id;
+                            $this->order->date = $this->data->orders->date;
+                            $this->order->getByTourAndDate();
+                        }
+                        if(isset($this->data->orders->tour_id) && !isset($this->data->orders->date) ) {
+                            $this->order->tour_id = $this->data->orders->tour_id;
+                            $this->order->getByTour();
                         }
                     } else
                     echo json_encode([
