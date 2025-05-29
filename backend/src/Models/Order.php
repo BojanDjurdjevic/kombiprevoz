@@ -269,7 +269,29 @@ class Order {
 
     public function delete()
     {
+        $select = "SELECT user_id from orders WHERE orders.id = '$this->id' and user_id = '$$this->user_id' and deleted = 0";
 
+        /*
+        $stmtS = $this->db->prepare($select);
+
+        $this->id = htmlspecialchars(strip_tags(strip_tags($this->id)));
+        $this->user_id = htmlspecialchars(strip_tags($this->user_id));
+
+        $stmtS->bindParam(":id", $this->id);
+        $stmtS->bindParam(":user_id", $this->user_id);
+
+        $res = $stmtS->execute($select);
+        */
+        $res = $this->db->query($select);
+        $num = $res->rowCount();
+
+        if($num > 0) {
+            $row = $res->fetch(PDO::FETCH_OBJ);
+            echo json_encode(["msg" => $row->user_id], JSON_PRETTY_PRINT);
+        } else {
+            echo json_encode(["msg"=> "Nije moguće obrisati ovu rezervaciju, molimo Vas da se
+            obratite našoj podršci"], JSON_PRETTY_PRINT);
+        }
     }
 }
 

@@ -75,7 +75,11 @@ class OrderController {
                     
                     break;
                 case 'DELETE':
-                    
+                    if(isset($this->data->orders->delete)) {
+                        $this->order->id = $this->data->orders->delete->order_id;
+                        $this->order->user_id = $this->data->orders->delete->user_id;
+                        $this->order->delete();
+                    }
                     break;
             }    
         } else
