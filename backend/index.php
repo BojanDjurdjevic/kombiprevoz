@@ -1,6 +1,8 @@
 <?php
 session_start();
 
+$_SESSION['user_id'] = 3;
+
 use Controllers\CityController;
 use Controllers\CountryController;
 use Controllers\OrderController;

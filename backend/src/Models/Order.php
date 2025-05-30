@@ -269,7 +269,7 @@ class Order {
 
     public function delete()
     {
-        $select = "SELECT user_id from orders WHERE orders.id = '$this->id' and user_id = '$$this->user_id' and deleted = 0";
+        $select = "SELECT user_id from orders WHERE id = '$this->id' and user_id = '$this->user_id' and deleted = 0";
 
         /*
         $stmtS = $this->db->prepare($select);
@@ -287,7 +287,19 @@ class Order {
 
         if($num > 0) {
             $row = $res->fetch(PDO::FETCH_OBJ);
-            echo json_encode(["msg" => $row->user_id], JSON_PRETTY_PRINT);
+
+            if($_SESSION['user_id'] == $row->user_id) {
+                $sql = "UPDATE orders SET deleted = 1 WHERE id = :id";
+                $stmt = $this->db->prepare($sql);
+                $this->id = htmlspecialchars(strip_tags($this->id));
+                $stmt->bindParam(":id", $this->id);
+                if($stmt->execute()) {
+                    echo json_encode(["msg" => 'Uspešno ste obrisali rezervaciju!'], JSON_PRETTY_PRINT);
+                } else
+                echo json_encode(["msg" => 'Trenutno nije moguće obrisati ovu rezervaciju!']);
+            } else {
+                echo json_encode(["msg" => "Niste autorizovani da obrišete ovu rezervaciju!"], JSON_PRETTY_PRINT);
+            }           
         } else {
             echo json_encode(["msg"=> "Nije moguće obrisati ovu rezervaciju, molimo Vas da se
             obratite našoj podršci"], JSON_PRETTY_PRINT);
