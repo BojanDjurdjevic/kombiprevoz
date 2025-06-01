@@ -262,26 +262,9 @@ class Order {
         echo json_encode(['msg' => 'Žao nam je, ali nema više slobodnih mesta za ovu vožnju.']);
     }
 
-    public function update()
-    {
-
-    }
-
-    public function delete()
+    public function findUserId() 
     {
         $select = "SELECT user_id from orders WHERE id = '$this->id' and user_id = '$this->user_id' and deleted = 0";
-
-        /*
-        $stmtS = $this->db->prepare($select);
-
-        $this->id = htmlspecialchars(strip_tags(strip_tags($this->id)));
-        $this->user_id = htmlspecialchars(strip_tags($this->user_id));
-
-        $stmtS->bindParam(":id", $this->id);
-        $stmtS->bindParam(":user_id", $this->user_id);
-
-        $res = $stmtS->execute($select);
-        */
         $res = $this->db->query($select);
         $num = $res->rowCount();
 
@@ -289,20 +272,32 @@ class Order {
             $row = $res->fetch(PDO::FETCH_OBJ);
 
             if($_SESSION['user_id'] == $row->user_id) {
-                $sql = "UPDATE orders SET deleted = 1 WHERE id = :id";
-                $stmt = $this->db->prepare($sql);
-                $this->id = htmlspecialchars(strip_tags($this->id));
-                $stmt->bindParam(":id", $this->id);
-                if($stmt->execute()) {
-                    echo json_encode(["msg" => 'Uspešno ste obrisali rezervaciju!'], JSON_PRETTY_PRINT);
-                } else
-                echo json_encode(["msg" => 'Trenutno nije moguće obrisati ovu rezervaciju!']);
+                return true;
             } else {
-                echo json_encode(["msg" => "Niste autorizovani da obrišete ovu rezervaciju!"], JSON_PRETTY_PRINT);
+                return false;
             }           
+        } else
+        return false;
+    }
+
+    public function update()
+    {
+
+    }
+
+    public function delete()
+    {
+        if($this->findUserId()) {
+            $sql = "UPDATE orders SET deleted = 1 WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            $this->id = htmlspecialchars(strip_tags($this->id));
+            $stmt->bindParam(":id", $this->id);
+            if($stmt->execute()) {
+                echo json_encode(["msg" => 'Uspešno ste obrisali rezervaciju!'], JSON_PRETTY_PRINT);
+            } else
+            echo json_encode(["msg" => 'Trenutno nije moguće obrisati ovu rezervaciju!']);
         } else {
-            echo json_encode(["msg"=> "Nije moguće obrisati ovu rezervaciju, molimo Vas da se
-            obratite našoj podršci"], JSON_PRETTY_PRINT);
+            echo json_encode(["msg" => "Niste autorizovani da obrišete ovu rezervaciju!"], JSON_PRETTY_PRINT);
         }
     }
 }

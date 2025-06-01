@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-$_SESSION['user_id'] = 3;
+$_SESSION['user_id'] = 2;
 
 use Controllers\CityController;
 use Controllers\CountryController;
