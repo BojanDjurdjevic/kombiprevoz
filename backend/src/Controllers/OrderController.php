@@ -72,7 +72,17 @@ class OrderController {
                     }
                     break;
                 case 'PUT':
-                    
+                    if(isset($this->data->orders->update)) {
+                        if(isset($this->data->orders->update->add_from) && !empty($this->data->orders->update->add_from)) {
+                            $this->order->add_from = $this->data->orders->update->add_from;
+                        }
+                        if(isset($this->data->orders->update->add_to) && !empty($this->data->orders->update->add_to)) {
+                            $this->order->add_to = $this->data->orders->update->add_to;
+                        }
+                        if(isset($this->data->orders->update->places) && !empty($this->data->orders->update->places)) {
+                            $this->order->places = $this->data->orders->update->places;
+                        }
+                    }
                     break;
                 case 'DELETE':
                     if(isset($this->data->orders->delete)) {
