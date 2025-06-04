@@ -282,7 +282,39 @@ class Order {
 
     public function update()
     {
+        if($this->findUserId()) {
+            $sql = "UPDATE orders SET add_from = :add_from, add_to = :add_to
+                    WHERE id = :id"
+            ;
+            $stmt = $this->db->prepare($sql);
+            $this->id = htmlspecialchars(strip_tags($this->id));
+            $this->add_from = htmlspecialchars(strip_tags($this->add_from));
+            $this->add_to = htmlspecialchars(strip_tags($this->add_to));
+            //$this->places = htmlspecialchars(strip_tags($this->places));
+            $stmt->bindParam(":id", $this->id);
+            $stmt->bindParam('add_from', $this->add_from);
+            $stmt->bindParam('add_to', $this->add_to);
+            //$stmt->bindParam('places', $this->places);
+            if(!empty($this->add_from) && !empty($this->add_to)) {
+                if($stmt->execute()) {
+                    echo json_encode(["msg" => 'Uspešno ste izmenili rezervaciju!'], JSON_PRETTY_PRINT);
+                } else
+                echo json_encode(["msg" => 'Trenutno nije moguće izmeniti ovu rezervaciju!']);
+            } else
+                echo json_encode(["msg" => 'Trenutno nije moguće izmeniti ovu rezervaciju!']);
+        } else {
+            echo json_encode(["msg" => "Niste autorizovani da izmenite ovu rezervaciju!"], JSON_PRETTY_PRINT);
+        }
+    }
 
+    public function updatePlaces() 
+    {
+
+    }
+
+    public function reschedule() 
+    {
+        
     }
 
     public function delete()

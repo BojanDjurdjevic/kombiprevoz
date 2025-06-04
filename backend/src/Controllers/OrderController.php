@@ -73,6 +73,9 @@ class OrderController {
                     break;
                 case 'PUT':
                     if(isset($this->data->orders->update)) {
+                        if(isset($this->data->orders->update->id) && !empty($this->data->orders->update->id)) {
+                            $this->order->id = $this->data->orders->update->id;
+                        }
                         if(isset($this->data->orders->update->add_from) && !empty($this->data->orders->update->add_from)) {
                             $this->order->add_from = $this->data->orders->update->add_from;
                         }
