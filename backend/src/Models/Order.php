@@ -309,12 +309,16 @@ class Order {
 
     public function updatePlaces() 
     {
-
+        if($this->findUserId()) {
+            $current = "SELECT places, date FROM orders WHERE id = '$this->id'";
+        } else {
+            echo json_encode(["msg" => "Niste autorizovani da izmenite ovu rezervaciju!"], JSON_PRETTY_PRINT);
+        }   
     }
 
     public function reschedule() 
     {
-        
+
     }
 
     public function delete()

@@ -76,6 +76,12 @@ class OrderController {
                         if(isset($this->data->orders->update->id) && !empty($this->data->orders->update->id)) {
                             $this->order->id = $this->data->orders->update->id;
                         }
+                        if(isset($this->data->orders->update->tour_id) && !empty($this->data->orders->update->tour_id)) {
+                            $this->order->tour_id = $this->data->orders->update->tour_id;
+                        }
+                        if(isset($this->data->orders->update->user_id) && !empty($this->data->orders->update->user_id)) {
+                            $this->order->user_id = $this->data->orders->update->user_id;
+                        }
                         if(isset($this->data->orders->update->add_from) && !empty($this->data->orders->update->add_from)) {
                             $this->order->add_from = $this->data->orders->update->add_from;
                         }
@@ -84,6 +90,12 @@ class OrderController {
                         }
                         if(isset($this->data->orders->update->places) && !empty($this->data->orders->update->places)) {
                             $this->order->places = $this->data->orders->update->places;
+                        }
+                        if(isset($this->data->orders->update->date) && !empty($this->data->orders->update->date)) {
+                            $this->order->date = $this->data->orders->update->date;
+                        }
+                        if(isset($this->data->orders->update->total) && !empty($this->data->orders->update->total)) {
+                            $this->order->price = $this->data->orders->update->total;
                         }
                     }
                     break;
