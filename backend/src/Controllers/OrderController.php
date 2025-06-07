@@ -73,8 +73,8 @@ class OrderController {
                     break;
                 case 'PUT':
                     if(isset($this->data->orders->update)) {
-                        if(isset($this->data->orders->update->id) && !empty($this->data->orders->update->id)) {
-                            $this->order->id = $this->data->orders->update->id;
+                        if(isset($this->data->orders->update->order_id) && !empty($this->data->orders->update->order_id)) {
+                            $this->order->id = $this->data->orders->update->order_id;
                         }
                         if(isset($this->data->orders->update->tour_id) && !empty($this->data->orders->update->tour_id)) {
                             $this->order->tour_id = $this->data->orders->update->tour_id;
@@ -96,6 +96,16 @@ class OrderController {
                         }
                         if(isset($this->data->orders->update->total) && !empty($this->data->orders->update->total)) {
                             $this->order->price = $this->data->orders->update->total;
+                        }
+
+                        if($this->data->orders->address) {
+                            $this->order->updateAddress();
+                        }
+                        if($this->data->orders->places) {
+                            $this->order->updatePlaces();
+                        }
+                        if($this->data->orders->reschedule) {
+                            $this->order->reschedule();
                         }
                     }
                     break;

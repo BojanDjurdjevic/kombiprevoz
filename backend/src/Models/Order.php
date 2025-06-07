@@ -280,7 +280,7 @@ class Order {
         return false;
     }
 
-    public function update()
+    public function updateAddress()
     {
         if($this->findUserId()) {
             $sql = "UPDATE orders SET add_from = :add_from, add_to = :add_to
@@ -307,10 +307,53 @@ class Order {
         }
     }
 
+    // CHECK if the deadline (48H) for changes is passed:
+
+    public function checkDeadline() 
+    {
+        $current = "SELECT places, date, time FROM orders 
+        INNER JOIN tours on orders.tour_id = tours.id
+        WHERE orders.id = '$this->id'";
+        $res = $this->db->query($current);
+        $num = $res->rowCount();
+
+        if($num > 0) {
+            $row = $res->fetch(PDO::FETCH_OBJ);
+            $test = date_create();
+            $today = date("Y-m-d H:i:s", date_timestamp_get($test));
+            $departure = date_create($row->date . " " . $row->time);
+            //$deadline = date_sub($departure, date_interval_create_from_date_string("48 hours"));
+            $deadline = date("Y-m-d H:i:s", strtotime("-48 hours", date_timestamp_get($departure)));
+
+            if($deadline > $today) {
+                return true;
+            } else {
+                return false;
+            }
+                
+                /*
+                echo json_encode([
+                    "orderDate" => $row->date,
+                    "time" => $row->time,
+                    "departure" => $departure,
+                    "today" => $today,
+                    "48h before" => date("Y-m-d H:i:s", strtotime("-48 hours", date_timestamp_get($departure))),
+                    "deadline" => $deadline,
+                    "isPassed" => $deadline < $today
+                ], JSON_PRETTY_PRINT); */
+        } else {
+            return false;
+        }
+    }
+
     public function updatePlaces() 
     {
         if($this->findUserId()) {
-            $current = "SELECT places, date FROM orders WHERE id = '$this->id'";
+            if($this->checkDeadline()) {
+                echo json_encode(["msg" => "u redu"], JSON_PRETTY_PRINT);
+            } else {
+                echo json_encode(["msg" => "Nije moguće izmeniti rezervaciju, jer je do polaska ostalo manje od 48 sati."], JSON_PRETTY_PRINT);
+            }
         } else {
             echo json_encode(["msg" => "Niste autorizovani da izmenite ovu rezervaciju!"], JSON_PRETTY_PRINT);
         }   
@@ -318,7 +361,10 @@ class Order {
 
     public function reschedule() 
     {
-
+        if($this->findUserId()) {
+            echo json_encode(["msg" => "reschedule in progress!"], JSON_PRETTY_PRINT);
+        } else
+        echo json_encode(["msg" => "Niste autorizovani da izmenite ovu rezervaciju!"], JSON_PRETTY_PRINT);
     }
 
     public function delete()
