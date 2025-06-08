@@ -75,45 +75,56 @@ class OrderController {
                     if(isset($this->data->orders->update)) {
                         if(isset($this->data->orders->update->order_id) && !empty($this->data->orders->update->order_id)) {
                             $this->order->id = $this->data->orders->update->order_id;
-                        }
+                        } //
                         if(isset($this->data->orders->update->tour_id) && !empty($this->data->orders->update->tour_id)) {
                             $this->order->tour_id = $this->data->orders->update->tour_id;
                         }
                         if(isset($this->data->orders->update->user_id) && !empty($this->data->orders->update->user_id)) {
                             $this->order->user_id = $this->data->orders->update->user_id;
                         }
-                        if(isset($this->data->orders->update->add_from) && !empty($this->data->orders->update->add_from)) {
-                            $this->order->add_from = $this->data->orders->update->add_from;
+                        if(isset($this->data->orders->address->add_from) && !empty($this->data->orders->address->add_from)) {
+                            $this->order->add_from = $this->data->orders->address->add_from;
                         }
-                        if(isset($this->data->orders->update->add_to) && !empty($this->data->orders->update->add_to)) {
-                            $this->order->add_to = $this->data->orders->update->add_to;
+                        if(isset($this->data->orders->address->add_to) && !empty($this->data->orders->address->add_to)) {
+                            $this->order->add_to = $this->data->orders->address->add_to;
                         }
-                        if(isset($this->data->orders->update->places) && !empty($this->data->orders->update->places)) {
-                            $this->order->places = $this->data->orders->update->places;
+                        if(isset($this->data->orders->new_places) && !empty($this->data->orders->new_places)) {
+                            $this->order->newPlaces = $this->data->orders->new_places;
                         }
-                        if(isset($this->data->orders->update->date) && !empty($this->data->orders->update->date)) {
-                            $this->order->date = $this->data->orders->update->date;
-                        }
+                        if(isset($this->data->orders->reschedule) && !empty($this->data->orders->reschedule)) {
+                            $this->order->newDate = $this->data->orders->reschedule;
+                        } //
                         if(isset($this->data->orders->update->total) && !empty($this->data->orders->update->total)) {
                             $this->order->price = $this->data->orders->update->total;
                         }
 
-                        if($this->data->orders->address) {
-                            $this->order->updateAddress();
-                        }
-                        if($this->data->orders->places) {
-                            $this->order->updatePlaces();
-                        }
-                        if($this->data->orders->reschedule) {
-                            $this->order->reschedule();
-                        }
+                        if($this->order->findUserId()) {
+                            if($this->order->checkDeadline()) {
+                                if($this->data->orders->address) {
+                                $this->order->updateAddress();
+                                }
+                                if($this->data->orders->new_places && $this->order->newPlaces != $this->order->places) {
+                                    $this->order->updatePlaces();
+                                } else {
+                                    $places = $this->order->newPlaces;
+                                    echo json_encode(["places" => "Naveli ste broj mesta koji već imate u rezervaciji: $places"]);
+                                }
+                                if($this->data->orders->reschedule) {
+                                    $this->order->reschedule();
+                                }
+                            } else {
+                                echo json_encode(["msg" => "Nije moguće izmeniti rezervaciju, jer je do polaska ostalo manje od 48 sati."], JSON_PRETTY_PRINT);
+                            }
+                        } else echo json_encode(["msg" => "Niste autorizovani da izmenite ovu rezervaciju!"], JSON_PRETTY_PRINT);
                     }
                     break;
                 case 'DELETE':
                     if(isset($this->data->orders->delete)) {
                         $this->order->id = $this->data->orders->delete->order_id;
                         $this->order->user_id = $this->data->orders->delete->user_id;
-                        $this->order->delete();
+                        if($this->order->findUserId()) {
+                            $this->order->delete();
+                        } echo json_encode(["msg" => "Niste autorizovani da izmenite ovu rezervaciju!"], JSON_PRETTY_PRINT);
                     }
                     break;
             }    

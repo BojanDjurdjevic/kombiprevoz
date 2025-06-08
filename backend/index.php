@@ -2,7 +2,7 @@
 session_start();
 date_default_timezone_set("Europe/Belgrade");
 
-$_SESSION['user_id'] = 3;
+$_SESSION['user_id'] = 1;
 
 use Controllers\CityController;
 use Controllers\CountryController;

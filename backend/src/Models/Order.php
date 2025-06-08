@@ -14,6 +14,8 @@ class Order {
     public $date;
     public $price;
     public $deleted;
+    public $newDate;
+    public $newPlaces;
     private $db;
 
     public function __construct($db)
@@ -282,36 +284,32 @@ class Order {
 
     public function updateAddress()
     {
-        if($this->findUserId()) {
-            $sql = "UPDATE orders SET add_from = :add_from, add_to = :add_to
-                    WHERE id = :id"
-            ;
-            $stmt = $this->db->prepare($sql);
-            $this->id = htmlspecialchars(strip_tags($this->id));
-            $this->add_from = htmlspecialchars(strip_tags($this->add_from));
-            $this->add_to = htmlspecialchars(strip_tags($this->add_to));
-            //$this->places = htmlspecialchars(strip_tags($this->places));
-            $stmt->bindParam(":id", $this->id);
-            $stmt->bindParam('add_from', $this->add_from);
-            $stmt->bindParam('add_to', $this->add_to);
-            //$stmt->bindParam('places', $this->places);
-            if(!empty($this->add_from) && !empty($this->add_to)) {
-                if($stmt->execute()) {
-                    echo json_encode(["msg" => 'Uspešno ste izmenili rezervaciju!'], JSON_PRETTY_PRINT);
-                } else
-                echo json_encode(["msg" => 'Trenutno nije moguće izmeniti ovu rezervaciju!']);
+        $sql = "UPDATE orders SET add_from = :add_from, add_to = :add_to
+                WHERE id = :id"
+        ;
+        $stmt = $this->db->prepare($sql);
+        $this->id = htmlspecialchars(strip_tags($this->id));
+        $this->add_from = htmlspecialchars(strip_tags($this->add_from));
+        $this->add_to = htmlspecialchars(strip_tags($this->add_to));
+        //$this->places = htmlspecialchars(strip_tags($this->places));
+        $stmt->bindParam(":id", $this->id);
+        $stmt->bindParam('add_from', $this->add_from);
+        $stmt->bindParam('add_to', $this->add_to);
+        //$stmt->bindParam('places', $this->places);
+        if(!empty($this->add_from) && !empty($this->add_to)) {
+            if($stmt->execute()) {
+                echo json_encode(["address" => 'Uspešno ste izmenili adresu/adrese rezervacije!'], JSON_PRETTY_PRINT);
             } else
-                echo json_encode(["msg" => 'Trenutno nije moguće izmeniti ovu rezervaciju!']);
-        } else {
-            echo json_encode(["msg" => "Niste autorizovani da izmenite ovu rezervaciju!"], JSON_PRETTY_PRINT);
-        }
+            echo json_encode(["address" => 'Trenutno nije moguće izmeniti ovu rezervaciju!']);
+        } else
+            echo json_encode(["address" => 'Molimo Vas da unesete validne adrese!']);
     }
 
-    // CHECK if the deadline (48H) for changes is passed:
+    // CHECK if the DEADLINE (48H) for changes is passed:
 
     public function checkDeadline() 
     {
-        $current = "SELECT places, date, time FROM orders 
+        $current = "SELECT places, date, total, tour_id, time FROM orders 
         INNER JOIN tours on orders.tour_id = tours.id
         WHERE orders.id = '$this->id'";
         $res = $this->db->query($current);
@@ -319,11 +317,16 @@ class Order {
 
         if($num > 0) {
             $row = $res->fetch(PDO::FETCH_OBJ);
-            $test = date_create();
+            $test = date_create("2025-06-25 06:44");
             $today = date("Y-m-d H:i:s", date_timestamp_get($test));
             $departure = date_create($row->date . " " . $row->time);
             //$deadline = date_sub($departure, date_interval_create_from_date_string("48 hours"));
             $deadline = date("Y-m-d H:i:s", strtotime("-48 hours", date_timestamp_get($departure)));
+
+            $this->date = date("Y-m-d", date_timestamp_get($departure));
+            $this->places = $row->places;
+            $this->price = $row->total;
+            $this->tour_id = $row->tour_id;
 
             if($deadline > $today) {
                 return true;
@@ -348,39 +351,51 @@ class Order {
 
     public function updatePlaces() 
     {
-        if($this->findUserId()) {
-            if($this->checkDeadline()) {
-                echo json_encode(["msg" => "u redu"], JSON_PRETTY_PRINT);
-            } else {
-                echo json_encode(["msg" => "Nije moguće izmeniti rezervaciju, jer je do polaska ostalo manje od 48 sati."], JSON_PRETTY_PRINT);
-            }
+        if($this->newPlaces - $this->places <= $this->availability()) {
+            $sql = "UPDATE orders SET places = :places, total = :total WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+
+            $this->id = htmlspecialchars(strip_tags($this->id));
+            $this->places = htmlspecialchars(strip_tags($this->places));
+            $this->price = htmlspecialchars(strip_tags($this->price));
+            $this->newPlaces = htmlspecialchars(strip_tags($this->newPlaces));
+            $new_total = ($this->price / $this->places) * $this->newPlaces;
+
+            $stmt->bindParam(':places', $this->newPlaces);
+            $stmt->bindParam(':total', $new_total);
+            $stmt->bindParam(':id', $this->id);
+
+            if($stmt->execute()) {
+                echo json_encode(["places" => "Uspešno ste izmenili broj mesta u rezervaciji."], JSON_PRETTY_PRINT);
+            } else
+                echo json_encode(["address" => 'Trenutno nije moguće izmeniti ovu rezervaciju!']);
         } else {
-            echo json_encode(["msg" => "Niste autorizovani da izmenite ovu rezervaciju!"], JSON_PRETTY_PRINT);
-        }   
+            echo json_encode([
+                "places" => "Nema dovoljno slobodnih mesta da biste izvršili izmenu!",
+                "available" => $this->availability() + $this->places
+            ], JSON_PRETTY_PRINT);
+        }
     }
 
     public function reschedule() 
     {
-        if($this->findUserId()) {
-            echo json_encode(["msg" => "reschedule in progress!"], JSON_PRETTY_PRINT);
-        } else
-        echo json_encode(["msg" => "Niste autorizovani da izmenite ovu rezervaciju!"], JSON_PRETTY_PRINT);
+        if(isset($this->newDate) && !empty($this->newDate)) {
+            $sql = "";
+            echo json_encode(["reschedule" => "reschedule in progress!"], JSON_PRETTY_PRINT);
+        }
+        
     }
 
     public function delete()
     {
-        if($this->findUserId()) {
-            $sql = "UPDATE orders SET deleted = 1 WHERE id = :id";
-            $stmt = $this->db->prepare($sql);
-            $this->id = htmlspecialchars(strip_tags($this->id));
-            $stmt->bindParam(":id", $this->id);
-            if($stmt->execute()) {
-                echo json_encode(["msg" => 'Uspešno ste obrisali rezervaciju!'], JSON_PRETTY_PRINT);
-            } else
-            echo json_encode(["msg" => 'Trenutno nije moguće obrisati ovu rezervaciju!']);
-        } else {
-            echo json_encode(["msg" => "Niste autorizovani da obrišete ovu rezervaciju!"], JSON_PRETTY_PRINT);
-        }
+        $sql = "UPDATE orders SET deleted = 1 WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        $this->id = htmlspecialchars(strip_tags($this->id));
+        $stmt->bindParam(":id", $this->id);
+        if($stmt->execute()) {
+            echo json_encode(["msg" => 'Uspešno ste obrisali rezervaciju!'], JSON_PRETTY_PRINT);
+        } else
+        echo json_encode(["msg" => 'Trenutno nije moguće obrisati ovu rezervaciju!']);
     }
 }
 
