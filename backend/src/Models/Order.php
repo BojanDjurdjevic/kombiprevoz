@@ -317,7 +317,7 @@ class Order {
 
         if($num > 0) {
             $row = $res->fetch(PDO::FETCH_OBJ);
-            $test = date_create("2025-06-25 06:44");
+            $test = date_create();
             $today = date("Y-m-d H:i:s", date_timestamp_get($test));
             $departure = date_create($row->date . " " . $row->time);
             //$deadline = date_sub($departure, date_interval_create_from_date_string("48 hours"));
@@ -381,24 +381,33 @@ class Order {
 
     public function isDeparture()
     {
-        $sql = "SELECT tour_id from orders WHERE id = '$this->id'";
-        $res = $this->db->query($sql);
-        $row = $this->db->fetch(PDO::FETCH_OBJ);
+        $sqlID = "SELECT tour_id from orders WHERE id = '$this->id'";
+        $res = $this->db->query($sqlID);
+        $row = $res->fetch(PDO::FETCH_OBJ);
+        $this->tour_id = $row->tour_id;
 
-        $days = $row->departures;
+        $sql = "SELECT departures from tours WHERE id = '$this->tour_id'";
+        $res2 = $this->db->query($sql);
+        $row2 = $res2->fetch(PDO::FETCH_OBJ);
+        
+        $days = $row2->departures;
+        
         $days = explode(",", $days);
 
-        foreach( $days as $day ) {
-            $day = (int)$day;
-        }
+        $depDays = [];
 
-        echo json_encode(["days"=> $days], JSON_PRETTY_PRINT);
+        foreach( $days as $day ) {
+            array_push( $depDays, (int)$day);
+        }
+        
+        echo json_encode(["days"=> $depDays], JSON_PRETTY_PRINT);
     }
 
     public function reschedule() 
     {
         if(isset($this->newDate) && !empty($this->newDate)) {
             $sql = "";
+            $this->isDeparture();
             echo json_encode(["reschedule" => "reschedule in progress!"], JSON_PRETTY_PRINT);
         }
         
