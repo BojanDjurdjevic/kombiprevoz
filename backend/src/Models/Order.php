@@ -377,6 +377,24 @@ class Order {
         }
     }
 
+    // CHECK if the new DATE is departure day:
+
+    public function isDeparture()
+    {
+        $sql = "SELECT tour_id from orders WHERE id = '$this->id'";
+        $res = $this->db->query($sql);
+        $row = $this->db->fetch(PDO::FETCH_OBJ);
+
+        $days = $row->departures;
+        $days = explode(",", $days);
+
+        foreach( $days as $day ) {
+            $day = (int)$day;
+        }
+
+        echo json_encode(["days"=> $days], JSON_PRETTY_PRINT);
+    }
+
     public function reschedule() 
     {
         if(isset($this->newDate) && !empty($this->newDate)) {
