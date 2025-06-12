@@ -100,16 +100,18 @@ class OrderController {
 
                         if($this->order->findUserId()) {
                             if($this->order->checkDeadline()) {
-                                if($this->data->orders->address) {
-                                $this->order->updateAddress();
+                                if(isset($this->data->orders->address)) {
+                                    $this->order->updateAddress();
                                 }
-                                if($this->data->orders->new_places && $this->order->newPlaces != $this->order->places) {
-                                    $this->order->updatePlaces();
-                                } else {
-                                    $places = $this->order->newPlaces;
-                                    echo json_encode(["places" => "Naveli ste broj mesta koji već imate u rezervaciji: $places"]);
+                                if(isset($this->data->orders->new_places)) {
+                                    if($this->order->newPlaces != $this->order->places) {
+                                        $this->order->updatePlaces();
+                                    } else {
+                                        $places = $this->order->newPlaces;
+                                        echo json_encode(["places" => "Naveli ste broj mesta koji već imate u rezervaciji: $places"]);
+                                    } 
                                 }
-                                if($this->data->orders->reschedule) {
+                                if(isset($this->data->orders->reschedule) && !empty($this->data->orders->reschedule)) {
                                     $this->order->reschedule();
                                 }
                             } else {

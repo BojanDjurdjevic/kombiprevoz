@@ -399,16 +399,34 @@ class Order {
         foreach( $days as $day ) {
             array_push( $depDays, (int)$day);
         }
+
+        $orderDate = date('w', strtotime($this->newDate));
+
+        if(in_array($orderDate, $depDays)) {
+            return true;
+        } else {
+            return false;
+        }
+        /*
+        echo json_encode([
+            "days"=> $depDays,
+            "orderDate" => $orderDate
         
-        echo json_encode(["days"=> $depDays], JSON_PRETTY_PRINT);
+        ], JSON_PRETTY_PRINT); */
     }
 
     public function reschedule() 
     {
         if(isset($this->newDate) && !empty($this->newDate)) {
-            $sql = "";
-            $this->isDeparture();
-            echo json_encode(["reschedule" => "reschedule in progress!"], JSON_PRETTY_PRINT);
+            if($this->isDeparture()) {
+                $sql = "";  
+                
+                echo json_encode(['isDeparture' => $this->isDeparture()], JSON_PRETTY_PRINT);
+            } else {
+                echo json_encode([
+                    'reschedule' => 'Odabrani datum nije dostupan.'
+                ], JSON_PRETTY_PRINT);
+            }   
         }
         
     }
