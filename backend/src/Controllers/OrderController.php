@@ -112,7 +112,12 @@ class OrderController {
                                     } 
                                 }
                                 if(isset($this->data->orders->reschedule) && !empty($this->data->orders->reschedule)) {
-                                    $this->order->reschedule();
+                                    if($this->order->newDate != $this->order->date) {
+                                        $this->order->reschedule();
+                                    } else {
+                                        $d = $this->order->date;
+                                        echo json_encode(["reschedule" => "Naveli ste datum koji već imate u rezervaciji: $d"]);
+                                    }  
                                 }
                             } else {
                                 echo json_encode(["msg" => "Nije moguće izmeniti rezervaciju, jer je do polaska ostalo manje od 48 sati."], JSON_PRETTY_PRINT);

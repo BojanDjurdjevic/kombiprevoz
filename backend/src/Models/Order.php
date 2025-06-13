@@ -200,10 +200,10 @@ class Order {
         echo json_encode(['msg' => 'Nema rezervisanih vožnji za odabrane datume.'], JSON_PRETTY_PRINT);
     }
 
-    public function availability() {
+    public function availability($date) {
         $sql = "SELECT orders.places, tours.seats from orders 
                 INNER JOIN tours on tours.id = orders.tour_id
-                WHERE orders.date = '$this->date'
+                WHERE orders.date = '$date'
                 and orders.tour_id = '$this->tour_id' and orders.deleted = 0
         ";
         $res = $this->db->query($sql);
@@ -233,7 +233,7 @@ class Order {
 
     public function create() 
     {
-        if($this->places <= $this->availability()) {
+        if($this->places <= $this->availability($this->date)) {
             $sql = "INSERT INTO orders SET
                     tour_id = :tour_id, user_id = :user_id, places = :places,
                     add_from = :add_from, add_to = :add_to, date = :date, total = :price
@@ -351,7 +351,7 @@ class Order {
 
     public function updatePlaces() 
     {
-        if($this->newPlaces - $this->places <= $this->availability()) {
+        if($this->newPlaces - $this->places <= $this->availability($this->date)) {
             $sql = "UPDATE orders SET places = :places, total = :total WHERE id = :id";
             $stmt = $this->db->prepare($sql);
 
@@ -372,7 +372,7 @@ class Order {
         } else {
             echo json_encode([
                 "places" => "Nema dovoljno slobodnih mesta da biste izvršili izmenu!",
-                "available" => $this->availability() + $this->places
+                "available" => $this->availability($this->date) + $this->places
             ], JSON_PRETTY_PRINT);
         }
     }
@@ -419,9 +419,27 @@ class Order {
     {
         if(isset($this->newDate) && !empty($this->newDate)) {
             if($this->isDeparture()) {
-                $sql = "";  
-                
-                echo json_encode(['isDeparture' => $this->isDeparture()], JSON_PRETTY_PRINT);
+                if($this->places <= $this->availability($this->newDate)) {
+                    $sql = "UPDATE orders SET date = :date WHERE id = :id";
+                    $stmt = $this->db->prepare($sql);
+                    
+                    $this->id = htmlspecialchars(strip_tags($this->id));
+                    $this->newDate = htmlspecialchars(strip_tags($this->newDate));
+
+                    $stmt->bindParam(':id', $this->id);
+                    $stmt->bindParam('date', $this->newDate);
+
+                    if($stmt->execute()) {
+                        echo json_encode(['reschedule' => "Uspešno ste promenili datum vaše vožnje na: $this->newDate"]);
+                    } else
+                        echo json_encode(['reschedule' => "Nije moguće promeniti datum vaše vožnje na: $this->newDate. Molimo kontaktirajte našu podršku!"]);
+                } else {
+                    echo json_encode([
+                        'reschedule' => 'Nema dovoljno slobodnih mesta za izabrani datum.',
+                        'mesta' => $this->places,
+                        'dostupno' => $this->availability($this->newDate)
+                    ], JSON_PRETTY_PRINT);
+                }  
             } else {
                 echo json_encode([
                     'reschedule' => 'Odabrani datum nije dostupan.'
