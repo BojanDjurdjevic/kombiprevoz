@@ -23,6 +23,138 @@ class Order {
         $this->db = $db;
     }
 
+    // Checking if the USER is OWNER of the order
+    public function findUserId() 
+    {
+        $select = "SELECT user_id from orders WHERE id = '$this->id' and user_id = '$this->user_id' and deleted = 0";
+        $res = $this->db->query($select);
+        $num = $res->rowCount();
+
+        if($num > 0) {
+            $row = $res->fetch(PDO::FETCH_OBJ);
+
+            if($_SESSION['user_id'] == $row->user_id) {
+                return true;
+            } else {
+                return false;
+            }           
+        } else
+        return false;
+    }
+
+    // How many places we have available for the requested date:
+    public function availability($date) {
+        $sql = "SELECT orders.places, tours.seats from orders 
+                INNER JOIN tours on tours.id = orders.tour_id
+                WHERE orders.date = '$date'
+                and orders.tour_id = '$this->tour_id' and orders.deleted = 0
+        ";
+        $res = $this->db->query($sql);
+        $num = $res->rowCount();
+        $occupated = 0;
+        $seats = 0;
+
+        if($num > 0) {
+            
+            while($row = $res->fetch(PDO::FETCH_OBJ)) {
+                $occupated += $row->places;
+                $seats = $row->seats;
+            }
+            return $seats - $occupated;
+        } else {
+            $tSql = "SELECT seats from tours WHERE id = '$this->tour_id' and deleted = 0";
+            $tRes = $this->db->query($tSql);
+            $tNum = $tRes->rowCount();
+            if($tNum > 0) {
+                $row = $tRes->fetch(PDO::FETCH_OBJ);
+                $seats = $row->seats;
+                return $seats;
+            } else 
+            return 0;
+        }
+    }
+
+    // CHECK if the DEADLINE (48H) for changes is NOT passed:
+    public function checkDeadline() 
+    {
+        $current = "SELECT places, date, total, tour_id, time FROM orders 
+        INNER JOIN tours on orders.tour_id = tours.id
+        WHERE orders.id = '$this->id'";
+        $res = $this->db->query($current);
+        $num = $res->rowCount();
+
+        if($num > 0) {
+            $row = $res->fetch(PDO::FETCH_OBJ);
+            $test = date_create();
+            $today = date("Y-m-d H:i:s", date_timestamp_get($test));
+            $departure = date_create($row->date . " " . $row->time);
+            //$deadline = date_sub($departure, date_interval_create_from_date_string("48 hours"));
+            $deadline = date("Y-m-d H:i:s", strtotime("-48 hours", date_timestamp_get($departure)));
+
+            $this->date = date("Y-m-d", date_timestamp_get($departure));
+            $this->places = $row->places;
+            $this->price = $row->total;
+            $this->tour_id = $row->tour_id;
+
+            if($deadline > $today) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    // CHECK if the new date isn't within 24H
+
+    public function isUnlocked($d) {
+        $new_date = date_create($d);
+        $requested = date("Y-m-d H:i:s", date_timestamp_get($new_date));
+        $test = date_create();
+        $now = date("Y-m-d H:i:s", date_timestamp_get($test));
+        $unlock = date("Y-m-d H:i:s", strtotime("+25 hours", date_timestamp_get($test)));
+
+        if($requested > $unlock) {
+            return true;
+        } else
+            return false;
+    }
+
+    // CHECK if the requested DATE is departure day:
+    public function isDeparture($d)
+    {
+        if(!isset($this->tour_id) || empty($this->tour_id)) {
+            $sqlID = "SELECT tour_id from orders WHERE id = '$this->id'";
+            $res = $this->db->query($sqlID);
+            $row = $res->fetch(PDO::FETCH_OBJ);
+            $this->tour_id = $row->tour_id;
+        }
+        $sql = "SELECT departures from tours WHERE id = '$this->tour_id'";
+        $res2 = $this->db->query($sql);
+        $row2 = $res2->fetch(PDO::FETCH_OBJ);
+        
+        $days = $row2->departures;
+        
+        $days = explode(",", $days);
+
+        $depDays = [];
+
+        foreach( $days as $day ) {
+            array_push( $depDays, (int)$day);
+        }
+
+        $orderDate = date('w', strtotime($d));
+
+        if(in_array($orderDate, $depDays)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    // GET data:
+
     public function getAll() 
     {
         $sql = "SELECT orders.id, orders.places, tours.from_city, 
@@ -200,40 +332,11 @@ class Order {
         echo json_encode(['msg' => 'Nema rezervisanih vožnji za odabrane datume.'], JSON_PRETTY_PRINT);
     }
 
-    public function availability($date) {
-        $sql = "SELECT orders.places, tours.seats from orders 
-                INNER JOIN tours on tours.id = orders.tour_id
-                WHERE orders.date = '$date'
-                and orders.tour_id = '$this->tour_id' and orders.deleted = 0
-        ";
-        $res = $this->db->query($sql);
-        $num = $res->rowCount();
-        $occupated = 0;
-        $seats = 0;
-
-        if($num > 0) {
-            
-            while($row = $res->fetch(PDO::FETCH_OBJ)) {
-                $occupated += $row->places;
-                $seats = $row->seats;
-            }
-            return $seats - $occupated;
-        } else {
-            $tSql = "SELECT seats from tours WHERE id = '$this->tour_id' and deleted = 0";
-            $tRes = $this->db->query($tSql);
-            $tNum = $tRes->rowCount();
-            if($tNum > 0) {
-                $row = $tRes->fetch(PDO::FETCH_OBJ);
-                $seats = $row->seats;
-                return $seats;
-            } else 
-            return 0;
-        }
-    }
+    // POST - create
 
     public function create() 
     {
-        if($this->places <= $this->availability($this->date)) {
+        if($this->places <= $this->availability($this->date) && $this->isDeparture($this->date) && $this->isUnlocked($this->date)) {
             $sql = "INSERT INTO orders SET
                     tour_id = :tour_id, user_id = :user_id, places = :places,
                     add_from = :add_from, add_to = :add_to, date = :date, total = :price
@@ -264,23 +367,7 @@ class Order {
         echo json_encode(['msg' => 'Žao nam je, ali nema više slobodnih mesta za ovu vožnju.']);
     }
 
-    public function findUserId() 
-    {
-        $select = "SELECT user_id from orders WHERE id = '$this->id' and user_id = '$this->user_id' and deleted = 0";
-        $res = $this->db->query($select);
-        $num = $res->rowCount();
-
-        if($num > 0) {
-            $row = $res->fetch(PDO::FETCH_OBJ);
-
-            if($_SESSION['user_id'] == $row->user_id) {
-                return true;
-            } else {
-                return false;
-            }           
-        } else
-        return false;
-    }
+    // PUT - UPDATES 
 
     public function updateAddress()
     {
@@ -305,50 +392,7 @@ class Order {
             echo json_encode(["address" => 'Molimo Vas da unesete validne adrese!']);
     }
 
-    // CHECK if the DEADLINE (48H) for changes is passed:
-
-    public function checkDeadline() 
-    {
-        $current = "SELECT places, date, total, tour_id, time FROM orders 
-        INNER JOIN tours on orders.tour_id = tours.id
-        WHERE orders.id = '$this->id'";
-        $res = $this->db->query($current);
-        $num = $res->rowCount();
-
-        if($num > 0) {
-            $row = $res->fetch(PDO::FETCH_OBJ);
-            $test = date_create();
-            $today = date("Y-m-d H:i:s", date_timestamp_get($test));
-            $departure = date_create($row->date . " " . $row->time);
-            //$deadline = date_sub($departure, date_interval_create_from_date_string("48 hours"));
-            $deadline = date("Y-m-d H:i:s", strtotime("-48 hours", date_timestamp_get($departure)));
-
-            $this->date = date("Y-m-d", date_timestamp_get($departure));
-            $this->places = $row->places;
-            $this->price = $row->total;
-            $this->tour_id = $row->tour_id;
-
-            if($deadline > $today) {
-                return true;
-            } else {
-                return false;
-            }
-                
-                /*
-                echo json_encode([
-                    "orderDate" => $row->date,
-                    "time" => $row->time,
-                    "departure" => $departure,
-                    "today" => $today,
-                    "48h before" => date("Y-m-d H:i:s", strtotime("-48 hours", date_timestamp_get($departure))),
-                    "deadline" => $deadline,
-                    "isPassed" => $deadline < $today
-                ], JSON_PRETTY_PRINT); */
-        } else {
-            return false;
-        }
-    }
-
+    // Update ONLY number of places:
     public function updatePlaces() 
     {
         if($this->newPlaces - $this->places <= $this->availability($this->date)) {
@@ -377,49 +421,12 @@ class Order {
         }
     }
 
-    // CHECK if the new DATE is departure day:
-
-    public function isDeparture()
-    {
-        $sqlID = "SELECT tour_id from orders WHERE id = '$this->id'";
-        $res = $this->db->query($sqlID);
-        $row = $res->fetch(PDO::FETCH_OBJ);
-        $this->tour_id = $row->tour_id;
-
-        $sql = "SELECT departures from tours WHERE id = '$this->tour_id'";
-        $res2 = $this->db->query($sql);
-        $row2 = $res2->fetch(PDO::FETCH_OBJ);
-        
-        $days = $row2->departures;
-        
-        $days = explode(",", $days);
-
-        $depDays = [];
-
-        foreach( $days as $day ) {
-            array_push( $depDays, (int)$day);
-        }
-
-        $orderDate = date('w', strtotime($this->newDate));
-
-        if(in_array($orderDate, $depDays)) {
-            return true;
-        } else {
-            return false;
-        }
-        /*
-        echo json_encode([
-            "days"=> $depDays,
-            "orderDate" => $orderDate
-        
-        ], JSON_PRETTY_PRINT); */
-    }
-
+    // RESCHEDULE date
     public function reschedule() 
     {
         if(isset($this->newDate) && !empty($this->newDate)) {
-            if($this->isDeparture()) {
-                if($this->places <= $this->availability($this->newDate)) {
+            if($this->isDeparture($this->newDate)) {
+                if($this->places <= $this->availability($this->newDate) && $this->isUnlocked($this->newDate)) {
                     $sql = "UPDATE orders SET date = :date WHERE id = :id";
                     $stmt = $this->db->prepare($sql);
                     
@@ -449,9 +456,68 @@ class Order {
         
     }
 
+    // UPDATE PLACES and DATE
+    public function rescheduleAndPlaces() 
+    {
+        if(isset($this->newDate) && !empty($this->newDate) && isset($this->newPlaces) && !empty($this->newPlaces)) {
+            if($this->isDeparture($this->newDate)) {
+                if($this->newPlaces <= $this->availability($this->newDate)) {
+                    $sql = "UPDATE orders SET places = :places, total = :total, date = :date WHERE id = :id";
+                    $stmt = $this->db->prepare($sql);
+                    
+                    $this->id = htmlspecialchars(strip_tags($this->id));
+                    $this->places = htmlspecialchars(strip_tags($this->places));
+                    $this->price = htmlspecialchars(strip_tags($this->price));
+                    $this->newPlaces = htmlspecialchars(strip_tags($this->newPlaces));
+                    $new_total = ($this->price / $this->places) * $this->newPlaces;
+                    $this->newDate = htmlspecialchars(strip_tags($this->newDate));
+
+                    $stmt->bindParam(':id', $this->id);
+                    $stmt->bindParam(':places', $this->newPlaces);
+                    $stmt->bindParam(':total', $new_total);
+                    $stmt->bindParam('date', $this->newDate);
+
+                    $d = date("d.m.Y", $this->newDate);
+
+                    if($stmt->execute()) {
+                        echo json_encode(['reschedule' => "Uspešno ste promenili datum vaše vožnje na: $d, a broj mesta na: $this->newPlaces"]);
+                    } else
+                        echo json_encode(['reschedule' => "Nije moguće promeniti datum vaše vožnje na: $this->newDate. Molimo kontaktirajte našu podršku!"]);
+                } else {
+                    echo json_encode([
+                        'reschedule' => 'Nema dovoljno slobodnih mesta za izabrani datum.',
+                        'mesta' => $this->newPlaces,
+                        'dostupno' => $this->availability($this->newDate)
+                    ], JSON_PRETTY_PRINT);
+                }  
+            } else {
+                echo json_encode([
+                    'reschedule' => 'Odabrani datum nije dostupan.'
+                ], JSON_PRETTY_PRINT);
+            }   
+        }
+        
+    }
+
+    // DELETE
+
     public function delete()
     {
         $sql = "UPDATE orders SET deleted = 1 WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        $this->id = htmlspecialchars(strip_tags($this->id));
+        $stmt->bindParam(":id", $this->id);
+        if($stmt->execute()) {
+            echo json_encode(["msg" => 'Uspešno ste obrisali rezervaciju!'], JSON_PRETTY_PRINT);
+        } else
+        echo json_encode(["msg" => 'Trenutno nije moguće obrisati ovu rezervaciju!']);
+    }
+
+    // RESTORE
+
+    public function restore() 
+    {
+        $sql = "UPDATE orders SET deleted = 0 WHERE id = :id";
         $stmt = $this->db->prepare($sql);
         $this->id = htmlspecialchars(strip_tags($this->id));
         $stmt->bindParam(":id", $this->id);

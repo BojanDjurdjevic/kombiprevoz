@@ -103,6 +103,10 @@ class OrderController {
                                 if(isset($this->data->orders->address)) {
                                     $this->order->updateAddress();
                                 }
+                                if(isset($this->data->orders->new_places) && !empty($this->data->orders->new_places) 
+                                && isset($this->data->orders->reschedule) && !empty($this->data->orders->reschedule)) {
+                                    $this->order->rescheduleAndPlaces();
+                                }
                                 if(isset($this->data->orders->new_places)) {
                                     if($this->order->newPlaces != $this->order->places) {
                                         $this->order->updatePlaces();
