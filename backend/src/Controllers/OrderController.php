@@ -105,23 +105,30 @@ class OrderController {
                                 }
                                 if(isset($this->data->orders->new_places) && !empty($this->data->orders->new_places) 
                                 && isset($this->data->orders->reschedule) && !empty($this->data->orders->reschedule)) {
-                                    $this->order->rescheduleAndPlaces();
-                                }
-                                if(isset($this->data->orders->new_places)) {
-                                    if($this->order->newPlaces != $this->order->places) {
-                                        $this->order->updatePlaces();
-                                    } else {
-                                        $places = $this->order->newPlaces;
-                                        echo json_encode(["places" => "Naveli ste broj mesta koji već imate u rezervaciji: $places"]);
-                                    } 
-                                }
-                                if(isset($this->data->orders->reschedule) && !empty($this->data->orders->reschedule)) {
-                                    if($this->order->newDate != $this->order->date) {
-                                        $this->order->reschedule();
-                                    } else {
-                                        $d = $this->order->date;
-                                        echo json_encode(["reschedule" => "Naveli ste datum koji već imate u rezervaciji: $d"]);
-                                    }  
+                                    if($this->order->isUnlocked($this->data->orders->reschedule)) {
+                                        $this->order->rescheduleAndPlaces();
+                                    }
+                                    else echo json_encode(["reschedule" => "Odabrani datum je ili nepostojeći, ili je već prošao. Novi odabrani polazak mora biti najmanje 24 časa od ovog momenta!"]);
+                                } else {
+                                    if(isset($this->data->orders->new_places)) {
+                                        if($this->order->newPlaces != $this->order->places) {
+                                            $this->order->updatePlaces();
+                                        } else {
+                                            $places = $this->order->newPlaces;
+                                            echo json_encode(["places" => "Naveli ste broj mesta koji već imate u rezervaciji: $places"]);
+                                        } 
+                                    }
+                                    if(isset($this->data->orders->reschedule) && !empty($this->data->orders->reschedule)) {
+                                        if($this->order->isUnlocked($this->data->orders->reschedule)) {
+                                            if($this->order->newDate != $this->order->date) {
+                                                $this->order->reschedule();
+                                            } else {
+                                                $d = $this->order->date;
+                                                echo json_encode(["reschedule" => "Naveli ste datum koji već imate u rezervaciji: $d"]);
+                                            }  
+                                        } else
+                                           echo json_encode(["reschedule" => "Odabrani datum je ili nepostojeći, ili je već prošao. Novi odabrani polazak mora biti najmanje 24 časa od ovog momenta!"]); 
+                                    }
                                 }
                             } else {
                                 echo json_encode(["msg" => "Nije moguće izmeniti rezervaciju, jer je do polaska ostalo manje od 48 sati."], JSON_PRETTY_PRINT);
@@ -134,8 +141,19 @@ class OrderController {
                         $this->order->id = $this->data->orders->delete->order_id;
                         $this->order->user_id = $this->data->orders->delete->user_id;
                         if($this->order->findUserId()) {
-                            $this->order->delete();
+                            if($this->order->checkDeadline()) {
+                                $this->order->delete();
+                            } else
+                                echo json_encode(["msg" => "Nije moguće izmeniti rezervaciju, jer je do polaska ostalo manje od 48 sati."], JSON_PRETTY_PRINT);
                         } echo json_encode(["msg" => "Niste autorizovani da izmenite ovu rezervaciju!"], JSON_PRETTY_PRINT);
+                    }
+                    if(isset($this->data->orders->restore)) {
+                        $this->order->id = $this->data->orders->restore->order_id;
+                        $this->order->user_id = $this->data->orders->restore->user_id;
+                        $this->order->tour_id = $this->data->orders->restore->tour_id;
+                        if($this->order->findUserId()) {
+                            $this->order->restore();
+                        } echo json_encode(["msg" => "Niste autorizovani da aktivirate ovu rezervaciju!"], JSON_PRETTY_PRINT);
                     }
                     break;
             }    

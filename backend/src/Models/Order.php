@@ -26,7 +26,7 @@ class Order {
     // Checking if the USER is OWNER of the order
     public function findUserId() 
     {
-        $select = "SELECT user_id from orders WHERE id = '$this->id' and user_id = '$this->user_id' and deleted = 0";
+        $select = "SELECT user_id from orders WHERE id = '$this->id' and user_id = '$this->user_id'";
         $res = $this->db->query($select);
         $num = $res->rowCount();
 
@@ -109,6 +109,11 @@ class Order {
     // CHECK if the new date isn't within 24H
 
     public function isUnlocked($d) {
+        $valid = explode('-', $d);
+        if(!checkdate($valid[1], $valid[2], $valid[0])) {
+            return false;
+            exit();
+        }
         $new_date = date_create($d);
         $requested = date("Y-m-d H:i:s", date_timestamp_get($new_date));
         $test = date_create();
@@ -157,7 +162,7 @@ class Order {
 
     public function getAll() 
     {
-        $sql = "SELECT orders.id, orders.places, tours.from_city, 
+        $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
                 orders.total as price, users.name as user, users.email, users.phone
@@ -183,7 +188,7 @@ class Order {
 
     public function getAllByDate() 
     {
-        $sql = "SELECT orders.id, orders.places, tours.from_city, 
+        $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
                 orders.total as price, users.name as user, users.email, users.phone
@@ -210,7 +215,7 @@ class Order {
         $now = date("Y-m-d");
         $sql = "";
         if(isset($from) && isset($to)) {
-            $sql = "SELECT orders.id, orders.places, tours.from_city, 
+            $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
                 orders.total as price, users.name as user, users.email, users.phone
@@ -221,7 +226,7 @@ class Order {
                 ORDER BY orders.date"
             ;
         } elseif(isset($from) && !isset($to)) {
-            $sql = "SELECT orders.id, orders.places, tours.from_city, 
+            $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
                 orders.total as price, users.name as user, users.email, users.phone
@@ -232,7 +237,7 @@ class Order {
                 ORDER BY orders.date"
             ;
         } elseif(!isset($from) && isset($to)) {
-            $sql = "SELECT orders.id, orders.places, tours.from_city, 
+            $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
                 orders.total as price, users.name as user, users.email, users.phone
@@ -261,7 +266,7 @@ class Order {
 
     public function getByUser() 
     {
-        $sql = "SELECT orders.id, orders.places, tours.from_city, 
+        $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
                 orders.total as price, users.name as user, users.email, users.phone
@@ -283,7 +288,7 @@ class Order {
     }
 
     public function getByTour() {
-        $sql = "SELECT orders.id, orders.places, tours.from_city, 
+        $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
                 orders.total as price, users.name as user, users.email, users.phone
@@ -308,7 +313,7 @@ class Order {
     }
 
     public function getByTourAndDate() {
-        $sql = "SELECT orders.id, orders.places, tours.from_city, 
+        $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
                 orders.total as price, users.name as user, users.email, users.phone
@@ -410,9 +415,14 @@ class Order {
             $stmt->bindParam(':id', $this->id);
 
             if($stmt->execute()) {
-                echo json_encode(["places" => "Uspešno ste izmenili broj mesta u rezervaciji."], JSON_PRETTY_PRINT);
+                echo json_encode([
+                    "places" => "Uspešno ste izmenili broj mesta u rezervaciji.",
+                    "mesta" => $this->places,
+                    "NovaMesta" => $this->newPlaces, 
+                    "Dostupno" => $this->availability($this->date)
+                ], JSON_PRETTY_PRINT);
             } else
-                echo json_encode(["address" => 'Trenutno nije moguće izmeniti ovu rezervaciju!']);
+                echo json_encode(["places" => 'Trenutno nije moguće izmeniti ovu rezervaciju!']);
         } else {
             echo json_encode([
                 "places" => "Nema dovoljno slobodnih mesta da biste izvršili izmenu!",
@@ -426,7 +436,7 @@ class Order {
     {
         if(isset($this->newDate) && !empty($this->newDate)) {
             if($this->isDeparture($this->newDate)) {
-                if($this->places <= $this->availability($this->newDate) && $this->isUnlocked($this->newDate)) {
+                if($this->places <= $this->availability($this->newDate)) {
                     $sql = "UPDATE orders SET date = :date WHERE id = :id";
                     $stmt = $this->db->prepare($sql);
                     
@@ -449,7 +459,7 @@ class Order {
                 }  
             } else {
                 echo json_encode([
-                    'reschedule' => 'Odabrani datum nije dostupan.'
+                    'reschedule' => 'Nemamo polaske za odabrani datum.'
                 ], JSON_PRETTY_PRINT);
             }   
         }
@@ -477,12 +487,13 @@ class Order {
                     $stmt->bindParam(':total', $new_total);
                     $stmt->bindParam('date', $this->newDate);
 
-                    $d = date("d.m.Y", $this->newDate);
+                    $formated = date_create($this->newDate);
+                    $d = date("d.m.Y", date_timestamp_get($formated));
 
                     if($stmt->execute()) {
                         echo json_encode(['reschedule' => "Uspešno ste promenili datum vaše vožnje na: $d, a broj mesta na: $this->newPlaces"]);
                     } else
-                        echo json_encode(['reschedule' => "Nije moguće promeniti datum vaše vožnje na: $this->newDate. Molimo kontaktirajte našu podršku!"]);
+                        echo json_encode(['reschedule' => "Nije moguće promeniti datum vaše vožnje na: $d. Molimo kontaktirajte našu podršku!"]);
                 } else {
                     echo json_encode([
                         'reschedule' => 'Nema dovoljno slobodnih mesta za izabrani datum.',
@@ -516,15 +527,34 @@ class Order {
     // RESTORE
 
     public function restore() 
-    {
-        $sql = "UPDATE orders SET deleted = 0 WHERE id = :id";
-        $stmt = $this->db->prepare($sql);
-        $this->id = htmlspecialchars(strip_tags($this->id));
-        $stmt->bindParam(":id", $this->id);
-        if($stmt->execute()) {
-            echo json_encode(["msg" => 'Uspešno ste obrisali rezervaciju!'], JSON_PRETTY_PRINT);
+    {   
+        $find = "SELECT date, places from orders WHERE id = '$this->id'";
+        $found = $this->db->query($find);
+        $num = $found->rowCount();
+
+        if($num > 0) {
+            $row = $found->fetch(PDO::FETCH_OBJ);
+
+            $this->date = $row->date;
+            $this->places = $row->places;
+            if($this->places <= $this->availability($this->date) && $this->isUnlocked($this->date)) {
+                $sql = "UPDATE orders SET deleted = 0 WHERE id = :id";
+                $stmt = $this->db->prepare($sql);
+                $this->id = htmlspecialchars(strip_tags($this->id));
+                $stmt->bindParam(":id", $this->id);
+                if($stmt->execute()) {
+                    echo json_encode(["msg" => 'Uspešno ste aktivirali rezervaciju!'], JSON_PRETTY_PRINT);
+                } else
+                echo json_encode(["msg" => 'Trenutno nije moguće aktivirati ovu rezervaciju!']);
+            } else
+                echo json_encode(["msg" => 'Nema više slobodnih mesta za datum ove rezervacije, te je ne možemo aktivirati.',
+                    'mesta' => $this->places,
+                    'dostupno' => $this->availability($this->date),
+                    'datum' => $this->date,
+                    'otključan' => $this->isUnlocked($this->date)
+                ]);
         } else
-        echo json_encode(["msg" => 'Trenutno nije moguće obrisati ovu rezervaciju!']);
+            echo json_encode(["msg" => 'Ova rezervacija je izbrisana iz naše baze, pokušajte da kreirate novu.']);
     }
 }
 
