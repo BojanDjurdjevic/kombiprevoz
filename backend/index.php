@@ -1,8 +1,8 @@
 <?php
-session_start();
+//session_start();
 date_default_timezone_set("Europe/Belgrade");
 
-$_SESSION['user_id'] = 1;
+//$_SESSION['user_id'] = 1;
 
 use Controllers\CityController;
 use Controllers\CountryController;
@@ -24,18 +24,23 @@ $dotenv->load();
 
 $database = new Database();
 $db = $database->connect();
-$sid = session_id();
+
 
 $data = json_decode((file_get_contents("php://input")));
 
+$user = new UserController($db, $data);
 $countries = new CountryController($db, $data);
 $cities = new CityController($db, $data);
 $tours = new TourController($db, $data);
+
+$sid = session_id();
 $orders = new OrderController($db, $data, $sid);
-$user = new UserController($db, $data);
 
 
-if(isset($data->country_id) || isset($data->country_name)) {
+if(isset($data->user)) {
+    $user->handleRequest();
+}
+elseif(isset($data->country_id) || isset($data->country_name)) {
     $countries->handleRequest();
 } elseif(isset($data->cities)) {
     $cities->handleRequest();
@@ -43,8 +48,6 @@ if(isset($data->country_id) || isset($data->country_name)) {
     $tours->handleRequest();
 } elseif(isset($data->orders)) {
     $orders->handleRequest();
-} elseif(isset($data->user)) {
-    $user->handleRequest();
 }
 
 ?>

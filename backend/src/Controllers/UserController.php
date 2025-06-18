@@ -76,14 +76,20 @@ class UserController {
                     } else
                     echo json_encode(['user' => 'Nije moguće kreirati korisnika, molimo Vas da unesete sve podatke!']);
                 }
+                if(isset($this->data->login) && !empty($this->data->login)) {
+                    if(!empty($this->user->email) && !empty($this->user->pass)) {
+                        $this->user->login();
+                    } else
+                    echo json_encode(['user' => 'Nije moguće ulogovati se, molimo Vas da unesete sve podatke!']);
+                }
                 break;
             case 'PUT':
-                if(isset($this->data->cities->id)) {
+                if(isset($this->data->update) && !empty($this->data->update)) {
                     
                 }
                 break;
             case 'DELETE':
-                if(isset($this->data->cities->id)) {
+                if(isset($this->data->delete) && !empty($this->data->delete)) {
                     
                 }
                 break;

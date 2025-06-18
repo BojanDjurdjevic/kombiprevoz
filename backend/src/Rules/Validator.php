@@ -3,7 +3,7 @@
 namespace Rules;
 
 class Validator {
-    public function validateString($str) 
+    public static function validateString($str) 
     {
         if(strlen($str) < 3) return false;
         $forbiden = ["=", ")", "(", "+", "-", "*"];

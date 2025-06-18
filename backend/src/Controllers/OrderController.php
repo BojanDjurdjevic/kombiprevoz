@@ -160,7 +160,7 @@ class OrderController {
         } else
         echo json_encode([
             'msg' => 'Vaša sesija je istekla.',
-            session_id()
+            'sid' => session_id()
         ], JSON_PRETTY_PRINT);
         
     }
