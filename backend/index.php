@@ -8,6 +8,7 @@ use Controllers\CityController;
 use Controllers\CountryController;
 use Controllers\OrderController;
 use Controllers\TourController;
+use Controllers\UserController;
 
 header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json');
@@ -31,6 +32,7 @@ $countries = new CountryController($db, $data);
 $cities = new CityController($db, $data);
 $tours = new TourController($db, $data);
 $orders = new OrderController($db, $data, $sid);
+$user = new UserController($db, $data);
 
 
 if(isset($data->country_id) || isset($data->country_name)) {
@@ -41,6 +43,8 @@ if(isset($data->country_id) || isset($data->country_name)) {
     $tours->handleRequest();
 } elseif(isset($data->orders)) {
     $orders->handleRequest();
+} elseif(isset($data->user)) {
+    $user->handleRequest();
 }
 
 ?>
