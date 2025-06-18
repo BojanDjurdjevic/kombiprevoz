@@ -3,6 +3,7 @@
 namespace Models;
 
 use PDO;
+use Rules\Validator;
 
 class User {
     public $id;
@@ -62,6 +63,19 @@ class User {
     // By CITY
     public function getByCity()
     {
+
+    }
+
+    // POST
+
+    // signin - create
+    public function create()
+    {
+        if(Validator::validatePassword($this->pass)) {
+            echo json_encode(['user' => 'Password OK']);
+        } else {
+            echo json_encode(['user' => 'Molimo Vas da pravilno unesete podatke!']);
+        }
         
     }
 }

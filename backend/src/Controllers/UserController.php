@@ -69,8 +69,12 @@ class UserController {
                 }
                 break;
             case 'POST':
-                if(isset($this->data->cities->name) && isset($this->data->cities->country_id)) {
-                    
+                if(isset($this->data->signin) && !empty($this->data->signin)) {
+                    if(!empty($this->user->name) && !empty($this->user->email) && !empty($this->user->pass) 
+                    && !empty($this->user->address) && !empty($this->user->city) && !empty($this->user->phone)) {
+                        $this->user->create();
+                    } else
+                    echo json_encode(['user' => 'Nije moguće kreirati korisnika, molimo Vas da unesete sve podatke!']);
                 }
                 break;
             case 'PUT':
