@@ -23,6 +23,27 @@ class Validator {
         } else
         return false;
     }
+
+    public static function isSuper()
+    {
+        if(isset($_SESSION['user_status']) && $_SESSION['user_status'] == 'Superadmin') return true;
+        else return false;
+    }
+    public static function isAdmin()
+    {
+        if(isset($_SESSION['user_status']) && $_SESSION['user_status'] == 'Admin') return true;
+        else return false;
+    }
+    public static function isUser()
+    {
+        if(isset($_SESSION['user_status']) && $_SESSION['user_status'] == 'User') return true;
+        else return false;
+    }
+    public static function isDriver()
+    {
+        if(isset($_SESSION['user_status']) && $_SESSION['user_status'] == 'Driver') return true;
+        else return false;
+    }
 }
 
 ?>

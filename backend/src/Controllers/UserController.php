@@ -82,6 +82,9 @@ class UserController {
                     } else
                     echo json_encode(['user' => 'Nije moguće ulogovati se, molimo Vas da unesete sve podatke!']);
                 }
+                if(isset($this->data->logout) && !empty($this->data->logout)) {
+                    $this->user->logout();
+                }
                 break;
             case 'PUT':
                 if(isset($this->data->update) && !empty($this->data->update)) {

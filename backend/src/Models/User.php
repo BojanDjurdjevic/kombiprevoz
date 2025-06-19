@@ -182,7 +182,7 @@ class User {
         if($user) {
             echo json_encode(['userPass' => $user->pass, 'pass' => $this->pass], JSON_PRETTY_PRINT);
             if(password_verify($this->pass, $user->pass)) {
-                session_start();
+                //session_start();
 
                 $_SESSION['user_id'] = $user->id;
                 $_SESSION['user_name'] = $user->name;
@@ -218,6 +218,13 @@ class User {
         } else
         echo json_encode(['user' => 'Pogrešan email ili lozinka!'], JSON_PRETTY_PRINT);
     }
+
+    public function logout()
+    {
+        echo json_encode(['user' => "Doviđenja {$_SESSION['user_name']}"], JSON_PRETTY_PRINT);
+        session_unset();
+        session_destroy();
+    }
 }
 
 /*
@@ -239,8 +246,10 @@ class User {
     "signin": null,
     "login": true
 
+    "pass": "Ljubavicmojija!123",
 
     "sid": "g3l0a87rf3c863qeab8070uvo8",
+    "user_id": 8,
     "orders": {
         "all": true
     }

@@ -3,6 +3,7 @@
 namespace Controllers;
 
 use Models\Order;
+use Rules\Validator;
 
 class OrderController {
     public $db;
@@ -17,10 +18,10 @@ class OrderController {
         $this->order = new Order($this->db);
         $this->sid = $sid;
     }
-
+        //isset($this->data->orders->sid) && $this->data->orders->sid == session_id()
     public function handleRequest()
     {
-        if(isset($this->data->orders->sid) && $this->data->orders->sid == session_id()) {
+        if(isset($_SESSION['user_id']) && $this->data->user_id == $_SESSION['user_id'] || Validator::isSuper() || Validator::isAdmin()) {
             $request = $_SERVER['REQUEST_METHOD'];
 
             switch($request) {
@@ -56,7 +57,7 @@ class OrderController {
                     } else
                     echo json_encode([
                         'status' => 401,
-                        'msg' => 'Peoverite podatke. Nisu pronađene rezervacije.'
+                        'msg' => 'Proverite podatke. Nisu pronađene rezervacije.'
                     ]);
                     break;
                 case 'POST':
