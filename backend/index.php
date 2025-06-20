@@ -1,5 +1,6 @@
 <?php
 session_start();
+$sid = session_id();
 date_default_timezone_set("Europe/Belgrade");
 
 //$_SESSION['user_id'] = 1;
@@ -9,6 +10,7 @@ use Controllers\CountryController;
 use Controllers\OrderController;
 use Controllers\TourController;
 use Controllers\UserController;
+use Models\User;
 
 header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json');
@@ -32,9 +34,9 @@ $user = new UserController($db, $data);
 $countries = new CountryController($db, $data);
 $cities = new CityController($db, $data);
 $tours = new TourController($db, $data);
-
-$sid = session_id();
 $orders = new OrderController($db, $data, $sid);
+
+$isLoged = User::isLoged($data->user->id, $data->user->email, $db);
 
 
 if(isset($data->user)) {
@@ -47,7 +49,13 @@ elseif(isset($data->country_id) || isset($data->country_name)) {
 } elseif(isset($data->tours)) {
     $tours->handleRequest();
 } elseif(isset($data->orders)) {
-    $orders->handleRequest();
+    if($isLoged) $orders->handleRequest();
+    else {
+        echo json_encode([
+            'user' => 404,
+            'msg' => 'Vaša sesija je istekla, molimo Vas da se ulogujete ponovo!'
+        ], JSON_PRETTY_PRINT);
+    }
 }
 
 ?>

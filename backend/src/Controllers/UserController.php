@@ -3,6 +3,7 @@
 namespace Controllers;
 
 use Models\User;
+use Rules\Validator;
 
 class UserController {
     public $db;
@@ -30,6 +31,12 @@ class UserController {
         if(isset($this->data->user->pass)) {
             $this->user->pass = $this->data->user->pass;
         }
+        if(isset($this->data->new_pass->password)) {
+            $this->user->new_pass = $this->data->new_pass->password;
+        }
+        if(isset($this->data->new_pass->password)) {
+            $this->user->new_pass_confirm = $this->data->new_pass->confirmation_pass;
+        }
         if(isset($this->data->user->status)) {
             $this->user->status = $this->data->user->status;
         }
@@ -48,21 +55,23 @@ class UserController {
         switch($request) {
             case 'GET':
                 if(isset($this->data->user)) {
-                    if(isset($this->data->all) && !empty($this->data->all)) {
-                        $this->user->getAll();
-                    }
-                    if(isset($this->data->byID) && !empty($this->data->byID)) {
-                        $this->user->getByID();
-                    }
-                    if(isset($this->data->byEmail) && !empty($this->data->byEmail)) {
-                        $this->user->getByEmail();
-                    }
-                    if(isset($this->data->byName) && !empty($this->data->byName)) {
-                        $this->user->getByName();
-                    }
-                    if(isset($this->data->byCity) && !empty($this->data->byCity)) {
-                        $this->user->getByCity();
-                    }
+                    if(Validator::isAdmin() || Validator::isSuper()) {
+                        if(isset($this->data->all) && !empty($this->data->all)) {
+                            $this->user->getAll();
+                        }
+                        if(isset($this->data->byID) && !empty($this->data->byID)) {
+                            $this->user->getByID();
+                        }
+                        if(isset($this->data->byEmail) && !empty($this->data->byEmail)) {
+                            $this->user->getByEmail();
+                        }
+                        if(isset($this->data->byName) && !empty($this->data->byName)) {
+                            $this->user->getByName();
+                        }
+                        if(isset($this->data->byCity) && !empty($this->data->byCity)) {
+                            $this->user->getByCity();
+                        }
+                    } else echo json_encode(['user' => 'Niste autorizovani da vidite sve korisnike!']);
                 } else {
                     echo json_encode(["user" => 'Nije pronađen korisnik.'], JSON_PRETTY_PRINT);
                     exit();
@@ -87,13 +96,26 @@ class UserController {
                 }
                 break;
             case 'PUT':
-                if(isset($this->data->update) && !empty($this->data->update)) {
-                    
+                if($this->user->isOwner() || Validator::isAdmin() || Validator::isSuper()) {
+                    if(isset($this->data->updateProfile) && !empty($this->data->updateProfile)) {
+                        $this->user->update();
+                    }
+                    if(isset($this->data->updatePass) && !empty($this->data->updatePass)) {
+                        if($this->user->isOwner()) $this->user->updatePassword();
+                        else echo json_encode(['user' => 'Niste autorizovani da vršite izmene!']);
+                    }
                 }
                 break;
             case 'DELETE':
                 if(isset($this->data->delete) && !empty($this->data->delete)) {
-                    
+                    if($this->user->isOwner() || Validator::isAdmin() || Validator::isSuper()) {
+                        $this->user->delete();
+                    }
+                }
+                if(isset($this->data->restore) && !empty($this->data->restore)) {
+                    if(Validator::isAdmin() || Validator::isSuper()) {
+                        $this->user->restore();
+                    }
                 }
                 break;
         }    

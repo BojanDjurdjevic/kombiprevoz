@@ -99,7 +99,7 @@ class OrderController {
                             $this->order->price = $this->data->orders->update->total;
                         }
 
-                        if($this->order->findUserId()) {
+                        if($this->order->findUserId() || Validator::isAdmin() || Validator::isSuper()) {
                             if($this->order->checkDeadline()) {
                                 if(isset($this->data->orders->address)) {
                                     $this->order->updateAddress();
@@ -141,7 +141,7 @@ class OrderController {
                     if(isset($this->data->orders->delete)) {
                         $this->order->id = $this->data->orders->delete->order_id;
                         $this->order->user_id = $this->data->orders->delete->user_id;
-                        if($this->order->findUserId()) {
+                        if($this->order->findUserId() || Validator::isAdmin() || Validator::isSuper()) {
                             if($this->order->checkDeadline()) {
                                 $this->order->delete();
                             } else
@@ -152,7 +152,7 @@ class OrderController {
                         $this->order->id = $this->data->orders->restore->order_id;
                         $this->order->user_id = $this->data->orders->restore->user_id;
                         $this->order->tour_id = $this->data->orders->restore->tour_id;
-                        if($this->order->findUserId()) {
+                        if($this->order->findUserId() || Validator::isAdmin() || Validator::isSuper()) {
                             $this->order->restore();
                         } echo json_encode(["msg" => "Niste autorizovani da aktivirate ovu rezervaciju!"], JSON_PRETTY_PRINT);
                     }
@@ -161,6 +161,7 @@ class OrderController {
         } else
         echo json_encode([
             'msg' => 'Vaša sesija je istekla.',
+            'user' => 404,
             'sid' => session_id()
         ], JSON_PRETTY_PRINT);
         
