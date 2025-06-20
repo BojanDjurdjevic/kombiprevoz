@@ -21,39 +21,42 @@ class OrderController {
         //isset($this->data->orders->sid) && $this->data->orders->sid == session_id()
     public function handleRequest()
     {
-        if(isset($_SESSION['user_id']) && $this->data->user_id == $_SESSION['user_id'] || Validator::isSuper() || Validator::isAdmin()) {
+        if(isset($_SESSION['user_id']) && $this->data->user->id == $_SESSION['user_id'] || Validator::isSuper() || Validator::isAdmin()) {
             $request = $_SERVER['REQUEST_METHOD'];
 
             switch($request) {
                 case 'GET':
                     if(isset($this->data->orders) && !empty($this->data->orders)) {
-                        if(isset($this->data->orders->all)) {
-                            $this->order->getAll();
-                        }
-                        if(isset($this->data->orders->date)) {
-                            $this->order->date = $this->data->orders->date;
-                            $this->order->getAllByDate();
-                        }
                         if(isset($this->data->orders->userID)) {
                             $this->order->user_id = $this->data->orders->userID;
                             $this->order->getByUser();
                         }
-                        if(isset($this->data->orders->from_date) && isset($this->data->orders->to_date)) {
-                            $this->order->getAllByDateRange($this->data->orders->from_date, $this->data->orders->to_date);
-                        } elseif(isset($this->data->orders->from_date)) {
-                            $this->order->getAllByDateRange($this->data->orders->from_date, null);
-                        } elseif(isset($this->data->orders->to_date)) {
-                            $this->order->getAllByDateRange(null, $this->data->orders->to_date);
-                        }
-                        if(isset($this->data->orders->tour_id) && isset($this->data->orders->date)) {
-                            $this->order->tour_id = $this->data->orders->tour_id;
-                            $this->order->date = $this->data->orders->date;
-                            $this->order->getByTourAndDate();
-                        }
-                        if(isset($this->data->orders->tour_id) && !isset($this->data->orders->date) ) {
-                            $this->order->tour_id = $this->data->orders->tour_id;
-                            $this->order->getByTour();
-                        }
+                        if(Validator::isAdmin() || Validator::isSuper() || Validator::isDriver()) {
+                            if(isset($this->data->orders->all) || !empty($this->data->orders->all)) {
+                                $this->order->getAll();
+                            }
+                            if(isset($this->data->orders->date)) {
+                                $this->order->date = $this->data->orders->date;
+                                $this->order->getAllByDate();
+                            }
+                            
+                            if(isset($this->data->orders->from_date) && isset($this->data->orders->to_date)) {
+                                $this->order->getAllByDateRange($this->data->orders->from_date, $this->data->orders->to_date);
+                            } elseif(isset($this->data->orders->from_date)) {
+                                $this->order->getAllByDateRange($this->data->orders->from_date, null);
+                            } elseif(isset($this->data->orders->to_date)) {
+                                $this->order->getAllByDateRange(null, $this->data->orders->to_date);
+                            }
+                            if(isset($this->data->orders->tour_id) && isset($this->data->orders->date)) {
+                                $this->order->tour_id = $this->data->orders->tour_id;
+                                $this->order->date = $this->data->orders->date;
+                                $this->order->getByTourAndDate();
+                            }
+                            if(isset($this->data->orders->tour_id) && !isset($this->data->orders->date) ) {
+                                $this->order->tour_id = $this->data->orders->tour_id;
+                                $this->order->getByTour();
+                            }
+                        } else echo json_encode(['orders' => 'Niste autorizovani da vidite tuđe rezervacije!']);
                     } else
                     echo json_encode([
                         'status' => 401,
@@ -138,7 +141,7 @@ class OrderController {
                     }
                     break;
                 case 'DELETE':
-                    if(isset($this->data->orders->delete)) {
+                    if(isset($this->data->orders->delete) && !empty($this->data->orders->delete)) {
                         $this->order->id = $this->data->orders->delete->order_id;
                         $this->order->user_id = $this->data->orders->delete->user_id;
                         if($this->order->findUserId() || Validator::isAdmin() || Validator::isSuper()) {
@@ -146,15 +149,15 @@ class OrderController {
                                 $this->order->delete();
                             } else
                                 echo json_encode(["msg" => "Nije moguće izmeniti rezervaciju, jer je do polaska ostalo manje od 48 sati."], JSON_PRETTY_PRINT);
-                        } echo json_encode(["msg" => "Niste autorizovani da izmenite ovu rezervaciju!"], JSON_PRETTY_PRINT);
+                        } else echo json_encode(["msg" => "Niste autorizovani da izmenite ovu rezervaciju!"], JSON_PRETTY_PRINT);
                     }
-                    if(isset($this->data->orders->restore)) {
+                    if(isset($this->data->orders->restore) && !empty($this->data->orders->restore)) {
                         $this->order->id = $this->data->orders->restore->order_id;
                         $this->order->user_id = $this->data->orders->restore->user_id;
                         $this->order->tour_id = $this->data->orders->restore->tour_id;
                         if($this->order->findUserId() || Validator::isAdmin() || Validator::isSuper()) {
                             $this->order->restore();
-                        } echo json_encode(["msg" => "Niste autorizovani da aktivirate ovu rezervaciju!"], JSON_PRETTY_PRINT);
+                        } else echo json_encode(["msg" => "Niste autorizovani da aktivirate ovu rezervaciju!"], JSON_PRETTY_PRINT);
                     }
                     break;
             }    

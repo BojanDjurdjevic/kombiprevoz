@@ -54,24 +54,27 @@ class UserController {
 
         switch($request) {
             case 'GET':
-                if(isset($this->data->user)) {
-                    if(Validator::isAdmin() || Validator::isSuper()) {
-                        if(isset($this->data->all) && !empty($this->data->all)) {
-                            $this->user->getAll();
-                        }
-                        if(isset($this->data->byID) && !empty($this->data->byID)) {
-                            $this->user->getByID();
-                        }
-                        if(isset($this->data->byEmail) && !empty($this->data->byEmail)) {
-                            $this->user->getByEmail();
-                        }
-                        if(isset($this->data->byName) && !empty($this->data->byName)) {
-                            $this->user->getByName();
-                        }
-                        if(isset($this->data->byCity) && !empty($this->data->byCity)) {
-                            $this->user->getByCity();
-                        }
-                    } else echo json_encode(['user' => 'Niste autorizovani da vidite sve korisnike!']);
+                if(isset($this->data->user) && !empty($this->data->user)) {
+                    if(isset($this->data->all) && !empty($this->data->all)) {
+                        if(Validator::isAdmin() || Validator::isSuper()) $this->user->getAll();
+                        else echo json_encode(['user' => 'Niste autorizovani da vidite druge korisnike!']);
+                    }
+                    if(isset($this->data->byID) && !empty($this->data->byID)) {
+                        if(Validator::isAdmin() || Validator::isSuper()) $this->user->getByID();
+                        else echo json_encode(['user' => 'Niste autorizovani da vidite druge korisnike!']);
+                    }
+                    if(isset($this->data->byEmail) && !empty($this->data->byEmail)) {
+                        if(Validator::isAdmin() || Validator::isSuper()) $this->user->getByEmail();
+                        else echo json_encode(['user' => 'Niste autorizovani da vidite druge korisnike!']);
+                    }
+                    if(isset($this->data->byName) && !empty($this->data->byName)) {
+                        if(Validator::isAdmin() || Validator::isSuper()) $this->user->getByName();
+                        else echo json_encode(['user' => 'Niste autorizovani da vidite druge korisnike!']);
+                    }
+                    if(isset($this->data->byCity) && !empty($this->data->byCity)) {
+                        if(Validator::isAdmin() || Validator::isSuper()) $this->user->getByCity();
+                        else echo json_encode(['user' => 'Niste autorizovani da vidite druge korisnike!']);
+                    }
                 } else {
                     echo json_encode(["user" => 'Nije pronađen korisnik.'], JSON_PRETTY_PRINT);
                     exit();

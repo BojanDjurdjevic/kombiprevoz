@@ -29,7 +29,7 @@ class User {
     // Check if it the User is logedin:
     public static function isLoged($id, $email, $db)
     {
-        if(isset($_SESSION['user_id']) && $_SESSION['user_id'] == $id && isset($_SESSION['user_name']) && isset($_SESSION['user_email'])) return true;
+        if(isset($_SESSION['user_id']) && isset($_SESSION['user_name']) && isset($_SESSION['user_email'])) return true;
         elseif(isset($id) && !empty($id)) {
             $find = "SELECT * FROM users WHERE id = '$id' AND deleted = 0";
             $res = $db->query($find);
@@ -52,7 +52,7 @@ class User {
     // Check if the User i owner of account
     public function isOwner()
     {
-        if($this->id == $_SESSION['user_id']) return true;
+        if(isset($_SESSION['user_id']) && !empty($this->id) && $this->id == $_SESSION['user_id']) return true;
         else return false;
     }
 
@@ -225,7 +225,6 @@ class User {
                 $arr = [];
                 foreach($splited as $s) {
                     array_push($arr, strtoupper($s[0]));
-                    echo $s . " - ". $s[0];
                 }
                 $initials = implode("", $arr);
 
@@ -261,18 +260,20 @@ class User {
     // Update User general data:
     public function update() 
     {   if($this->isOwner() || Validator::isSuper() || Validator::isAdmin()) {
-            $sql = "UPDATE users SET name = :name, email = :email, city = :city, address = :adress, phone = :phone
-                    WHERE id = '$this->id' and deleted = 0"
+            $sql = "UPDATE users SET name = :name, email = :email, city = :city, address = :address, phone = :phone
+                    WHERE id = :id and deleted = 0"
             ;
             $stmt = $this->db->prepare($sql);
 
             if(filter_var($this->email, FILTER_VALIDATE_EMAIL) && Validator::validateString($this->name)) {
+                $this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
                 $this->name = htmlspecialchars(strip_tags($this->name), ENT_QUOTES);
                 $this->email = htmlspecialchars(strip_tags($this->email), ENT_QUOTES);
                 $this->city = htmlspecialchars(strip_tags($this->city), ENT_QUOTES);
                 $this->address = htmlspecialchars(strip_tags($this->address), ENT_QUOTES);
                 $this->phone = htmlspecialchars(strip_tags($this->phone), ENT_QUOTES);
 
+                $stmt->bindParam(':id', $this->id);
                 $stmt->bindParam(':name', $this->name);
                 $stmt->bindParam(':email', $this->email);
                 $stmt->bindParam(':city', $this->city);
@@ -288,7 +289,6 @@ class User {
                         $arr = [];
                         foreach($splited as $s) {
                             array_push($arr, strtoupper($s[0]));
-                            echo $s . " - ". $s[0];
                         }
                         $initials = implode("", $arr);
 
@@ -323,6 +323,44 @@ class User {
     // PASSWORD Update
     public function updatePassword()
     {
+        $find = "SELECT * FROM users WHERE id = '$this->id' AND deleted = 0";
+        $res = $this->db->query($find);
+        $user = $res->fetch(PDO::FETCH_OBJ);
+
+        if($user) {
+            if(password_verify($this->pass, $user->pass)) {
+                if($this->new_pass == $this->new_pass_confirm) {
+                    if(Validator::validatePassword($this->new_pass)) {
+                        $sql = "UPDATE users SET pass = :pass WHERE id = :id";
+                        $stmt = $this->db->prepare($sql);
+                        
+                        $this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
+                        $hashed = password_hash($this->new_pass, PASSWORD_DEFAULT);
+
+                        $stmt->bindParam(':id', $this->id);
+                        $stmt->bindParam(':pass', $hashed);
+
+                        try {
+                            if($stmt->execute()) {
+                                echo json_encode(['user' => 'Vaša lozinka je uspešno izmenjena!']);
+                            }
+                        } catch (PDOException $e) {
+                            echo json_encode([
+                                'user' => 'Došlo je do greške! Lozinka nije izmenjena.',
+                                'msg' => $e->getMessage()
+                            ], JSON_PRETTY_PRINT);
+                        }
+                    } else 
+                    echo json_encode([
+                        'user' => 'Nedovoljno jaka lozinka! Lozinka mora sadržati najmenje: 1 karakter, 1 malo/veliko slovo i 1 broj.'
+                    ], JSON_PRETTY_PRINT);
+                } else
+                    echo json_encode([
+                        'user' => 'Lozinka i potvrda lozinke se ne poklapaju. Molimo pokušajte ponovo.'
+                    ], JSON_PRETTY_PRINT);
+                
+            } else echo json_encode(['user' => 'Pogrešana trenutna lozinka! Molimo Vas da unesete važeću lozinku'], JSON_PRETTY_PRINT);
+        } else echo json_encode(['user' => 'Nije pronađen korisnik, molimo da nas kontaktirate.'], JSON_PRETTY_PRINT);
         
     }
 
@@ -394,6 +432,7 @@ class User {
     "byCity": null,
     "signin": null,
     "login": null,
+    "logout": null,
     "updateProfile": null,
     "updatePass": null,
     "delete": null,
@@ -402,6 +441,7 @@ class User {
     ------------------------------------------------
 
     "pass": "Ljubavicmojija!123",
+    "password": "EniBaneni!123",
 
     "sid": "g3l0a87rf3c863qeab8070uvo8",
     "user_id": 8,

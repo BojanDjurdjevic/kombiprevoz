@@ -284,7 +284,7 @@ class Order {
                 array_push($orders, $row);
             }
             echo json_encode(['orders' => $orders]);
-        } 
+        } else echo json_encode(['order' => 'Nema rezervacija od ovog korisnika.'], JSON_PRETTY_PRINT);
     }
 
     public function getByTour() {

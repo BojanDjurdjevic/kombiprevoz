@@ -39,16 +39,17 @@ $orders = new OrderController($db, $data, $sid);
 $isLoged = User::isLoged($data->user->id, $data->user->email, $db);
 
 
-if(isset($data->user)) {
+if(isset($data->users) && !empty($data->users)) {
     $user->handleRequest();
 }
-elseif(isset($data->country_id) || isset($data->country_name)) {
+if(isset($data->country_id) || isset($data->country_name)) {
     $countries->handleRequest();
-} elseif(isset($data->cities)) {
+} elseif(isset($data->cities) && !empty($data->cities)) {
     $cities->handleRequest();
-} elseif(isset($data->tours)) {
+} elseif(isset($data->tours) && !empty($data->tours)) {
     $tours->handleRequest();
-} elseif(isset($data->orders)) {
+} 
+if(isset($data->orders) && !empty($data->orders)) {
     if($isLoged) $orders->handleRequest();
     else {
         echo json_encode([
