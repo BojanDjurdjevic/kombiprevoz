@@ -27,8 +27,24 @@ $dotenv->load();
 $database = new Database();
 $db = $database->connect();
 
-
 $data = json_decode((file_get_contents("php://input")));
+/*
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+
+$mail = new PHPMailer(true);
+$mail->isSMTP();
+$mail->SMTPAuth = true;
+
+$mail->Host = "smtp.gmail.com";
+$mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+$mail->Port = 587;
+$mail->Username = $_ENV["SMTP_USER"];
+$mail->Password = $_ENV["SMTP_PASS"];
+
+$mail->setFrom($email, $name);
+$mail->addAddress("", "");
+*/
 
 $user = new UserController($db, $data);
 $countries = new CountryController($db, $data);

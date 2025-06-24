@@ -97,6 +97,9 @@ class UserController {
                 if(isset($this->data->logout) && !empty($this->data->logout)) {
                     $this->user->logout();
                 }
+                if(isset($this->data->resetPass) && !empty($this->data->resetPass)) {
+                    $this->user->resetPassword();
+                }
                 break;
             case 'PUT':
                 if($this->user->isOwner() || Validator::isAdmin() || Validator::isSuper()) {

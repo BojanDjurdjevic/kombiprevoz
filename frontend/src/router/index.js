@@ -10,6 +10,7 @@ import ManageBooking from '@/views/ManageBookingView.vue'
 import Contact from '@/views/ContactView.vue'
 import SignInView from '@/views/SignInView.vue'
 import LoginView from '@/views/LoginView.vue'
+import ResetPassView from '@/views/ResetPassView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -76,6 +77,11 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: LoginView,
+    },
+    {
+      path: '/password-reset',
+      name: 'password-reset',
+      component: ResetPassView,
     },
   ],
 })

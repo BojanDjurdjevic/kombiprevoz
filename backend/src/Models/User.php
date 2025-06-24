@@ -4,6 +4,9 @@ namespace Models;
 
 use PDO;
 use PDOException;
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception;
 use Rules\Validator;
 
 class User {
@@ -362,6 +365,74 @@ class User {
             } else echo json_encode(['user' => 'Pogrešana trenutna lozinka! Molimo Vas da unesete važeću lozinku'], JSON_PRETTY_PRINT);
         } else echo json_encode(['user' => 'Nije pronađen korisnik, molimo da nas kontaktirate.'], JSON_PRETTY_PRINT);
         
+    }
+
+    // Reset Password
+    public function resetPassword() 
+    {
+        $token = bin2hex(random_bytes(16));
+        $token_hash = hash("sha256", $token);
+
+        $expiry = date("Y-m-d H:i:s", time() + 60 * 31);
+
+        $sql = "UPDATE users SET 
+        reset_token_hash = :token, reset_token_expires = :expiry
+        WHERE email = :email"
+        ;
+        $stmt = $this->db->prepare($sql);
+
+        $stmt->bindParam(':token', $token_hash);
+        $stmt->bindParam(':expiry', $expiry);
+        $stmt->bindParam(':email', $this->email);
+
+        try {
+            if($stmt->execute()) {
+                echo json_encode(['token' => $token_hash]);
+                if($stmt->rowCount() == 1) {
+
+                    $mail = new PHPMailer(true);
+                    $mail->SMTPDebug = SMTP::DEBUG_SERVER;
+                    $mail->isSMTP();
+                    $mail->SMTPAuth = true;
+
+                    $mail->Host = "smtp.gmail.com";
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+                    $mail->Port = 465;
+                    $mail->Username = $_ENV["SMTP_USER"];
+                    $mail->Password = $_ENV["SMTP_PASS"];
+
+                    $mail->setFrom("noreply-kombiprevoz@gmail.com", "Bojan");
+                    $mail->addAddress($this->email, $this->name);
+                    $mail->isHTML(true);
+                    $mail->Subject = "Password Reset";
+                    $mail->Body = <<<END
+
+                    Kliknite na link: http://localhost:5173/password-reset?token=$token
+
+                    END;
+
+                    try {
+                        $mail->send();
+                        echo json_encode(['user' => 'Link je upravo poslat na Vašu email adresu. Molimo proverite Vaš email!']);
+                    } catch (Exception $e) {
+                        echo json_encode([
+                            'user' => 'Došlo je do greške!',
+                            'msg' => $mail->ErrorInfo
+                        ]);
+                    }
+                    //return $mail; // sbps uiqu hdmt besz
+                } else
+                echo json_encode([
+                    'user' => 'Link je upravo poslat na Vašu email adresu. Molimo proverite Vaš email!',
+                    'msg' => 'Korisnik nije pronađen !!!'
+                ]);
+            }
+        } catch (PDOException $e) {
+            echo json_encode([
+                'user' => 'Došlo je do greške! Link nije poslat.',
+                'msg' => $e->getMessage()
+            ], JSON_PRETTY_PRINT);
+        }
     }
 
      // -------------------------  DELETE --------------------------------- // 
