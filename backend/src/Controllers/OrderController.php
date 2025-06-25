@@ -27,9 +27,13 @@ class OrderController {
             switch($request) {
                 case 'GET':
                     if(isset($this->data->orders) && !empty($this->data->orders)) {
-                        if(isset($this->data->orders->userID)) {
+                        if(isset($this->data->orders->userID) && !empty($this->data->orders->userID)) {
                             $this->order->user_id = $this->data->orders->userID;
                             $this->order->getByUser();
+                        }
+                        if(isset($this->data->orders->ord_code) && !empty($this->data->orders->ord_code)) {
+                            $this->order->code = $this->data->orders->ord_code;
+                            $this->order->getByCode();
                         }
                         if(Validator::isAdmin() || Validator::isSuper() || Validator::isDriver()) {
                             if(isset($this->data->orders->all) || !empty($this->data->orders->all)) {
@@ -71,6 +75,7 @@ class OrderController {
                         $this->order->add_from = $this->data->orders->create->add_from;
                         $this->order->add_to = $this->data->orders->create->add_to;
                         $this->order->date = $this->data->orders->create->date;
+                        if(isset($this->data->orders->create->price) && !empty($this->data->orders->create->price))
                         $this->order->price = $this->data->orders->create->price;
                         $this->order->create();
                     }

@@ -571,18 +571,20 @@ class User {
 }
 
 /*
+    "users": true,
     "user": {
         "id": null, 
-        "name": "Bogdan Đurović",
-        "email": "bogy@test.com",
-        "pass": "BogyCar!123",
-        "city": "Novi Sad",
-        "address": "Puškinova 9",
-        "phone": "062648963"
+        "name": "Bojan Djurdjevic",
+        "email": "pininfarina164@gmail.com",
+        "pass": "Ljubavsonmojija!369",
+        "pass_confirm": "",
+        "city": "Sremska Kamenica",
+        "address": "Gavrila Principa 6",
+        "phone": "0641178898"
     },
     "new_pass": {
-        "password": "",
-        "confirmation_pass": ""
+        "password": "Ljubavsonmojija!369",
+        "confirmation_pass": "Ljubavsonmojija!369"
     },
     "all": null,
     "byID": null,
@@ -595,18 +597,33 @@ class User {
     "updateProfile": null,
     "updatePass": null,
     "delete": null,
-    "restore": null
+    "restore": null,
+    "resetPass": null,
+    "token": null
 
     ------------------------------------------------
 
-    "pass": "Ljubavicmojija!123",
+    "pass": "Ljubavsonmojija!369",
     "password": "EniBaneni!123",
     Valentina - LjubavicBuljavi!123
 
-    "sid": "g3l0a87rf3c863qeab8070uvo8",
-    "user_id": 8,
+    --------------------------------------
+
+    "user_id": 10,
+    "user": {
+        "id": 10,
+        "email": "pininfarina164@gmail.com"
+    },
     "orders": {
-        "all": true
+        "create": {
+            "tour_id": 6,
+            "user_id": 10,
+            "places": 2,
+            "add_from": "Ise Bajića 9",
+            "add_to": "Stipice Jelavića 15",
+            "date": "2025-07-11",
+            "price": 50
+        }
     }
 */
 

@@ -3,6 +3,8 @@
 namespace Models;
 
 use PDO;
+use PDOException;
+use Rules\Validator;
 
 class Order {
     public $id;
@@ -13,6 +15,7 @@ class Order {
     public $add_to;
     public $date;
     public $price;
+    public $code;
     public $deleted;
     public $newDate;
     public $newPlaces;
@@ -158,6 +161,33 @@ class Order {
         }
     }
 
+    // Check the real price of the order:
+    public static function totalPrice($db, $tourID, $places)
+    {
+        $sql = "SELECT price FROM tours WHERE id = :id";
+        $stmt = $db->prepare($sql);
+
+        if(filter_var($tourID, FILTER_VALIDATE_INT) && filter_var($places, FILTER_VALIDATE_INT)) {
+            $stmt->bindParam(':id', $tourID);
+
+            try {
+                if($stmt->execute()) {
+                    $row = $stmt->fetch(PDO::FETCH_OBJ);
+                    
+                    if($row) {
+                        return (int)$row->price * (int)$places;
+                    } else return null;
+                }
+            } catch (PDOException $e) {
+                json_encode([
+                    'order' => 'Došlo je do greške pri konekciji na bazu podataka.',
+                    'msg' => $e->getMessage()
+                ]);
+                exit();
+            }
+        } else return null;
+    }
+
     // GET data:
 
     public function getAll() 
@@ -165,7 +195,7 @@ class Order {
         $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
-                orders.total as price, users.name as user, users.email, users.phone
+                orders.total as price, orders.code, users.name as user, users.email, users.phone
                 from orders 
                 INNER JOIN tours on orders.tour_id = tours.id
                 INNER JOIN users on orders.user_id = users.id
@@ -191,7 +221,7 @@ class Order {
         $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
-                orders.total as price, users.name as user, users.email, users.phone
+                orders.total as price, orders.code, users.name as user, users.email, users.phone
                 from orders 
                 INNER JOIN tours on orders.tour_id = tours.id
                 INNER JOIN users on orders.user_id = users.id
@@ -218,7 +248,7 @@ class Order {
             $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
-                orders.total as price, users.name as user, users.email, users.phone
+                orders.total as price, orders.code, users.name as user, users.email, users.phone
                 from orders 
                 INNER JOIN tours on orders.tour_id = tours.id
                 INNER JOIN users on orders.user_id = users.id
@@ -229,7 +259,7 @@ class Order {
             $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
-                orders.total as price, users.name as user, users.email, users.phone
+                orders.total as price, orders.code, users.name as user, users.email, users.phone
                 from orders 
                 INNER JOIN tours on orders.tour_id = tours.id
                 INNER JOIN users on orders.user_id = users.id
@@ -240,7 +270,7 @@ class Order {
             $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
-                orders.total as price, users.name as user, users.email, users.phone
+                orders.total as price, orders.code, users.name as user, users.email, users.phone
                 from orders 
                 INNER JOIN tours on orders.tour_id = tours.id
                 INNER JOIN users on orders.user_id = users.id
@@ -269,7 +299,7 @@ class Order {
         $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
-                orders.total as price, users.name as user, users.email, users.phone
+                orders.total as price, orders.code, users.name as user, users.email, users.phone
                 from orders 
                 INNER JOIN tours on orders.tour_id = tours.id
                 INNER JOIN users on orders.user_id = users.id
@@ -287,11 +317,64 @@ class Order {
         } else echo json_encode(['order' => 'Nema rezervacija od ovog korisnika.'], JSON_PRETTY_PRINT);
     }
 
+    public function getByCode() {
+        $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
+                orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
+                orders.date, tours.time as pickuptime, tours.duration,
+                orders.total as price, orders.code, orders.deleted,
+                users.name as user, users.email, users.phone
+                from orders 
+                INNER JOIN tours on orders.tour_id = tours.id
+                INNER JOIN users on orders.user_id = users.id
+                WHERE orders.code = :code"
+        ;
+        $stmt = $this->db->prepare($sql);
+
+        if(Validator::validateString($this->code)) {
+            $this->code = htmlspecialchars(strip_tags($this->code));
+            $stmt->bindParam(':code', $this->code);
+
+            try {
+                if($stmt->execute()) {
+                    $order = $stmt->fetch(PDO::FETCH_OBJ);
+                    //$num = $order->rowCount();
+
+                    if($order) {
+                        echo json_encode(['order' => $order], JSON_PRETTY_PRINT);
+                    } else echo json_encode(['order' => 'Rezervacija nije pronađena.'], JSON_PRETTY_PRINT);
+                }
+            } catch (PDOException $e) {
+                echo json_encode([
+                    'order' => 'Došlo je do greške pri konekciji na bazu podataka.',
+                    'msg' => $e->getMessage()
+                ], JSON_PRETTY_PRINT);
+            }
+        } else
+        echo json_encode(['order' => 'Pogrešno unet broj rezervacije. Molimo Vas da unesete validan kod
+                        koji sadrži 7 brojeva i 2 velika slova: xxxxxxxKP'], JSON_PRETTY_PRINT)
+        ;
+
+        /*
+        $res = $this->db->query($sql);
+        $num = $res->rowCount();
+
+        if($num > 0) {
+            $orders = [];
+            while($row = $res->fetch(PDO::FETCH_OBJ)) {
+                array_push($orders, $row);
+            }
+            echo json_encode([
+                'orders'=> $orders
+            ], JSON_PRETTY_PRINT);
+        } else
+        echo json_encode(['msg' => 'Nema rezervisanih vožnji za odabrane destinacije.'], JSON_PRETTY_PRINT); */
+    }
+
     public function getByTour() {
         $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
-                orders.total as price, users.name as user, users.email, users.phone
+                orders.total as price, orders.code, users.name as user, users.email, users.phone
                 from orders 
                 INNER JOIN tours on orders.tour_id = tours.id
                 INNER JOIN users on orders.user_id = users.id
@@ -316,7 +399,7 @@ class Order {
         $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
-                orders.total as price, users.name as user, users.email, users.phone
+                orders.total as price, orders.code, users.name as user, users.email, users.phone
                 from orders 
                 INNER JOIN tours on orders.tour_id = tours.id
                 INNER JOIN users on orders.user_id = users.id
@@ -344,9 +427,13 @@ class Order {
         if($this->places <= $this->availability($this->date) && $this->isDeparture($this->date) && $this->isUnlocked($this->date)) {
             $sql = "INSERT INTO orders SET
                     tour_id = :tour_id, user_id = :user_id, places = :places,
-                    add_from = :add_from, add_to = :add_to, date = :date, total = :price
+                    add_from = :add_from, add_to = :add_to, date = :date, total = :price, code = :code
             ";
             $stmt = $this->db->prepare($sql);
+
+            $now = time() + $this->user_id;
+            $generated = (string)$now . "KP";
+            $new_code = substr($generated, -9);
 
             $this->tour_id = htmlspecialchars(strip_tags($this->tour_id));
             $this->user_id = htmlspecialchars(strip_tags($this->user_id));
@@ -354,20 +441,25 @@ class Order {
             $this->add_from = htmlspecialchars(strip_tags($this->add_from));
             $this->add_to = htmlspecialchars(strip_tags($this->add_to));
             $this->date = htmlspecialchars(strip_tags($this->date));
+            $this->price = $this->totalPrice($this->db, $this->tour_id, $this->places);
             $this->price = htmlspecialchars(strip_tags($this->price));
 
-            $stmt->bindParam(':tour_id', $this->tour_id);
-            $stmt->bindParam(':user_id', $this->user_id);
-            $stmt->bindParam(':places', $this->places);
-            $stmt->bindParam(':add_from', $this->add_from);
-            $stmt->bindParam(':add_to', $this->add_to);
-            $stmt->bindParam(':date', $this->date);
-            $stmt->bindParam(':price', $this->price);
+            if($this->price != null) {
+                $stmt->bindParam(':tour_id', $this->tour_id);
+                $stmt->bindParam(':user_id', $this->user_id);
+                $stmt->bindParam(':places', $this->places);
+                $stmt->bindParam(':add_from', $this->add_from);
+                $stmt->bindParam(':add_to', $this->add_to);
+                $stmt->bindParam(':date', $this->date);
+                $stmt->bindParam(':price', $this->price);
+                $stmt->bindParam(':code', $new_code);
 
-            if($stmt->execute()) {
-                echo json_encode(['msg' => 'Uspešno ste rezervisali vožnju.'], JSON_PRETTY_PRINT);
-            }
-            else echo json_encode(['msg' => 'Trenutno nije moguće rezervisati ovu vožnju.'], JSON_PRETTY_PRINT);
+                if($stmt->execute()) {
+                    echo json_encode(['msg' => "Uspešno ste rezervisali vožnju. Vaš broj rezervacije je: {$new_code}"], JSON_PRETTY_PRINT);
+                }
+                else echo json_encode(['msg' => 'Trenutno nije moguće rezervisati ovu vožnju.'], JSON_PRETTY_PRINT);
+            } else echo json_encode(['msg' => 'Trenutno nije moguće rezervisati ovu vožnju. 
+                                    Nolimo Vas da se obratite našem centru za podršku!'], JSON_PRETTY_PRINT);
         } else
         echo json_encode(['msg' => 'Žao nam je, ali nema više slobodnih mesta za ovu vožnju.']);
     }
