@@ -21,6 +21,8 @@ class User {
     public $address;
     public $phone;
     public $verified;
+    public $token;
+    public $expiry;
     public $db;
     public $sid;
 
@@ -50,13 +52,6 @@ class User {
             } else return false;
             
         } else return false;
-    }
-
-    // Check if the User i owner of account
-    public function isOwner()
-    {
-        if(isset($_SESSION['user_id']) && !empty($this->id) && $this->id == $_SESSION['user_id']) return true;
-        else return false;
     }
 
     // -------------------------  GET --------------------------------- // 
@@ -148,6 +143,59 @@ class User {
             echo json_encode(["user" => $users], JSON_PRETTY_PRINT);
         } else
         echo json_encode(["user" => 'Nema registrovanih korisnika sa naznačenim mestom stanovanja.'], JSON_PRETTY_PRINT);
+    }
+
+    // Check if the User i owner of account
+    public function isOwner()
+    {
+        if(isset($_SESSION['user_id']) && !empty($this->id) && $this->id == $_SESSION['user_id']) return true;
+        else return false;
+    }
+
+    // Check if the reset-password token is good
+    public function checkToken($token)
+    {
+        $token_hash = hash("sha256", $token);
+        $sql = "SELECT * FROM users WHERE reset_token_hash = :token";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':token', $token_hash);
+
+        try {
+            if($stmt->execute()) {
+                $user = $stmt->fetch(PDO::FETCH_OBJ);
+
+                if(!$user) {
+                    echo json_encode([
+                        'token' => 404,
+                        'msg' => 'Token nije pronađen.'
+                    ], JSON_PRETTY_PRINT);
+                    return false;
+                }
+                if(strtotime($user->reset_token_expires) <= time()) {
+                    echo json_encode([
+                        'token' => 404,
+                        'msg' => 'Token je istekao. Molimo Vas da ponovo kliknete link: Zaboravljena Lozinka'
+                    ], JSON_PRETTY_PRINT);
+                    return false;
+                }
+
+                $this->id = $user->id;
+                $this->name = $user->name;
+                $this->email = $user->email;
+
+                echo json_encode([
+                    'token' => 200,
+                    'msg' => 'Token je u redu. Molimo Vas da izmenite lozinku.'
+                ], JSON_PRETTY_PRINT);
+                return true;
+            }
+        } catch (PDOException $e) {
+            echo json_encode([
+                'user' => 'Došlo je do greške!',
+                'msg' => $e->getMessage()
+            ], JSON_PRETTY_PRINT);
+        }
     }
 
     // -------------------------  POST --------------------------------- // 
@@ -435,6 +483,46 @@ class User {
         }
     }
 
+    public function processResetPassword()
+    {
+        if($this->checkToken($this->token)) {
+            if(Validator::validatePassword($this->new_pass)) {
+                if($this->new_pass == $this->new_pass_confirm) {
+                    $sql = "UPDATE users SET
+                            pass = :pass, reset_token_hash = NULL, reset_token_expires = NULL
+                            WHERE id = :id"
+                    ;
+                    $stmt = $this->db->prepare($sql);
+                    $hashed = password_hash($this->new_pass, PASSWORD_DEFAULT);
+                    $stmt->bindParam(':pass', $hashed);
+                    $stmt->bindParam(':id', $this->id);
+
+                    try {
+                        if($stmt->execute()) {
+                            echo json_encode([
+                                'user' => 200,
+                                'msg' => "Poštovani/a {$this->name} spešno ste izmenili lozinku. Sada možete da se ulogujete."
+                            ], JSON_PRETTY_PRINT);
+                        }
+                    } catch (PDOException $e) {
+                        echo json_encode([
+                        'user' => 'Došlo je do greške pri konekciji.',
+                        'msg' => $e->getMessage()
+                    ], JSON_PRETTY_PRINT);
+                    }
+                } else
+                echo json_encode([
+                    'user' => 404,
+                    'msg' => 'Vaša nova lozinka mora da se podudara sa potvrdom lozinke. Molmo proverite još jednom i pošaljite ponovo!'
+                ], JSON_PRETTY_PRINT);
+            } else
+            echo json_encode([
+                'user' => 404,
+                'msg' => 'Lozinka nije validna! Lozinka obavezno mora da sadrži najmanje: 8 karaktera, 1 veliko/malo slovo, 1 broj i 1 specijalni karakter.'
+            ], JSON_PRETTY_PRINT);
+        }
+    }
+
      // -------------------------  DELETE --------------------------------- // 
 
      // Delete User
@@ -513,6 +601,7 @@ class User {
 
     "pass": "Ljubavicmojija!123",
     "password": "EniBaneni!123",
+    Valentina - LjubavicBuljavi!123
 
     "sid": "g3l0a87rf3c863qeab8070uvo8",
     "user_id": 8,

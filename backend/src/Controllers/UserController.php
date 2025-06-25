@@ -49,6 +49,9 @@ class UserController {
         if(isset($this->data->user->phone)) {
             $this->user->phone = $this->data->user->phone;
         }
+        if(isset($this->data->token)) {
+            $this->user->token = $this->data->token;
+        }
 
         $request = $_SERVER['REQUEST_METHOD'];
 
@@ -75,6 +78,7 @@ class UserController {
                         if(Validator::isAdmin() || Validator::isSuper()) $this->user->getByCity();
                         else echo json_encode(['user' => 'Niste autorizovani da vidite druge korisnike!']);
                     }
+                    if(isset($this->data->token) && !empty($this->data->token)) $this->user->checkToken($this->user->token);
                 } else {
                     echo json_encode(["user" => 'Nije pronađen korisnik.'], JSON_PRETTY_PRINT);
                     exit();
@@ -97,19 +101,22 @@ class UserController {
                 if(isset($this->data->logout) && !empty($this->data->logout)) {
                     $this->user->logout();
                 }
+                
+                break;
+            case 'PUT':
+                if(isset($this->data->updateProfile) && !empty($this->data->updateProfile)) {
+                    if($this->user->isOwner() || Validator::isAdmin() || Validator::isSuper()) $this->user->update();
+                    else echo json_encode(['user' => 'Niste autorizovani da vršite izmene!']);
+                }
+                if(isset($this->data->updatePass) && !empty($this->data->updatePass)) {
+                    if($this->user->isOwner()) $this->user->updatePassword();
+                    else echo json_encode(['user' => 'Niste autorizovani da vršite izmene!']);
+                }
                 if(isset($this->data->resetPass) && !empty($this->data->resetPass)) {
                     $this->user->resetPassword();
                 }
-                break;
-            case 'PUT':
-                if($this->user->isOwner() || Validator::isAdmin() || Validator::isSuper()) {
-                    if(isset($this->data->updateProfile) && !empty($this->data->updateProfile)) {
-                        $this->user->update();
-                    }
-                    if(isset($this->data->updatePass) && !empty($this->data->updatePass)) {
-                        if($this->user->isOwner()) $this->user->updatePassword();
-                        else echo json_encode(['user' => 'Niste autorizovani da vršite izmene!']);
-                    }
+                if(isset($this->data->token) && !empty($this->data->token)) {
+                    $this->user->processResetPassword();
                 }
                 break;
             case 'DELETE':

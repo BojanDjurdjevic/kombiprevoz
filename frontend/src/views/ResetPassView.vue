@@ -1,5 +1,12 @@
 <script setup>
+    const url = window.location.href
 
+    console.log(url);
+
+    const arr = url.split("=")
+    const token = arr[1]
+    console.log(token)
+    
 </script>
 
 <template>
@@ -14,6 +21,9 @@
             ></v-text-field>
             <v-text-field
                 label="Lozinka"
+            ></v-text-field>
+            <v-text-field
+                label="Potvrda lozinke"
             ></v-text-field>
         </v-form>
         <v-btn>
