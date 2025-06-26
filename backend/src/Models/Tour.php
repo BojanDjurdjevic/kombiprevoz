@@ -50,7 +50,18 @@ class Tour {
 
         try {
             if($stmt->execute()) {
-                $tour = $stmt->fetch(PDO::FETCH_OBJ);
+                $tour = [];
+                $res = $stmt->fetch(PDO::FETCH_OBJ);
+                array_push($tour, [
+                    "id" => $res->id,
+                    "from_city" => $res->from_city,
+                    "to_city" => $res->to_city,
+                    "departures" => $res->departures,
+                    "time" => $res->time,
+                    "duration" => $res->duration,
+                    "price" => $res->price,
+                    "seats" => $res->seats
+                ]);
 
                 if($tour) return $tour;
                 else echo json_encode(['tour' => 'Nije pronađena nijedna vožnja!']);

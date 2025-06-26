@@ -6,6 +6,7 @@ use PDO;
 use PDOException;
 use Rules\Validator;
 use Dompdf\Dompdf;
+use Dompdf\Options;
 
 class Order {
     public $id;
@@ -428,7 +429,8 @@ class Order {
         if($this->places <= $this->availability($this->date) && $this->isDeparture($this->date) && $this->isUnlocked($this->date)) {
             $sql = "INSERT INTO orders SET
                     tour_id = :tour_id, user_id = :user_id, places = :places,
-                    add_from = :add_from, add_to = :add_to, date = :date, total = :price, code = :code
+                    add_from = :add_from, add_to = :add_to, date = :date, total = :price, 
+                    code = :code, file_path = :pdf
             ";
             $stmt = $this->db->prepare($sql);
 
@@ -455,38 +457,47 @@ class Order {
                 $stmt->bindParam(':price', $this->price);
                 $stmt->bindParam(':code', $new_code);
 
+                $user = new User($this->db);
+                $user->id = $this->user_id;
+                $tour = new Tour($this->db);
+                $tour->id = $this->tour_id;
+
+                $owner = $user->getByID();
+                    
+                $tourObj = $tour->getByID();
+                    
+                $options = new Options();
+                $options->setChroot("src/assets/img");
+                $pdf = new Dompdf($options);
+                $pdf->setPaper("A4", "Portrait");
+
+                $html = file_get_contents("src/template.html");
+                $html = str_replace("{{ order }}", $new_code, $html);
+
+                $html = str_replace("{{ name }}", $owner[0]['name'], $html);
+                $html = str_replace("{{ places }}", $this->places, $html);
+                $html = str_replace("{{ address }}", $this->add_from, $html);
+                $html = str_replace("{{ city }}", $tourObj[0]['from_city'], $html);
+                $html = str_replace("{{ address_to }}", $this->add_to, $html);
+                $html = str_replace("{{ city_to }}", $tourObj[0]['to_city'], $html);
+                $html = str_replace("{{ date }}", $this->date, $html);
+                $html = str_replace("{{ time }}", $tourObj[0]['time'], $html);
+                $html = str_replace("{{ price }}", $this->price, $html);
+                $html = str_replace("{{ year }}", date("Y"), $html);
+
+                $pdf->loadHtml($html);
+
+                $pdf->render(); // Obavezno!!!
+                $pdf->addInfo("Title", "Kombiprevoz - rezervacija: ". $new_code);
+                //$pdf->stream("Rezervacija.pdf");
+                $file_path = "src/assets/pdfs/". $new_code . ".pdf";
+                    
+                $output = $pdf->output();
+                file_put_contents($file_path, $output);
+
+                $stmt->bindParam(':pdf', $file_path);
+
                 if($stmt->execute()) {
-                    $user = new User($this->db);
-                    $user->id = $this->user_id;
-                    $tour = new Tour($this->db);
-                    $tour->id = $this->tour_id;
-
-                    $owner = $user->getByID();
-                    $tourObj = $tour->getByID();
-
-                    $pdf = new Dompdf;
-                    $pdf->setPaper("A4", "Portrait");
-
-                    $html = file_get_contents("template.html");
-                    $html = str_replace("{{ order }}", $new_code, $html);
-                    $html = str_replace("{{ name }}", $owner['name'], $html);
-                    $html = str_replace("{{ places }}", $this->places, $html);
-                    $html = str_replace("{{ address }}", $this->add_from, $html);
-                    $html = str_replace("{{ city }}", $tourObj['from_city'], $html);
-                    $html = str_replace("{{ address_to }}", $this->add_to, $html);
-                    $html = str_replace("{{ city_to }}", $tourObj['to_city'], $html);
-                    $html = str_replace("{{ date }}", $this->date, $html);
-                    $html = str_replace("{{ time }}", $tourObj['time'], $html);
-                    $pdf->loadHtml($html);
-
-                    $pdf->render();
-                    $pdf->addInfo("Title", "Kombiprevoz - rezervacija");
-                    $pdf->stream("Rezervacija.pdf");
-
-                    $file_path = $new_code . ".pdf";
-                    $output = $pdf->output();
-                    file_put_contents("./assets/".$file_path, $output);
-
                     echo json_encode(['msg' => "Uspešno ste rezervisali vožnju. Vaš broj rezervacije je: {$new_code}"], JSON_PRETTY_PRINT);
                 }
                 else echo json_encode(['msg' => 'Trenutno nije moguće rezervisati ovu vožnju.'], JSON_PRETTY_PRINT);

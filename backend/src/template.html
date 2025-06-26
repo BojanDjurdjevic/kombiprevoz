@@ -22,9 +22,11 @@
         footer {
             border-top: 0.0625rem solid black;
             padding: 1.5rem;
+            text-align: center;
         }
         img {
-            width: 18rem;
+            width: 12rem;
+            align-self: center;
         }
         p {
             font-size: 1.3rem;
@@ -33,15 +35,19 @@
             color: brown;
             font-weight: bold;
         }
-        div {
-            width: 21rem;
+        div  {
+            width: 96%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
     </style>
 </head>
 <body>
     <h1>Kombi Prevoz</h1>
-    <hr>
-    <div>
+
+    <div class="img">
         <img src="assets/img/1.jpg">
     </div>
     
@@ -57,9 +63,11 @@
         <p>Adresa dolaska: <span>{{ address_to }}, {{ city_to }}</span>  </p>
         <br>
         <p>Vreme polaska: <span>{{ date }}, {{ time }} </span> </p>
+        <br>
+        <p>Cena: <span>{{ price }} EUR</span> </p>
     </div>
     <br>
-    <hr>
+
     <footer>
         &copy; KombiPrevoz {{ year }}
     </footer>

@@ -82,12 +82,20 @@ class User {
         $res = $this->db->query($sql);
         $num = $res->rowCount();
         if($num > 0) {
-            $users = [];
+            $user = [];
             while($row = $res->fetch(PDO::FETCH_OBJ)) {
-                array_push($users, $row);
+                array_push($user, [
+                    "id" => $row->id,
+                    "name" => $row->name,
+                    "email" => $row->email,
+                    "status" => $row->status,
+                    "city" => $row->city,
+                    "address" => $row->address,
+                    "phone" => $row->phone
+                ]);
             }
-            echo json_encode(["user" => $users], JSON_PRETTY_PRINT);
-            return $users[0];
+            echo json_encode(["user" => $user], JSON_PRETTY_PRINT);
+            return $user;
         } else
         echo json_encode(["user" => 'Nema registrovanih korisnika sa poslatim ID-em.'], JSON_PRETTY_PRINT);
     }
@@ -617,14 +625,15 @@ class User {
     },
     "orders": {
         "create": {
-            "tour_id": 6,
+            "tour_id": 1,
             "user_id": 10,
             "places": 2,
             "add_from": "Ise Bajića 9",
             "add_to": "Stipice Jelavića 15",
-            "date": "2025-07-11",
-            "price": 50
-        }
+            "date": "2025-07-25",
+            "price": null
+        },
+        "ord_code": null
     }
 */
 
