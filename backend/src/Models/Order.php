@@ -519,14 +519,16 @@ class Order {
                 $mail->Subject = "Potvrda Rezervacije";
                 $mail->Body = <<<END
 
-                    Poštovani/a,
-
-                    Uspešno ste rezervisali vašu vožnju!
-                    Broj vaše rezervacije je: $new_code
-
-                    U prilogu Vam šaljemo potvrdu rezervacije.
-
-                    Srdačan pozdrav od KombiPrevoz tima!
+                    <p> Poštovani/a, </p>
+                    <br>
+                    <p> Uspešno ste rezervisali vašu vožnju! <br><br> </p>
+                    <br>
+                    <p> Broj vaše rezervacije je: <b> $new_code </b> </p>
+                    <br>
+                    <p> U prilogu Vam šaljemo potvrdu rezervacije. </p>
+                    <br><br>
+                    <p> Srdačan pozdrav od KombiPrevoz tima! </p>
+                    
                 END;
 
                 try {
