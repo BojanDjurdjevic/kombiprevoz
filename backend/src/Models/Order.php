@@ -7,6 +7,9 @@ use PDOException;
 use Rules\Validator;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception;
 
 class Order {
     public $id;
@@ -497,6 +500,46 @@ class Order {
 
                 $stmt->bindParam(':pdf', $file_path);
 
+                // Mail
+                $mail = new PHPMailer(true);
+                $mail->SMTPDebug = SMTP::DEBUG_SERVER;
+                $mail->isSMTP();
+                $mail->SMTPAuth = true;
+
+                $mail->Host = "smtp.gmail.com";
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+                $mail->Port = 465;
+                $mail->Username = $_ENV["SMTP_USER"];
+                $mail->Password = $_ENV["SMTP_PASS"];
+
+                $mail->setFrom("noreply-kombiprevoz@gmail.com", "Bojan");
+                $mail->addAddress($owner[0]['email'], $owner[0]['name']);
+                $mail->isHTML(true);
+                $mail->addAttachment($file_path, "Kombiprevoz - rezervacija: ". $new_code);
+                $mail->Subject = "Potvrda Rezervacije";
+                $mail->Body = <<<END
+
+                    Poštovani/a,
+
+                    Uspešno ste rezervisali vašu vožnju!
+                    Broj vaše rezervacije je: $new_code
+
+                    U prilogu Vam šaljemo potvrdu rezervacije.
+
+                    Srdačan pozdrav od KombiPrevoz tima!
+                END;
+
+                try {
+                    $mail->send();
+                    echo json_encode(['user' => 'Potvrda je upravo poslata na Vašu email adresu. Molimo proverite Vaš email!']);
+                } catch (Exception $e) {
+                    echo json_encode([
+                        'user' => 'Došlo je do greške!',
+                        'msg' => $mail->ErrorInfo
+                    ]);
+                }
+
+                exit();
                 if($stmt->execute()) {
                     echo json_encode(['msg' => "Uspešno ste rezervisali vožnju. Vaš broj rezervacije je: {$new_code}"], JSON_PRETTY_PRINT);
                 }

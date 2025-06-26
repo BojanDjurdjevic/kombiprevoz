@@ -47,9 +47,7 @@
 <body>
     <h1>Kombi Prevoz</h1>
 
-    <div class="img">
-        <img src="assets/img/1.jpg">
-    </div>
+    
     
     <div>
         <h2>Rezervacija <span>{{ order }}</span>  </h2>
@@ -65,11 +63,15 @@
         <p>Vreme polaska: <span>{{ date }}, {{ time }} </span> </p>
         <br>
         <p>Cena: <span>{{ price }} EUR</span> </p>
+        
     </div>
     <br>
 
     <footer>
-        &copy; KombiPrevoz {{ year }}
+        <p>&copy; KombiPrevoz {{ year }}</p>
+        <br>
+        <p><b>* Napomena: </b> Ovaj dokument kao i ceo sajt je napravljen u svrhu ucenja programiranja.
+        Svaka slicnost sa stvarnim rezervacijama je slucajna!</p>
     </footer>
 </body>
 </html>
