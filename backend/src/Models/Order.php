@@ -5,6 +5,7 @@ namespace Models;
 use PDO;
 use PDOException;
 use Rules\Validator;
+use Dompdf\Dompdf;
 
 class Order {
     public $id;
@@ -455,6 +456,37 @@ class Order {
                 $stmt->bindParam(':code', $new_code);
 
                 if($stmt->execute()) {
+                    $user = new User($this->db);
+                    $user->id = $this->user_id;
+                    $tour = new Tour($this->db);
+                    $tour->id = $this->tour_id;
+
+                    $owner = $user->getByID();
+                    $tourObj = $tour->getByID();
+
+                    $pdf = new Dompdf;
+                    $pdf->setPaper("A4", "Portrait");
+
+                    $html = file_get_contents("template.html");
+                    $html = str_replace("{{ order }}", $new_code, $html);
+                    $html = str_replace("{{ name }}", $owner['name'], $html);
+                    $html = str_replace("{{ places }}", $this->places, $html);
+                    $html = str_replace("{{ address }}", $this->add_from, $html);
+                    $html = str_replace("{{ city }}", $tourObj['from_city'], $html);
+                    $html = str_replace("{{ address_to }}", $this->add_to, $html);
+                    $html = str_replace("{{ city_to }}", $tourObj['to_city'], $html);
+                    $html = str_replace("{{ date }}", $this->date, $html);
+                    $html = str_replace("{{ time }}", $tourObj['time'], $html);
+                    $pdf->loadHtml($html);
+
+                    $pdf->render();
+                    $pdf->addInfo("Title", "Kombiprevoz - rezervacija");
+                    $pdf->stream("Rezervacija.pdf");
+
+                    $file_path = $new_code . ".pdf";
+                    $output = $pdf->output();
+                    file_put_contents("./assets/".$file_path, $output);
+
                     echo json_encode(['msg' => "Uspešno ste rezervisali vožnju. Vaš broj rezervacije je: {$new_code}"], JSON_PRETTY_PRINT);
                 }
                 else echo json_encode(['msg' => 'Trenutno nije moguće rezervisati ovu vožnju.'], JSON_PRETTY_PRINT);

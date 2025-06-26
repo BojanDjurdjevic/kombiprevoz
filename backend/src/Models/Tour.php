@@ -3,6 +3,7 @@
 namespace Models;
 
 use PDO;
+use PDOException;
 
 class Tour {
     public $id;
@@ -39,6 +40,28 @@ class Tour {
         } else
         echo json_encode(['msg' => "Nema dostupnih vožnji."]);
     } 
+
+    public function getByID() 
+    {
+        $sql = "SELECT * FROM tours WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        $this->id = htmlspecialchars(strip_tags($this->id));
+        $stmt->bindParam(':id', $this->id);
+
+        try {
+            if($stmt->execute()) {
+                $tour = $stmt->fetch(PDO::FETCH_OBJ);
+
+                if($tour) return $tour;
+                else echo json_encode(['tour' => 'Nije pronađena nijedna vožnja!']);
+            }
+        } catch (PDOException $e) {
+            echo json_encode([
+                'tour' => 'Došlo je do greške!', 
+                'msg' => $e->getMessage()    
+            ]);
+        }
+    }
 
     public function getDays() {
         $sql = "SELECT tours.departures from tours where from_city = '$this->from_city' and to_city = '$this->to_city' and deleted = 0";

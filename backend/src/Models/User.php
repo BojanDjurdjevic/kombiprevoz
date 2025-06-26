@@ -87,6 +87,7 @@ class User {
                 array_push($users, $row);
             }
             echo json_encode(["user" => $users], JSON_PRETTY_PRINT);
+            return $users[0];
         } else
         echo json_encode(["user" => 'Nema registrovanih korisnika sa poslatim ID-em.'], JSON_PRETTY_PRINT);
     }

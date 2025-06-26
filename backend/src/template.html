@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        h1, h2 {
+            text-align: center;
+            width: 96%;
+        }
+        h1 {
+            border-bottom: 0.0625rem solid black;
+            padding: 1.5rem;
+        }
+        body, footer {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 96%;
+        }
+        footer {
+            border-top: 0.0625rem solid black;
+            padding: 1.5rem;
+        }
+        img {
+            width: 18rem;
+        }
+        p {
+            font-size: 1.3rem;
+        }
+        span {
+            color: brown;
+            font-weight: bold;
+        }
+        div {
+            width: 21rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>Kombi Prevoz</h1>
+    <hr>
+    <div>
+        <img src="assets/img/1.jpg">
+    </div>
+    
+    <div>
+        <h2>Rezervacija <span>{{ order }}</span>  </h2>
+        <br>
+        <p>Ime glavnog putnika: <span>{{ name }}</span> </p>
+        <br>
+        <p>Broj rezervisanih mesta: <span>{{ places }}</span> </p>
+        <br>
+        <p>Adresa polaska: <span>{{ address }}, {{ city }}</span>  </p>
+        <br>
+        <p>Adresa dolaska: <span>{{ address_to }}, {{ city_to }}</span>  </p>
+        <br>
+        <p>Vreme polaska: <span>{{ date }}, {{ time }} </span> </p>
+    </div>
+    <br>
+    <hr>
+    <footer>
+        &copy; KombiPrevoz {{ year }}
+    </footer>
+</body>
+</html>
