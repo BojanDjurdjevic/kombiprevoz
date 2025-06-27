@@ -44,6 +44,14 @@ class Validator {
         if(isset($_SESSION['user_status']) && $_SESSION['user_status'] == 'Driver') return true;
         else return false;
     }
+
+    public static function mailerTemplate($html, $code, ? string $name)
+    {
+        $html = str_replace("{{ code }}", $code, $html);
+        if($name) $html = str_replace("{{ name }}", $name, $html);
+
+        return $html;
+    }
 }
 
 ?>
