@@ -36,14 +36,14 @@ class User {
     // Check if it the User is logedin:
     public static function isLoged($id, $email, $db)
     {
-        if(isset($_SESSION['user_id']) && isset($_SESSION['user_name']) && isset($_SESSION['user_email'])) return true;
+        if(isset($_SESSION['user_id']) && $_SESSION['user_id'] == $id && isset($_SESSION['user_name']) && isset($_SESSION['user_email'])) return true;
         elseif(isset($id) && !empty($id)) {
             $find = "SELECT * FROM users WHERE id = '$id' AND deleted = 0";
             $res = $db->query($find);
             $user = $res->fetch(PDO::FETCH_OBJ);
-
             if($user) {
                 if($email == $user->email) {
+                    echo "dobar mail";
                     $_SESSION['user_id'] = $user->id;
                     $_SESSION['user_name'] = $user->name;
                     $_SESSION['user_email'] = $user->email;
@@ -204,11 +204,9 @@ class User {
         $res = $this->db->query($sql);
         $num = $res->rowCount();
         if($num > 0) {
-            $users = [];
-            while($row = $res->fetch(PDO::FETCH_OBJ)) {
-                array_push($users, $row);
-            }
-            echo json_encode(["user" => $users], JSON_PRETTY_PRINT);
+            $user = $res->fetch(PDO::FETCH_OBJ);
+            echo json_encode(["user" => $user], JSON_PRETTY_PRINT);
+            return $user;
         } else
         echo json_encode(["user" => 'Nije pronađen korisnik.'], JSON_PRETTY_PRINT);
     }
@@ -247,6 +245,33 @@ class User {
             echo json_encode(["user" => $users], JSON_PRETTY_PRINT);
         } else
         echo json_encode(["user" => 'Nema registrovanih korisnika sa naznačenim mestom stanovanja.'], JSON_PRETTY_PRINT);
+    }
+
+    public function getAvailableDrivers($date)
+    {
+        $sql = "SELECT id, name, email, phone FROM users
+                WHERE status = 'Driver'
+                and id NOT IN (SELECT driver_id FROM orders WHERE date = :date)
+        ";
+        $stmt = $this->db->prepare($sql);
+        $date = htmlspecialchars(strip_tags($date), ENT_QUOTES);
+        $stmt->bindParam(':date', $date);
+
+        $drivers = [];
+
+        try {
+            if($stmt->execute()) {
+                while($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+                    array_push($drivers, $row);
+                }
+                return $drivers;
+            }
+        } catch (PDOException $e) {
+            echo json_encode([
+                'drivers' => 'Došlo je do greške u sistemu!',
+                'msg' => $e->getMessage()
+            ], JSON_PRETTY_PRINT);
+        }
     }
 
     // -------------------------  POST --------------------------------- // 

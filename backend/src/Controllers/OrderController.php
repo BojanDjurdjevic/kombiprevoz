@@ -35,32 +35,46 @@ class OrderController {
                             $this->order->code = $this->data->orders->ord_code;
                             $this->order->getByCode();
                         }
-                        if(Validator::isAdmin() || Validator::isSuper() || Validator::isDriver()) {
-                            if(isset($this->data->orders->all) || !empty($this->data->orders->all)) {
-                                $this->order->getAll();
+                        //if(Validator::isAdmin() || Validator::isSuper() || Validator::isDriver()) {
+                            if(isset($this->data->orders->all) && !empty($this->data->orders->all)) {
+                                if(Validator::isAdmin() || Validator::isSuper() || Validator::isDriver()) $this->order->getAll();
+                                else echo json_encode(['orders' => 'Niste autorizovani da vidite tuđe rezervacije!']);
                             }
-                            if(isset($this->data->orders->date)) {
+                            if(isset($this->data->orders->date) && !empty($this->data->orders->date) 
+                            && !isset($this->data->orders->tour_id) && !empty($this->data->orders->tour_id)) {
                                 $this->order->date = $this->data->orders->date;
-                                $this->order->getAllByDate();
+                                if(Validator::isAdmin() || Validator::isSuper() || Validator::isDriver()) $this->order->getAllByDate();
+                                else echo json_encode(['orders' => 'Niste autorizovani da vidite tuđe rezervacije!']);
                             }
                             
                             if(isset($this->data->orders->from_date) && isset($this->data->orders->to_date)) {
+                                if(Validator::isAdmin() || Validator::isSuper() || Validator::isDriver())
                                 $this->order->getAllByDateRange($this->data->orders->from_date, $this->data->orders->to_date);
+                                else echo json_encode(['orders' => 'Niste autorizovani da vidite tuđe rezervacije!']);
                             } elseif(isset($this->data->orders->from_date)) {
+                                if(Validator::isAdmin() || Validator::isSuper() || Validator::isDriver())
                                 $this->order->getAllByDateRange($this->data->orders->from_date, null);
+                                else echo json_encode(['orders' => 'Niste autorizovani da vidite tuđe rezervacije!']);
                             } elseif(isset($this->data->orders->to_date)) {
+                                if(Validator::isAdmin() || Validator::isSuper() || Validator::isDriver())
                                 $this->order->getAllByDateRange(null, $this->data->orders->to_date);
+                                else echo json_encode(['orders' => 'Niste autorizovani da vidite tuđe rezervacije!']);
                             }
-                            if(isset($this->data->orders->tour_id) && isset($this->data->orders->date)) {
+                            if(isset($this->data->orders->tour_id) && !empty($this->data->orders->tour_id) 
+                            && isset($this->data->orders->date) && !empty($this->data->orders->date)) {
                                 $this->order->tour_id = $this->data->orders->tour_id;
                                 $this->order->date = $this->data->orders->date;
+                                if(Validator::isAdmin() || Validator::isSuper() || Validator::isDriver())
                                 $this->order->getByTourAndDate();
+                                else echo json_encode(['orders' => 'Niste autorizovani da vidite tuđe rezervacije!']);
                             }
                             if(isset($this->data->orders->tour_id) && !isset($this->data->orders->date) ) {
                                 $this->order->tour_id = $this->data->orders->tour_id;
+                                if(Validator::isAdmin() || Validator::isSuper() || Validator::isDriver())
                                 $this->order->getByTour();
+                                else echo json_encode(['orders' => 'Niste autorizovani da vidite tuđe rezervacije!']);
                             }
-                        } else echo json_encode(['orders' => 'Niste autorizovani da vidite tuđe rezervacije!']);
+                        //} else echo json_encode(['orders' => 'Niste autorizovani da vidite tuđe rezervacije!']);
                     } else
                     echo json_encode([
                         'status' => 401,
@@ -171,7 +185,7 @@ class OrderController {
         echo json_encode([
             'msg' => 'Vaša sesija je istekla.',
             'user' => 404,
-            'sid' => session_id()
+            'userid' => $_SESSION['user_id']
         ], JSON_PRETTY_PRINT);
         
     }

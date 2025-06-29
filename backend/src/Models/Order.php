@@ -549,12 +549,14 @@ class Order {
         $num = $res->rowCount();
 
         if($num > 0) {
+            $drivers = $this->user->getAvailableDrivers($this->date);
             $orders = [];
             while($row = $res->fetch(PDO::FETCH_OBJ)) {
                 array_push($orders, $row);
             }
             echo json_encode([
-                'orders'=> $orders
+                'orders'=> $orders,
+                'drivers' => $drivers
             ], JSON_PRETTY_PRINT);
         } else
         echo json_encode(['msg' => 'Nema rezervisanih vožnji za odabrane datume.'], JSON_PRETTY_PRINT);
