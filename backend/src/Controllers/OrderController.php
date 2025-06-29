@@ -161,6 +161,13 @@ class OrderController {
                             }
                         } else echo json_encode(["msg" => "Niste autorizovani da izmenite ovu rezervaciju!"], JSON_PRETTY_PRINT);
                     }
+                    if(isset($this->data->orders->selected) && !empty($this->data->orders->selected)
+                        && isset($this->data->orders->driver) && !empty($this->data->orders->driver)) {
+                            $this->order->selected = $this->data->orders->selected;
+                            $this->order->driver = $this->data->orders->driver
+                        ;
+                            $this->order->assignDriver();
+                    }
                     break;
                 case 'DELETE':
                     if(isset($this->data->orders->delete) && !empty($this->data->orders->delete)) {

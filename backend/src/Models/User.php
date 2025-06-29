@@ -43,7 +43,6 @@ class User {
             $user = $res->fetch(PDO::FETCH_OBJ);
             if($user) {
                 if($email == $user->email) {
-                    echo "dobar mail";
                     $_SESSION['user_id'] = $user->id;
                     $_SESSION['user_name'] = $user->name;
                     $_SESSION['user_email'] = $user->email;

@@ -15,6 +15,7 @@ class Order {
     public $id;
     public $tour_id;
     public $user_id;
+    public $driver_id;
     public $places;
     public $add_from;
     public $add_to;
@@ -27,6 +28,8 @@ class Order {
     public $new_add_to;
     public $newDate;
     public $newPlaces;
+    public $driver;
+    public $selected;
 
     private $user;
     private $tour;
@@ -207,9 +210,7 @@ class Order {
 
     public function generateVoucher($new_code, $places, $add_from, $add_to, $date, $price) 
     {
-        //$user = new User($this->db);
         $this->user->id = $this->user_id;
-        //$tour = new Tour($this->db);
         $this->tour->id = $this->tour_id;
 
         $owner = $this->user->getByID();
@@ -254,11 +255,105 @@ class Order {
         ];
     }
 
+    public function reGenerateVoucher() 
+    {
+        $this->user->id = $this->user_id;
+        $this->tour->id = $this->tour_id;
+        
+        $owner = $this->user->getByID();          
+        $tourObj = $this->tour->getByID();
+        $myOrder = $this->getDriverOfTour();
+                    
+        $options = new Options();
+        $options->setChroot("src/assets/img");
+        $pdf = new Dompdf($options);
+        $pdf->setPaper("A4", "Portrait");
+
+        if($myOrder != NULL) {
+            $arr = explode(" ", $myOrder->driver);
+            $myDriver = $arr[0];
+        }
+
+        if($myOrder != NULL) {
+           $formated = date_create($myOrder->date); 
+        } else 
+        $formated = date_create($this->date); 
+        $d = date("d.m.Y", date_timestamp_get($formated));
+        if($myOrder != NULL) {
+            $html = file_get_contents("src/updated.html");
+        } else $html = file_get_contents("src/template.html");
+        if($myOrder != NULL) {
+            $html = str_replace("{{ order }}", $myOrder->code, $html);
+        } else
+        $html = str_replace("{{ order }}", $this->code, $html);
+
+        $html = str_replace("{{ name }}", $owner[0]['name'], $html);
+        if($myOrder != NULL) {
+            $html = str_replace("{{ places }}", $myOrder->places, $html);
+        } else
+        $html = str_replace("{{ places }}", $this->places, $html);
+        if($myOrder != NULL) {
+            $html = str_replace("{{ address }}", $myOrder->pickup, $html);
+        } else
+        $html = str_replace("{{ address }}", $this->add_from, $html);
+        $html = str_replace("{{ city }}", $tourObj[0]['from_city'], $html);
+        if($myOrder != NULL) {
+            $html = str_replace("{{ address_to }}", $myOrder->dropoff, $html);
+        } else
+        $html = str_replace("{{ address_to }}", $this->add_to, $html);
+        $html = str_replace("{{ city_to }}", $tourObj[0]['to_city'], $html);
+        $html = str_replace("{{ date }}", $d, $html);
+        $html = str_replace("{{ time }}", $tourObj[0]['time'], $html);
+        if($myOrder != NULL) {
+            $html = str_replace("{{ price }}", $myOrder->price, $html);
+        } else
+        $html = str_replace("{{ price }}", $this->price, $html);
+        $html = str_replace("{{ year }}", date("Y"), $html);
+        if($myOrder != NULL) {
+            $html = str_replace("{{ driver }}", $myDriver, $html);
+            $html = str_replace("{{ drphone }}", $myOrder->dr_phone, $html);
+            $html = str_replace("{{ drmail }}", $myOrder->dr_email, $html);
+        }
+
+        $pdf->loadHtml($html);
+
+        $pdf->render(); // Obavezno!!!
+        if($myOrder != NULL) {
+            $pdf->addInfo("Title", "Kombiprevoz - rezervacija: ". $myOrder->code);
+        } else
+        $pdf->addInfo("Title", "Kombiprevoz - rezervacija: ". $this->code);
+        //$pdf->stream("Rezervacija.pdf");
+        if($myOrder != NULL) {
+            $file_path = $myOrder->voucher;
+        } else
+        $file_path = $this->voucher;
+                    
+        $output = $pdf->output();
+        file_put_contents($file_path, $output);
+        if($myOrder != NULL) {
+            return [
+                'email' => $owner[0]['email'],
+                'name' => $owner[0]['name'],
+                'path' => $file_path,
+                'code' => $myOrder->code,
+                'driver' => $myDriver,
+                'driver_phone' => $myOrder->dr_phone,
+                'driver_email' => $myOrder->dr_email
+            ];
+        } else
+        return [
+            'email' => $owner[0]['email'],
+            'name' => $owner[0]['name'],
+            'path' => $file_path,
+            'code' => $this->code
+        ];
+    }
+
     public function sendVoucher($email, $name, $path, $new_code, $goal)
     {
         $template = '';
         if($goal === 'create') {
-            $template = "<p> Poštovani/a, </p>
+            $template = "<p> Poštovani/a {$name}, </p>
             <br>
             <p> Uspešno ste rezervisali vašu vožnju! </p>
             <br>
@@ -268,11 +363,19 @@ class Order {
             <br><br>
             <p> Srdačan pozdrav od KombiPrevoz tima! </p>";
         } elseif($goal === 'update') {
-            $template = "<p> Poštovani/a, </p>
+            $template = "<p> Poštovani/a {$name}, </p>
             <br>
             <p> Uspešno ste izmenili vašu vožnju! </p>
             <br>
             <p> Broj vaše rezervacije je: <b> $new_code </b> </p>
+            <br>
+            <p> U prilogu Vam šaljemo ažuriranu potvrdu rezervacije. </p>
+            <br><br>
+            <p> Srdačan pozdrav od KombiPrevoz tima! </p>";
+        } else {
+            $template = "<p> Poštovani/a {$name}, </p>
+            <br>
+            <p> Vaša rezervacija broj <b> $new_code </b> je ažurirana </p>
             <br>
             <p> U prilogu Vam šaljemo ažuriranu potvrdu rezervacije. </p>
             <br><br>
@@ -316,7 +419,7 @@ class Order {
 
     public function getAll() 
     {
-        $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
+        $sql = "SELECT orders.id, orders.tour_id, orders.user_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
                 orders.total as price, orders.code, orders.file_path as voucher, users.name as user, users.email, users.phone
@@ -342,7 +445,7 @@ class Order {
 
     public function getAllByDate() 
     {
-        $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
+        $sql = "SELECT orders.id, orders.tour_id, orders.user_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
                 orders.total as price, orders.code, orders.file_path as voucher, users.name as user, users.email, users.phone
@@ -355,11 +458,12 @@ class Order {
         $num = $res->rowCount();
 
         if($num > 0) {
+            $drivers = $this->user->getAvailableDrivers($this->date);
             $orders = [];
             while($row = $res->fetch(PDO::FETCH_OBJ)) {
                 array_push($orders, $row);
             }
-            echo json_encode(['orders' => $orders]);
+            echo json_encode(['orders' => $orders, 'drivers' => $drivers], JSON_PRETTY_PRINT);
         } else
         echo json_encode(['msg' => 'Nema rezervisanih vožnji za traženi datum.']);
     }
@@ -369,7 +473,7 @@ class Order {
         $now = date("Y-m-d");
         $sql = "";
         if(isset($from) && isset($to)) {
-            $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
+            $sql = "SELECT orders.id, orders.tour_id, orders.user_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
                 orders.total as price, orders.code, orders.file_path as voucher, users.name as user, users.email, users.phone
@@ -380,7 +484,7 @@ class Order {
                 ORDER BY orders.date"
             ;
         } elseif(isset($from) && !isset($to)) {
-            $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
+            $sql = "SELECT orders.id, orders.tour_id, orders.user_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
                 orders.total as price, orders.code, orders.file_path as voucher, users.name as user, users.email, users.phone
@@ -391,7 +495,7 @@ class Order {
                 ORDER BY orders.date"
             ;
         } elseif(!isset($from) && isset($to)) {
-            $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
+            $sql = "SELECT orders.id, orders.tour_id, orders.user_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
                 orders.total as price, orders.code, orders.file_path as voucher, users.name as user, users.email, users.phone
@@ -421,7 +525,7 @@ class Order {
     public function getByUser() 
     {
         $this->user_id = htmlspecialchars(strip_tags($this->user_id));
-        $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
+        $sql = "SELECT orders.id, orders.tour_id, orders.user_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
                 orders.total as price, orders.code, orders.file_path as voucher, users.name as user, users.email, users.phone
@@ -443,7 +547,7 @@ class Order {
     }
 
     public function getByCode() {
-        $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
+        $sql = "SELECT orders.id, orders.tour_id, orders.user_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
                 orders.total as price, orders.code, orders.file_path as voucher, orders.deleted,
@@ -499,6 +603,8 @@ class Order {
                     $this->date = $order->date;
                     $this->price = $order->total;
                     $this->code = $order->code;
+                    $this->voucher = $order->file_path;
+                    $this->driver_id = $order->driver_id;
                     
                     return $order; 
                 } 
@@ -511,7 +617,7 @@ class Order {
     }
 
     public function getByTour() {
-        $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
+        $sql = "SELECT orders.id, orders.tour_id, orders.user_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
                 orders.total as price, orders.code, orders.file_path as voucher, users.name as user, users.email, users.phone
@@ -536,7 +642,7 @@ class Order {
     }
 
     public function getByTourAndDate() {
-        $sql = "SELECT orders.id, orders.tour_id, orders.places, tours.from_city, 
+        $sql = "SELECT orders.id, orders.tour_id, orders.user_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
                 orders.total as price, orders.code, orders.file_path as voucher, users.name as user, users.email, users.phone
@@ -560,6 +666,30 @@ class Order {
             ], JSON_PRETTY_PRINT);
         } else
         echo json_encode(['msg' => 'Nema rezervisanih vožnji za odabrane datume.'], JSON_PRETTY_PRINT);
+    }
+
+    public function getDriverOfTour()
+    {
+        $sql = "SELECT orders.id, orders.tour_id, orders.driver_id, orders.places, tours.from_city, 
+                orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
+                orders.date, tours.time as pickuptime, tours.duration,
+                orders.total as price, orders.code, orders.file_path as voucher, 
+                users.name as driver, users.email as dr_email, users.phone as dr_phone
+                from orders 
+                INNER JOIN tours on orders.tour_id = tours.id
+                INNER JOIN users on orders.driver_id = users.id
+                WHERE orders.id = '$this->id' AND orders.deleted = 0"
+        ;
+        $res = $this->db->query($sql);
+        $order = $res->fetch(PDO::FETCH_OBJ);
+        if($order) {
+            echo json_encode(['msg_drOfT' => $order]);
+            return $order;
+        } else {
+            $this->getFromDB($this->id);
+            echo json_encode(['msg_drIsNull' => $order]);
+            return null;
+        } 
     }
 
     //------------------------------- FUNCTIONS OF POST METHOD --------------------------------//
@@ -767,6 +897,35 @@ class Order {
             }   
         }
         
+    }
+
+    public function assignDriver()
+    {
+        $arr = explode(" ", $this->driver->name);
+        $driverName = $arr[0];
+        foreach($this->selected as $ord) {
+            $sql = "UPDATE orders SET driver_id = :driver WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            $this->driver->id = htmlspecialchars(strip_tags($this->driver->id), ENT_QUOTES);
+            $this->id = htmlspecialchars(strip_tags($ord->id), ENT_QUOTES);
+            $this->user_id = htmlspecialchars(strip_tags($ord->user_id), ENT_QUOTES);
+            $this->tour_id = htmlspecialchars(strip_tags($ord->tour_id), ENT_QUOTES);
+            $stmt->bindParam(':driver', $this->driver->id);
+            $stmt->bindParam(':id', $this->id);
+            try {
+                if($stmt->execute()) {
+                    $updated = $this->reGenerateVoucher();
+                    $this->sendVoucher($ord->email, $ord->user, $updated['path'], $updated['code'], 'resend');
+                    echo json_encode(["driver_assign' => 'Uspešno ste dodelili vožnje vozaču {$this->driver->name}"], JSON_PRETTY_PRINT);
+                }
+            } catch (PDOException $e) {
+                echo json_encode([
+                    "driver_assign" => 'Došlo je do greške pri konekciji na bazu!',
+                    "msg" => $e->getMessage()
+                ], JSON_PRETTY_PRINT);
+                
+            }
+        }
     }
 
     //------------------------------- FUNCTIONS OF DELETE METHOD --------------------------------//
