@@ -6,11 +6,10 @@ class Validator {
     public static function validateString($str) 
     {
         if(strlen($str) < 3) return false;
-        $forbiden = ["=", ")", "(", "+", "-", "*"];
+        $forbiden = array("=", ")", "(", "+", "-", "*", "/", "|");
         foreach($forbiden as $f) {
-            if(strpos($str, $f) !== false) {
-                return false;
-            } else return true;
+            if(strpos($str, $f) !== false) return false; 
+            else return true;
         }
     }
 
@@ -49,6 +48,8 @@ class Validator {
     {
         $html = str_replace("{{ code }}", $code, $html);
         if($name) $html = str_replace("{{ name }}", $name, $html);
+        //if($subj) $html = str_replace("{{ subj }}", $subj, $html);
+        //if($pass) $html = str_replace("{{ pass }}", $pass, $html);
 
         return $html;
     }

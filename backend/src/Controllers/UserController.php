@@ -92,6 +92,14 @@ class UserController {
                     } else
                     echo json_encode(['user' => 'Nije moguće kreirati korisnika, molimo Vas da unesete sve podatke!']);
                 }
+                if(isset($this->data->byAdmin) && !empty($this->data->byAdmin)) {
+                    if(!empty($this->user->name) && !empty($this->user->email) && !empty($this->user->pass) 
+                    && !empty($this->user->address) && !empty($this->user->city) && !empty($this->user->phone) && !empty($this->user->status)) {
+                        if(Validator::isSuper() || Validator::isAdmin()) $this->user->createByAdmin();
+                        else echo json_encode(['user' => 'Niste autorizovani da kreirate korisnike!']);
+                    } else
+                    echo json_encode(['user' => 'Nije moguće kreirati korisnika, molimo Vas da unesete sve podatke!']);
+                }
                 if(isset($this->data->login) && !empty($this->data->login)) {
                     if(!empty($this->user->email) && !empty($this->user->pass)) {
                         $this->user->login();
@@ -117,6 +125,10 @@ class UserController {
                 }
                 if(isset($this->data->token) && !empty($this->data->token)) {
                     $this->user->processResetPassword();
+                }
+                if(isset($this->data->role) && !empty($this->data->role)) {
+                    if(Validator::isSuper()) $this->user->changeRole();
+                    else echo json_encode(['user' => 'Niste autorizovani da vršite izmene!']);
                 }
                 break;
             case 'DELETE':

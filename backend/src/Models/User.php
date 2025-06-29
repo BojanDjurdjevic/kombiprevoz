@@ -31,6 +31,8 @@ class User {
         $this->db = $db;
     }
 
+    // -------------------------  FUNCTIONS BEFORE ACTION --------------------------------- //
+
     // Check if it the User is logedin:
     public static function isLoged($id, $email, $db)
     {
@@ -52,6 +54,99 @@ class User {
             } else return false;
             
         } else return false;
+    }
+    // Check if the User i owner of account
+    public function isOwner()
+    {
+        if(isset($_SESSION['user_id']) && !empty($this->id) && $this->id == $_SESSION['user_id']) return true;
+        else return false;
+    }
+
+    // -------------------------  FUNCTIONS AFTER ACTION --------------------------------- //
+
+    // Check if the reset-password token is good
+    public function checkToken($token)
+    {
+        $token_hash = hash("sha256", $token);
+        $sql = "SELECT * FROM users WHERE reset_token_hash = :token";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':token', $token_hash);
+
+        try {
+            if($stmt->execute()) {
+                $user = $stmt->fetch(PDO::FETCH_OBJ);
+
+                if(!$user) {
+                    echo json_encode([
+                        'token' => 404,
+                        'msg' => 'Token nije pronađen.'
+                    ], JSON_PRETTY_PRINT);
+                    return false;
+                }
+                if(strtotime($user->reset_token_expires) <= time()) {
+                    echo json_encode([
+                        'token' => 404,
+                        'msg' => 'Token je istekao. Molimo Vas da ponovo kliknete link: Zaboravljena Lozinka'
+                    ], JSON_PRETTY_PRINT);
+                    return false;
+                }
+
+                $this->id = $user->id;
+                $this->name = $user->name;
+                $this->email = $user->email;
+
+                echo json_encode([
+                    'token' => 200,
+                    'msg' => 'Token je u redu. Molimo Vas da izmenite lozinku.'
+                ], JSON_PRETTY_PRINT);
+                return true;
+            }
+        } catch (PDOException $e) {
+            echo json_encode([
+                'user' => 'Došlo je do greške!',
+                'msg' => $e->getMessage()
+            ], JSON_PRETTY_PRINT);
+        }
+    }
+
+    // Email to the user:
+    public function sendEmail($html, $code, $name, $subject, $output) 
+    {
+        $template = Validator::mailerTemplate($html, $code, $name);
+        $mail = new PHPMailer(true);
+        $mail->SMTPDebug = SMTP::DEBUG_SERVER;
+        $mail->isSMTP();
+        $mail->SMTPAuth = true;
+
+        $mail->Host = "smtp.gmail.com";
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+        $mail->Port = 465;
+        $mail->Username = $_ENV["SMTP_USER"];
+        $mail->Password = $_ENV["SMTP_PASS"];
+
+        $mail->setFrom("noreply-kombiprevoz@gmail.com", "Bojan");
+        $mail->addAddress($this->email, $this->name);
+        $mail->isHTML(true);
+        $mail->Subject = $subject;
+        $mail->setLanguage('sr');
+        $mail->Body = <<<END
+
+        $template
+
+        END;
+
+        try {
+            $mail->send();
+            echo json_encode(['user' => $output]);
+        } catch (Exception $e) {
+            echo json_encode([
+                'user' => 'Došlo je do greške!',
+                'msg' => $mail->ErrorInfo
+            ]);
+        }
+        //return $mail; // sbps uiqu hdmt besz
+    
     }
 
     // -------------------------  GET --------------------------------- // 
@@ -154,66 +249,14 @@ class User {
         echo json_encode(["user" => 'Nema registrovanih korisnika sa naznačenim mestom stanovanja.'], JSON_PRETTY_PRINT);
     }
 
-    // Check if the User i owner of account
-    public function isOwner()
-    {
-        if(isset($_SESSION['user_id']) && !empty($this->id) && $this->id == $_SESSION['user_id']) return true;
-        else return false;
-    }
-
-    // Check if the reset-password token is good
-    public function checkToken($token)
-    {
-        $token_hash = hash("sha256", $token);
-        $sql = "SELECT * FROM users WHERE reset_token_hash = :token";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(':token', $token_hash);
-
-        try {
-            if($stmt->execute()) {
-                $user = $stmt->fetch(PDO::FETCH_OBJ);
-
-                if(!$user) {
-                    echo json_encode([
-                        'token' => 404,
-                        'msg' => 'Token nije pronađen.'
-                    ], JSON_PRETTY_PRINT);
-                    return false;
-                }
-                if(strtotime($user->reset_token_expires) <= time()) {
-                    echo json_encode([
-                        'token' => 404,
-                        'msg' => 'Token je istekao. Molimo Vas da ponovo kliknete link: Zaboravljena Lozinka'
-                    ], JSON_PRETTY_PRINT);
-                    return false;
-                }
-
-                $this->id = $user->id;
-                $this->name = $user->name;
-                $this->email = $user->email;
-
-                echo json_encode([
-                    'token' => 200,
-                    'msg' => 'Token je u redu. Molimo Vas da izmenite lozinku.'
-                ], JSON_PRETTY_PRINT);
-                return true;
-            }
-        } catch (PDOException $e) {
-            echo json_encode([
-                'user' => 'Došlo je do greške!',
-                'msg' => $e->getMessage()
-            ], JSON_PRETTY_PRINT);
-        }
-    }
-
     // -------------------------  POST --------------------------------- // 
 
-    // signin - create
+    // SIGNIN - create new User
     public function create()
     {
         if(Validator::validateString($this->name) && Validator::validatePassword($this->pass)
-            && filter_var($this->email, FILTER_VALIDATE_EMAIL)) {
+            && filter_var($this->email, FILTER_VALIDATE_EMAIL) && Validator::validateString($this->address)
+            && Validator::validateString($this->city) && filter_var($this->phone, FILTER_VALIDATE_INT)) {
             $sql = "INSERT INTO users SET name = :name, email = :email, pass = :pass, status = :status,
                     city = :city, address = :address, phone = :phone"
             ;
@@ -233,7 +276,7 @@ class User {
             $stmt->bindParam(':name', $this->name);
             $stmt->bindParam(':email', $this->email);
             $stmt->bindParam(':pass', $hashed);
-            $stmt->bindParam(':status', $this->status);
+            $stmt->bindParam(':status', 'User');
             $stmt->bindParam(':city', $this->city);
             $stmt->bindParam(':address', $this->address);
             $stmt->bindParam(':phone', $this->phone);
@@ -265,47 +308,135 @@ class User {
         
     }
 
+    // Admin can choose the role while creating
+    public function createByAdmin()
+    {
+        if(Validator::validateString($this->name) /* && Validator::validatePassword($this->pass) */
+            && filter_var($this->email, FILTER_VALIDATE_EMAIL) && Validator::validateString($this->address)
+            && Validator::validateString($this->city) && Validator::validateString($this->phone)) {
+            
+            if(Validator::validateString($this->status)) {
+                if($this->status === 'Admin' || $this->status === 'Driver' || $this->status === 'User') {
+                    $sql = "INSERT INTO users SET name = :name, email = :email, pass = :pass, status = :status,
+                            city = :city, address = :address, phone = :phone"
+                    ;
+                    $stmt = $this->db->prepare($sql);
+
+                    $this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
+                    $this->name = htmlspecialchars(strip_tags($this->name), ENT_QUOTES);
+                    $this->email = htmlspecialchars(strip_tags($this->email), ENT_QUOTES);
+                    //$this->pass = htmlspecialchars(strip_tags($this->pass), ENT_QUOTES);
+                    $this->status = htmlspecialchars(strip_tags($this->status), ENT_QUOTES);
+                    $this->city = htmlspecialchars(strip_tags($this->city), ENT_QUOTES);
+                    $this->address = htmlspecialchars(strip_tags($this->address), ENT_QUOTES);
+                    $this->phone = htmlspecialchars(strip_tags($this->phone), ENT_QUOTES);
+
+                    $generated = bin2hex(random_bytes(6));
+
+                    $hashed = password_hash($generated, PASSWORD_DEFAULT);
+
+                    $stmt->bindParam(':name', $this->name);
+                    $stmt->bindParam(':email', $this->email);
+                    $stmt->bindParam(':pass', $hashed);
+                    $stmt->bindParam(':status', $this->status);
+                    $stmt->bindParam(':city', $this->city);
+                    $stmt->bindParam(':address', $this->address);
+                    $stmt->bindParam(':phone', $this->phone);
+
+                    
+                    try {
+                        if($stmt->execute()) {
+                            $html = "
+                                <p>Poštovani {{ name }}, </p><br>
+                                <p>Vaš nalog je uspešno kreiran.</p>
+                                <p>Vaš korisnički email je {$this->email} a Vaša lozinka je: {{ code }} </p>
+                                <br>
+                                <p>Molimo Vas da uđete na našu platformu, ulogujete se a zatim odmah promenite Vašu lozinku.</p>
+                                <br>
+                                <p>Da biste to uradili, kliknite na link: http://localhost:5173/login </p>
+                                <br><br>
+                                <p>Srdačan pozdrav od KombiPrevoz tima!</p>
+                            ";
+                            $this->sendEmail($html, $generated, $this->name, 'Kreiran Nalog', 'Email sa kredencijalima je poslat!');
+                            echo json_encode(['user' => [
+                                'msg' => 'Novi korisnik je uspešno kreiran.',
+                                'user_id' => $this->db->lastInsertId()
+                                ]
+                            ]);
+                        }
+                    } catch (PDOException $e) {
+                        if($e->getCode() == 23000) {
+                            echo json_encode([
+                                "user" => 'Email nije dostupan! Molimo Vas da probate sa drugim.'
+                            ]);
+                        } else 
+                        echo json_encode([
+                            'status' => 500,
+                            "user" => 'Nije moguće kreirati novog korisnika.'
+                        ]); 
+                    }
+                } else echo json_encode(['user' => 'Korisnik može imati samo jednu od 3 uloge!']);
+            } else echo json_encode(['user' => 'Molimo Vas da pravilno unesete podatke!']);
+            
+        } else {
+            echo json_encode(['user' => 'Molimo Vas da pravilno unesete podatke!']);
+        }
+        
+    }
+
     public function login()
     {
-        $find = "SELECT * FROM users WHERE email = '$this->email' AND deleted = 0";
-        $res = $this->db->query($find);
-        $user = $res->fetch(PDO::FETCH_OBJ);
+        $find = "SELECT * FROM users WHERE email = :email AND deleted = 0";
+        $stmt = $this->db->prepare($find);
+        if(filter_var($this->email, FILTER_VALIDATE_EMAIL)) {
+            $this->email = htmlspecialchars(strip_tags($this->email));
+            $stmt->bindParam(':email', $this->email);
 
-        if($user) {
-            if(password_verify($this->pass, $user->pass)) {
-                //session_start();
+            try {
+                if($stmt->execute()) {
+                    $user = $stmt->fetch(PDO::FETCH_OBJ);
 
-                $_SESSION['user_id'] = $user->id;
-                $_SESSION['user_name'] = $user->name;
-                $_SESSION['user_email'] = $user->email;
-                $_SESSION['user_status'] = $user->status;
-                $_SESSION['sid'] = session_id();
+                    if($user) {
+                        if(password_verify($this->pass, $user->pass)) {
+                            $_SESSION['user_id'] = $user->id;
+                            $_SESSION['user_name'] = $user->name;
+                            $_SESSION['user_email'] = $user->email;
+                            $_SESSION['user_status'] = $user->status;
+                            $_SESSION['sid'] = session_id();
 
-                $splited = explode(" ", $user->name);
-                $arr = [];
-                foreach($splited as $s) {
-                    array_push($arr, strtoupper($s[0]));
+                            $splited = explode(" ", $user->name);
+                            $arr = [];
+                            foreach($splited as $s) {
+                                array_push($arr, strtoupper($s[0]));
+                            }
+                            $initials = implode("", $arr);
+
+                            $logedUser = [
+                                'id' => $user->id,
+                                'name' => $user->name,
+                                'email' => $user->email,
+                                'city' => $user->city,
+                                "address" => $user->address,
+                                'phone' => $user->phone,
+                                'initials' => $initials
+                            ];
+
+                            echo json_encode([
+                                'sid' => $_SESSION['sid'],
+                                'user' => $logedUser
+                            ], JSON_PRETTY_PRINT);
+                        } else
+                        echo json_encode(['user' => 'Pogrešan email / lozinka!'], JSON_PRETTY_PRINT);
+                    } else
+                    echo json_encode(['user' => 'Pogrešan email ili lozinka!'], JSON_PRETTY_PRINT);
                 }
-                $initials = implode("", $arr);
-
-                $logedUser = [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'city' => $user->city,
-                    "address" => $user->address,
-                    'phone' => $user->phone,
-                    'initials' => $initials
-                ];
-
+            } catch (PDOException $e) {
                 echo json_encode([
-                    'sid' => $_SESSION['sid'],
-                    'user' => $logedUser
+                    'user' => 'Došlo je do greške pri konektovanju na bazu!',
+                    'msg' => $e->getMessage()
                 ], JSON_PRETTY_PRINT);
-            } else
-            echo json_encode(['user' => 'Pogrešan email / lozinka!'], JSON_PRETTY_PRINT);
-        } else
-        echo json_encode(['user' => 'Pogrešan email ili lozinka!'], JSON_PRETTY_PRINT);
+            }
+        } else echo json_encode(['user' => 'Pogrešno upisan email! Molimo Vas da unesete validan email!'], JSON_PRETTY_PRINT);
     }
 
     public function logout()
@@ -444,39 +575,17 @@ class User {
 
         try {
             if($stmt->execute()) {
-                echo json_encode(['token' => $token_hash]);
                 if($stmt->rowCount() == 1) {
-
-                    $mail = new PHPMailer(true);
-                    $mail->SMTPDebug = SMTP::DEBUG_SERVER;
-                    $mail->isSMTP();
-                    $mail->SMTPAuth = true;
-
-                    $mail->Host = "smtp.gmail.com";
-                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-                    $mail->Port = 465;
-                    $mail->Username = $_ENV["SMTP_USER"];
-                    $mail->Password = $_ENV["SMTP_PASS"];
-
-                    $mail->setFrom("noreply-kombiprevoz@gmail.com", "Bojan");
-                    $mail->addAddress($this->email, $this->name);
-                    $mail->isHTML(true);
-                    $mail->Subject = "Password Reset";
-                    $mail->Body = <<<END
-
-                    Kliknite na link: http://localhost:5173/password-reset?token=$token
-
-                    END;
-
-                    try {
-                        $mail->send();
-                        echo json_encode(['user' => 'Link je upravo poslat na Vašu email adresu. Molimo proverite Vaš email!']);
-                    } catch (Exception $e) {
-                        echo json_encode([
-                            'user' => 'Došlo je do greške!',
-                            'msg' => $mail->ErrorInfo
-                        ]);
-                    }
+                    $html = "
+                        <p>Poštovani/a {{ name }}</p>
+                        <br>
+                        <p>Da biste promenili vašu zaboravljenu lozinku, molimo Vas da kliknete na link: </p>
+                        <p>http://localhost:5173/password-reset?token={{ code }}</p>
+                        <br>
+                        <p>Srdačan pozdrav od KombiPrevoz tima!</p>
+                    ";
+                    $output = 'Link je upravo poslat na Vašu email adresu!';
+                    $this->sendEmail($html, $token, $this->name, 'Poništavanje Lozinke', $output);
                     //return $mail; // sbps uiqu hdmt besz
                 } else
                 echo json_encode([
@@ -530,6 +639,31 @@ class User {
                 'msg' => 'Lozinka nije validna! Lozinka obavezno mora da sadrži najmanje: 8 karaktera, 1 veliko/malo slovo, 1 broj i 1 specijalni karakter.'
             ], JSON_PRETTY_PRINT);
         }
+    }
+
+    public function changeRole() 
+    {
+        $sql = "UPDATE users SET status = :status WHERE id = :id";
+        if(Validator::validateString($this->status)) {
+            if($this->status === 'Admin' || $this->status === 'Driver' || $this->status === 'User') {
+                $stmt = $this->db->prepare($sql);
+                $this->status = htmlspecialchars(strip_tags($this->status), ENT_QUOTES);
+                $this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
+                $stmt->bindParam(':status', $this->status);
+                $stmt->bindParam(':id', $this->id);
+
+                try {
+                    if($stmt->execute()) {
+                        echo json_encode(['user' => "Uspešno ste izmenili ulogu korisniku {$this->name} u {$this->status}"], JSON_PRETTY_PRINT);
+                    } 
+                } catch (PDOException $e) {
+                    echo json_encode([
+                        'user' => 'Došlo je do greške prilikom konekcije na bazu!',
+                        'msg' => $e->getMessage()
+                    ], JSON_PRETTY_PRINT);
+                }
+            } else echo json_encode(['user' => 'Korisnik može imati samo jednu od 3 uloge!']);
+        } else echo json_encode(['user' => 'Nepravilno unesen podatak! Izaberite jednu od 3 uloge!']);
     }
 
      // -------------------------  DELETE --------------------------------- // 
@@ -635,6 +769,26 @@ class User {
         },
         "ord_code": null
     }
+
+    ---------------------------
+
+    giuliano: Giuliano!999
+
+    ---------------------------
+    create ByAdmin
+    "users": true,
+    "user": {
+        "id": null,
+        "name": "Bojan Giuliano",
+        "email": "bojan.giuliano@gmail.com",
+        "pass": "Giuliano!999",
+        "status": "Deiver",
+        "city": "Novi Sad",
+        "address": "Seljačkih Buna 29",
+        "phone": "062640227"
+    },
+    "byAdmin": true,
+    "role": null
 */
 
 ?>
