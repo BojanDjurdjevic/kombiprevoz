@@ -5,10 +5,12 @@ date_default_timezone_set("Europe/Belgrade");
 
 use Controllers\CityController;
 use Controllers\CountryController;
+use Controllers\DepartureController;
 use Controllers\OrderController;
 use Controllers\TourController;
 use Controllers\UserController;
 use Models\User;
+use Rules\Validator;
 
 header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json');
@@ -32,6 +34,7 @@ $countries = new CountryController($db, $data);
 $cities = new CityController($db, $data);
 $tours = new TourController($db, $data);
 $orders = new OrderController($db, $data, $sid);
+$departures = new DepartureController($db, $data);
 
 $isLoged = User::isLoged($data->user->id, $data->user->email, $db);
 
@@ -55,5 +58,14 @@ if(isset($data->orders) && !empty($data->orders)) {
         ], JSON_PRETTY_PRINT);
     }
 }
-
+if(isset($data->drive) && !empty($data->drive)) {
+    if($isLoged && Validator::isDriver() || Validator::isAdmin() || Validator::isSuper()) 
+    $departures->handleRequest();
+    else {
+        echo json_encode([
+            'user' => 404,
+            'msg' => 'Vaša sesija je istekla, ili niste autorizovani da pristupite!'
+        ], JSON_PRETTY_PRINT);
+    }
+}
 ?>

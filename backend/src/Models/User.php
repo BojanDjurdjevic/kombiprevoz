@@ -813,6 +813,68 @@ class User {
     },
     "byAdmin": true,
     "role": null
+
+    -----------------------
+
+    "users": false,
+    "user": {
+        "id": 10,
+        "name": "Valentina",
+        "email": "pininfarina164@gmail.com",
+        "pass": "Ljubavsonmojija!369",
+        "status": "Driver",
+        "city": "Novi Sad",
+        "address": "Seljačkih Buna 29",
+        "phone": "062640227"
+    },
+    "orders": {
+        "selected": [
+            {
+                "id": 2,
+                "tour_id": 1,
+                "user_id": 12,
+                "places": 2,
+                "from_city": "Novi Sad",
+                "pickup": "Kočićeva 9",
+                "to_city": "Rijeka",
+                "dropoff": "Zadarska 33",
+                "date": "2025-07-15",
+                "pickuptime": "06:45:00",
+                "duration": 6,
+                "price": 100,
+                "code": "3693692KP",
+                "voucher": "src/assets/pdfs/3693692KP.pdf",
+                "user": "Valentina Djurdjevic",
+                "email": "valentajndj@gmail.com",
+                "phone": "0641178898"
+            },
+            {
+                "id": 83,
+                "tour_id": 1,
+                "user_id": 10,
+                "places": 2,
+                "from_city": "Novi Sad",
+                "pickup": "Gajeva 9",
+                "to_city": "Rijeka",
+                "dropoff": "Primorska 18",
+                "date": "2025-07-15",
+                "pickuptime": "06:45:00",
+                "duration": 6,
+                "price": 100,
+                "code": "1016996KP",
+                "voucher": "src/assets/pdfs/1016996KP.pdf",
+                "user": "Bojan",
+                "email": "pininfarina164@gmail.com",
+                "phone": "062640273"
+            }
+        ],
+        "driver": {
+            "id": 15,
+            "name": "Bojan Giuliano",
+            "email": "bojan.giuliano@gmail.com",
+            "phone": "062640227"
+        }
+    }
 */
 
 ?>
