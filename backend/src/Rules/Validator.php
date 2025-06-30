@@ -48,8 +48,44 @@ class Validator {
     {
         $html = str_replace("{{ code }}", $code, $html);
         if($name) $html = str_replace("{{ name }}", $name, $html);
-        //if($subj) $html = str_replace("{{ subj }}", $subj, $html);
-        //if($pass) $html = str_replace("{{ pass }}", $pass, $html);
+
+        return $html;
+    }
+    public static function mailerDriverTemplate($order, $name, $places, $address, $city, $add_to, $city_to, $date, $time, $price, $tel) 
+    {
+        $formated = date_create($date);
+        $d = date("d.m.Y", date_timestamp_get($formated));
+        $html = "
+            <div>
+                <h2>Rezervacija <span>{{ order }}</span>  </h2>
+                <br>
+                <p>Ime glavnog putnika: <span>{{ name }}</span> </p>
+                <br>
+                <p>Broj rezervisanih mesta: <span>{{ places }}</span> </p>
+                <br>
+                <p>Adresa polaska: <span>{{ address }}, {{ city }}</span>  </p>
+                <br>
+                <p>Adresa dolaska: <span>{{ add_to }}, {{ city_to }}</span>  </p>
+                <br>
+                <p>Vreme polaska: <span>{{ date }} u {{ time }} sati</span> </p>
+                <br>
+                <p>Cena: <span>{{ price }} EUR</span> </p>
+                <br>
+                <p>Telefon putnika: <span>{{ tel }} EUR</span> </p>
+            </div>
+        ";
+
+        $html = str_replace("{{ order }}", $order, $html);
+        $html = str_replace("{{ name }}", $name, $html);
+        $html = str_replace("{{ places }}", $places, $html);
+        $html = str_replace("{{ address }}", $address, $html);
+        $html = str_replace("{{ city }}", $city, $html);
+        $html = str_replace("{{ add_to }}", $add_to, $html);
+        $html = str_replace("{{ city_to }}", $city_to, $html);
+        $html = str_replace("{{ date }}", $d, $html);
+        $html = str_replace("{{ time }}", $time, $html);
+        $html = str_replace("{{ price }}", $price, $html);
+        $html = str_replace("{{ tel }}", $tel, $html);
 
         return $html;
     }

@@ -317,12 +317,11 @@ class Order {
 
         $pdf->loadHtml($html);
 
-        $pdf->render(); // Obavezno!!!
+        $pdf->render();
         if($myOrder != NULL) {
             $pdf->addInfo("Title", "Kombiprevoz - rezervacija: ". $myOrder->code);
         } else
         $pdf->addInfo("Title", "Kombiprevoz - rezervacija: ". $this->code);
-        //$pdf->stream("Rezervacija.pdf");
         if($myOrder != NULL) {
             $file_path = $myOrder->voucher;
         } else
@@ -413,6 +412,42 @@ class Order {
                 'msg' => $mail->ErrorInfo
             ]);
         }
+    }
+
+    // ------ PDF of all passangers and reservations to DRIVER
+    public function generateDeparture($users, $new_code)
+    {        
+        $options = new Options();
+        $options->setChroot("src/assets/img");
+        $pdf = new Dompdf($options);
+        $pdf->setPaper("A4", "Portrait");
+
+        $template = '';
+        foreach ($users as $pax) {
+            $template .= Validator::mailerDriverTemplate($pax->code, $pax->user, $pax->places, $pax->pickup, $pax->from_city, $pax->dropoff, $pax->to_city, $pax->date, $pax->pickuptime, $pax->price, $pax->phone);
+        }
+
+        $html = file_get_contents("src/driver.html");
+        $html = str_replace("{{ main }}", $template, $html);
+        $html = str_replace("{{ year }}", date("Y"), $html);
+
+        $pdf->loadHtml($html);
+
+        $pdf->render();
+        $pdf->addInfo("Title", "Kombiprevoz - vožnja: ". $new_code);
+        $file_path = "src/assets/pdfs/". $new_code . ".pdf";
+                    
+        $output = $pdf->output();
+        file_put_contents($file_path, $output);
+        return [
+            'path' => $file_path
+        ];
+    }
+
+    // ------ Email about reservations to DRIVER
+    public function sendOrdersToDriver()
+    {
+
     }
 
     //------------------------------- FUNCTIONS OF GET METHOD --------------------------------//
@@ -901,8 +936,7 @@ class Order {
 
     public function assignDriver()
     {
-        $arr = explode(" ", $this->driver->name);
-        $driverName = $arr[0];
+        $ordersArr = []; 
         foreach($this->selected as $ord) {
             $sql = "UPDATE orders SET driver_id = :driver WHERE id = :id";
             $stmt = $this->db->prepare($sql);
@@ -912,11 +946,13 @@ class Order {
             $this->tour_id = htmlspecialchars(strip_tags($ord->tour_id), ENT_QUOTES);
             $stmt->bindParam(':driver', $this->driver->id);
             $stmt->bindParam(':id', $this->id);
+            array_push($ordersArr, (string)$ord->id);
+            /*
             try {
                 if($stmt->execute()) {
                     $updated = $this->reGenerateVoucher();
                     $this->sendVoucher($ord->email, $ord->user, $updated['path'], $updated['code'], 'resend');
-                    echo json_encode(["driver_assign' => 'Uspešno ste dodelili vožnje vozaču {$this->driver->name}"], JSON_PRETTY_PRINT);
+                    //echo json_encode(["driver_assign' => 'Uspešno ste dodelili vožnje vozaču {$this->driver->name}"], JSON_PRETTY_PRINT);
                 }
             } catch (PDOException $e) {
                 echo json_encode([
@@ -924,7 +960,36 @@ class Order {
                     "msg" => $e->getMessage()
                 ], JSON_PRETTY_PRINT);
                 
-            }
+            } */
+        }
+        
+        $ord_set = implode(",", $ordersArr);
+        $now = time() + $this->driver->id;
+        $generated = (string)$now . "KP";
+        $new_code = substr($generated, -9);
+
+        $pathD = $this->generateDeparture($this->selected, $new_code);
+
+        $this->departureCreate($this->driver->id, $ord_set, $new_code, $pathD['path']);
+        
+        
+    }
+
+    public function departureCreate($driver_id, $orders, $code, $path) 
+    {
+        $sql = "INSERT INTO departures SET driver_id = :driver_id, dep_orders = :orders, code = :code, file_path = :path";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':driver_id', $driver_id);
+        $stmt->bindParam(':orders', $orders);
+        $stmt->bindParam(':code', $code);
+        $stmt->bindParam(':path', $path);
+
+        try {
+            if($stmt->execute()) {
+                echo json_encode(['departure' => 'Uspešno ste kreirali polazak!'], JSON_PRETTY_PRINT);
+            } 
+        }catch (PDOException $e) {
+            echo json_encode(['departure' => 'Došlo je do greške pri konekciji na bazu!', 'msg' => $e->getMessage()], JSON_PRETTY_PRINT);
         }
     }
 
@@ -947,23 +1012,9 @@ class Order {
 
     public function restore() 
     {   
-        /*
-        $find = "SELECT date, places from orders WHERE id = '$this->id'";
-        $found = $this->db->query($find);
-        $num = $found->rowCount(); */
         $order = $this->getFromDB($this->id);
 
         if($order) {
-            /*
-            $row = $found->fetch(PDO::FETCH_OBJ);
-        
-            $this->date = $row->date;
-            $this->places = $row->places;
-            $this->add_from = $row->add_from;
-            $this->add_to = $row->add_to;
-            $this->price = $row->total;
-            $this->code = $row->code;
-            */
             if($this->places <= $this->availability($this->date) && $this->isUnlocked($this->date)) {
                 $mydata = $this->generateVoucher($this->code, $this->places, $this->add_from, $this->add_to, $this->date, $this->price);
                 $sql = "UPDATE orders SET deleted = 0, file_path = :path WHERE id = :id";
