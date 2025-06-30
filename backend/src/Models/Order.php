@@ -415,12 +415,15 @@ class Order {
     }
 
     // ------ PDF of all passangers and reservations to DRIVER
-    public function generateDeparture($users, $new_code)
+    public function generateDeparture($users, $new_code, $dateTime)
     {        
         $options = new Options();
         $options->setChroot("src/assets/img");
         $pdf = new Dompdf($options);
         $pdf->setPaper("A4", "Portrait");
+
+        $formated = date_create($dateTime);
+        $d = date_format($formated, "d.m.Y H:i"); 
 
         $template = '';
         foreach ($users as $pax) {
@@ -428,6 +431,8 @@ class Order {
         }
 
         $html = file_get_contents("src/driver.html");
+        $html = str_replace("{{ code }}", $new_code, $html);
+        $html = str_replace("{{ dateTime }}", $d, $html);
         $html = str_replace("{{ main }}", $template, $html);
         $html = str_replace("{{ year }}", date("Y"), $html);
 
@@ -445,9 +450,50 @@ class Order {
     }
 
     // ------ Email about reservations to DRIVER
-    public function sendOrdersToDriver()
-    {
+    public function sendOrdersToDriver($name, $new_code, $path, $email)
+    {        
+        $template = "<p> Poštovani/a {$name}, </p>
+        <br>
+        <p> Sistem Vam je dodelio vožnju broj: <b> $new_code </b> </p>
+        <br>
+        <p> U prilogu Vam šaljemo spisak svih porudžbina, sa imenima i podacima putnika. </p>
+        <p> Savetujemo Vam da napravite svoju rutu i poredak kupljenja i ostavljanja putnika sa/na adrese. </p>
+        <p> Takođe Vas molimo da dan pre polaska, a nakon pravljenja redosleda preuzimanja putnika, 
+        svim putnicima blagovremeno javite okvirno vreme kada ćete po njih doći. </p>
+        <p>Hvala!</p>
+        <br><br>
+        <p> Srdačan pozdrav od KombiPrevoz tima! </p>";
 
+        $mail = new PHPMailer(true);
+        //$mail->SMTPDebug = SMTP::DEBUG_SERVER;
+        $mail->isSMTP();
+        $mail->SMTPAuth = true;
+
+        $mail->Host = "smtp.gmail.com";
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+        $mail->Port = 465;
+        $mail->Username = $_ENV["SMTP_USER"];
+        $mail->Password = $_ENV["SMTP_PASS"];
+
+        $mail->setFrom("noreply-kombiprevoz@gmail.com", "Bojan");
+        $mail->addAddress($email, $name);
+        $mail->isHTML(true);
+        $mail->addAttachment($path, "Kombiprevoz - rezervacija: ". $new_code);
+        $mail->Subject = "Potvrda Rezervacije";
+        $mail->Body = <<<END
+
+            $template
+                        
+        END;
+
+        try {
+            $mail->send();
+        } catch (Exception $e) {
+            echo json_encode([
+                'email' => 'Došlo je do greške!',
+                'msg' => $mail->ErrorInfo
+            ]);
+        }
     }
 
     //------------------------------- FUNCTIONS OF GET METHOD --------------------------------//
@@ -947,7 +993,7 @@ class Order {
             $stmt->bindParam(':driver', $this->driver->id);
             $stmt->bindParam(':id', $this->id);
             array_push($ordersArr, (string)$ord->id);
-            /*
+            
             try {
                 if($stmt->execute()) {
                     $updated = $this->reGenerateVoucher();
@@ -960,29 +1006,31 @@ class Order {
                     "msg" => $e->getMessage()
                 ], JSON_PRETTY_PRINT);
                 
-            } */
+            } 
         }
         
         $ord_set = implode(",", $ordersArr);
         $now = time() + $this->driver->id;
         $generated = (string)$now . "KP";
         $new_code = substr($generated, -9);
-
-        $pathD = $this->generateDeparture($this->selected, $new_code);
-
-        $this->departureCreate($this->driver->id, $ord_set, $new_code, $pathD['path']);
+        $dep_date = $this->selected[0]->date . " " . $this->selected[0]->pickuptime;
         
+        $pathD = $this->generateDeparture($this->selected, $new_code, $dep_date);
+
+        $this->departureCreate($this->driver->id, $ord_set, $new_code, $pathD['path'], $dep_date);
+        $this->sendOrdersToDriver($this->driver->name, $new_code, $pathD['path'], $this->driver->email);
         
     }
 
-    public function departureCreate($driver_id, $orders, $code, $path) 
+    public function departureCreate($driver_id, $orders, $code, $path, $time) 
     {
-        $sql = "INSERT INTO departures SET driver_id = :driver_id, dep_orders = :orders, code = :code, file_path = :path";
+        $sql = "INSERT INTO departures SET driver_id = :driver_id, dep_orders = :orders, code = :code, file_path = :path, time = :time";
         $stmt = $this->db->prepare($sql);
         $stmt->bindParam(':driver_id', $driver_id);
         $stmt->bindParam(':orders', $orders);
         $stmt->bindParam(':code', $code);
         $stmt->bindParam(':path', $path);
+        $stmt->bindParam(':time', $time);
 
         try {
             if($stmt->execute()) {

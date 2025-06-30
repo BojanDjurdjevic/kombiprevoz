@@ -71,7 +71,7 @@ class Validator {
                 <br>
                 <p>Cena: <span>{{ price }} EUR</span> </p>
                 <br>
-                <p>Telefon putnika: <span>{{ tel }} EUR</span> </p>
+                <p>Telefon putnika: <span>{{ tel }}</span> </p>
             </div>
         ";
 
