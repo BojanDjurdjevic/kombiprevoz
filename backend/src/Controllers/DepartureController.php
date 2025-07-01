@@ -39,6 +39,9 @@ class DepartureController {
                 if(isset($this->data->drive->all) && !empty($this->data->drive->all)) {
                     $this->departure->getAll();
                 }
+                if(isset($this->data->drive->byDriver) && !empty($this->data->drive->byDriver)) {
+                    $this->departure->getByDriver();
+                }
                 break;
             case 'POST':
                 if(isset($this->data->drive->create)) {

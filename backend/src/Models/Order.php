@@ -133,7 +133,8 @@ class Order {
         $valid = explode('-', $d);
         if(!checkdate($valid[1], $valid[2], $valid[0])) {
             return false;
-            exit();
+            //
+            //exit();
         }
         $new_date = date_create($d);
         $requested = date("Y-m-d H:i:s", date_timestamp_get($new_date));
