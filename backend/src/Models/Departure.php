@@ -121,6 +121,86 @@ class Departure {
         }
     }
 
+    public function byDriver() 
+    {
+        $sql = "SELECT * FROM departures
+                WHERE departures.driver_id = :driver_id
+                AND deleted = 0
+                order by time"
+        ;
+        $stmt = $this->db->prepare($sql);
+        $this->driver_id = htmlspecialchars(strip_tags($this->driver_id));
+        $stmt->bindParam(':driver_id', $this->driver_id);
+
+        $all = array(
+            'all' => []
+        );
+        try {
+            if($stmt->execute()) {
+                $deps = $stmt->rowCount();
+                if($deps > 0) {
+                    while($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+                        $one = array(
+                            'departure' => [],
+                            'orders' => []
+                        );
+                        array_push($one['departure'], [
+                            'id' => $row->id,
+                            'driver_id' => $row->driver_id,
+                            'code' => $row->code,
+                            'time' => $row->time,
+                            'path' => $row->file_path
+                        ]);
+                        $ord_ids = explode(",", $row->dep_orders);
+                        
+                        foreach($ord_ids as $id) {
+                            $ord_sql = "SELECT orders.id as ord_id, orders.places, tours.from_city, 
+                                        orders.add_from as pickup, tours.to_city, orders.add_to as dropoff, tours.duration,
+                                        orders.total as price, orders.code as ord_code, orders.file_path as voucher, users.name as user, users.email, users.phone
+                                        from orders
+                                        INNER JOIN users on orders.user_id = users.id
+                                        INNER JOIN tours on orders.tour_id = tours.id
+                                        WHERE orders.id = $id";
+                            $res = $this->db->query($ord_sql);
+                            $num = $res->rowCount();
+
+                            if($num > 0) {
+                                while($row = $res->fetch(PDO::FETCH_OBJ)) {
+                                    array_push($one['orders'], [
+                                        'id' => $row->ord_id,
+                                        'ord_code' => $row->ord_code,
+                                        'places' => $row->places,
+                                        'from' => $row->from_city . ", " . $row->pickup,
+                                        'to' => $row->to_city . ", " . $row->dropoff,
+                                        'price' => $row->price,
+                                        'voucher' => $row->voucher,
+                                        'user' => $row->user,
+                                        'usr_email' => $row->email,
+                                        'usr_phone' => $row->phone
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                    $one['departure'] = array_unique($one['departure']);
+                    array_push($all['all'], $one);
+                    echo json_encode([
+                        'departures' => $all,
+                    ], JSON_PRETTY_PRINT); 
+                } else {
+                    echo json_encode([
+                        'departure' => 'Nemate nijednu dodeljenu vožnju!',
+                    ], JSON_PRETTY_PRINT); 
+                }
+            }
+        } catch (PDOException $e) {
+            echo json_encode([
+                'departure' => 'Došlo je do greške pri konekciji na bazu!',
+                'msg' => $e->getMessage()
+            ], JSON_PRETTY_PRINT);
+        }
+    }
+
     /**
      while($dep) {
                         $ords = [];

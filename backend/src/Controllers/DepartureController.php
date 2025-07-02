@@ -40,7 +40,7 @@ class DepartureController {
                     $this->departure->getAll();
                 }
                 if(isset($this->data->drive->byDriver) && !empty($this->data->drive->byDriver)) {
-                    $this->departure->getByDriver();
+                    $this->departure->byDriver();
                 }
                 break;
             case 'POST':
