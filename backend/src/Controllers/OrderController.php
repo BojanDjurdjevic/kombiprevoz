@@ -166,7 +166,7 @@ class OrderController {
                             $this->order->selected = $this->data->orders->selected;
                             $this->order->driver = $this->data->orders->driver
                         ;
-                            $this->order->assignDriver();
+                            $this->order->assignDriverTo();
                     }
                     break;
                 case 'DELETE':

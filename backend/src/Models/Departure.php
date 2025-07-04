@@ -54,6 +54,16 @@ class Departure {
         }
     }
 
+    public function getById()
+    {
+        $sql = "SELECT departures.*, tours.from_city, tours.to_city,
+                tours.time, tours.price
+                FROM departures
+                INNER JOIN tours on departures.tour_id = tours.id
+                WHERE departures.id = :id
+        ";
+    }
+
     public function getByDriver()
     {
         $sql = "SELECT departures.*, orders.id as ord_id, orders.places, tours.from_city, 
@@ -196,6 +206,44 @@ class Departure {
         } catch (PDOException $e) {
             echo json_encode([
                 'departure' => 'Došlo je do greške pri konekciji na bazu!',
+                'msg' => $e->getMessage()
+            ], JSON_PRETTY_PRINT);
+        }
+    }
+
+    public function byDriverOne()
+    {
+        $sql = "SELECT departures.*, tours.from_city, tours.to_city,
+                tours.time, tours.price
+                FROM departures
+                INNER JOIN tours on departures.tour_id = tours.id
+                WHERE departures.driver_id = :id
+        ";
+        $stmt = $this->db->prepare($sql);
+        $this->driver_id = htmlspecialchars(strip_tags($this->driver_id), ENT_QUOTES);
+        $stmt->bindParam(':id', $this->driver_id);
+
+        try {
+            if($stmt->execute()) {
+                $num = $stmt->rowCount();
+
+                if($num > 0) {
+                    $deps = [];
+                    while($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+                        array_push($deps, $row);
+                    }
+                    echo json_encode([
+                        'drive' => $deps
+                    ], JSON_PRETTY_PRINT);
+                } else {
+                    echo json_encode([
+                        'drive' => 'Nije pronađena vožnja!'
+                    ], JSON_PRETTY_PRINT);
+                }
+            }
+        } catch(PDOException $e) {
+            echo json_encode([
+                'drive' => 'Došlo je do greške pri konekciji na bazu!',
                 'msg' => $e->getMessage()
             ], JSON_PRETTY_PRINT);
         }

@@ -209,7 +209,7 @@ class Order {
 
     //------------------------------- FUNCTIONS AFTER THE ACTION ------------------------------//
 
-    public function generateVoucher($new_code, $places, $add_from, $add_to, $date, $price) 
+    public function generateVoucher($new_code, $places, $add_from, $add_to, $date, $price): array 
     {
         $this->user->id = $this->user_id;
         $this->tour->id = $this->tour_id;
@@ -980,7 +980,7 @@ class Order {
         }
         
     }
-
+    /* Old ASSIGN:
     public function assignDriver()
     {
         $ordersArr = []; 
@@ -1021,21 +1021,67 @@ class Order {
         $this->departureCreate($this->driver->id, $ord_set, $new_code, $pathD['path'], $dep_date);
         $this->sendOrdersToDriver($this->driver->name, $new_code, $pathD['path'], $this->driver->email);
         
+    } */
+
+    // REFACTOR ASSIGN DRIVER
+
+    public function assignDriverTo()
+    {
+        $now = time() + $this->driver->id;
+        $generated = (string)$now . "KP";
+        $new_code = substr($generated, -9);
+        $dep_date = $this->selected[0]->date;
+        $this->tour_id = $this->selected[0]->tour_id;
+        
+        $pathD = $this->generateDeparture($this->selected, $new_code, $dep_date);
+
+        $dep_id = $this->departureCreate($this->driver->id, $this->tour_id, $new_code, $pathD['path'], $dep_date);
+        $this->sendOrdersToDriver($this->driver->name, $new_code, $pathD['path'], $this->driver->email);
+
+        foreach($this->selected as $ord) {
+            $sql = "UPDATE orders SET driver_id = :driver, dep_id = :dep_id WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            $this->driver->id = htmlspecialchars(strip_tags($this->driver->id), ENT_QUOTES);
+            $this->id = htmlspecialchars(strip_tags($ord->id), ENT_QUOTES);
+            $this->user_id = htmlspecialchars(strip_tags($ord->user_id), ENT_QUOTES);
+            $this->tour_id = htmlspecialchars(strip_tags($ord->tour_id), ENT_QUOTES);
+            $stmt->bindParam(':driver', $this->driver->id);
+            $stmt->bindParam(':dep_id', $dep_id);
+            $stmt->bindParam(':id', $this->id);
+            
+            try {
+                if($stmt->execute()) {
+                    $updated = $this->reGenerateVoucher();
+                    $this->sendVoucher($ord->email, $ord->user, $updated['path'], $updated['code'], 'resend');
+                    //echo json_encode(["driver_assign' => 'Uspešno ste dodelili vožnje vozaču {$this->driver->name}"], JSON_PRETTY_PRINT);
+                }
+            } catch (PDOException $e) {
+                echo json_encode([
+                    "driver_assign" => 'Došlo je do greške pri konekciji na bazu!',
+                    "msg" => $e->getMessage()
+                ], JSON_PRETTY_PRINT);
+                
+            } 
+        }
+        
     }
 
-    public function departureCreate($driver_id, $orders, $code, $path, $time) 
+    // END
+    public function departureCreate($driver_id, $tour_id, $code, $path, $date) 
     {
-        $sql = "INSERT INTO departures SET driver_id = :driver_id, dep_orders = :orders, code = :code, file_path = :path, time = :time";
+        $sql = "INSERT INTO departures SET driver_id = :driver_id, tour_id = :tour_id, code = :code, file_path = :path, date = :date";
         $stmt = $this->db->prepare($sql);
         $stmt->bindParam(':driver_id', $driver_id);
-        $stmt->bindParam(':orders', $orders);
+        $stmt->bindParam(':tour_id', $tour_id);
+        //$stmt->bindParam(':orders', $orders);
         $stmt->bindParam(':code', $code);
         $stmt->bindParam(':path', $path);
-        $stmt->bindParam(':time', $time);
+        $stmt->bindParam(':date', $date);
 
         try {
             if($stmt->execute()) {
                 echo json_encode(['departure' => 'Uspešno ste kreirali polazak!'], JSON_PRETTY_PRINT);
+                return $this->db->lastInsertId();
             } 
         }catch (PDOException $e) {
             echo json_encode(['departure' => 'Došlo je do greške pri konekciji na bazu!', 'msg' => $e->getMessage()], JSON_PRETTY_PRINT);
