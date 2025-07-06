@@ -29,37 +29,6 @@ class Departure {
         ";
     }
 
-    public function getAll() 
-    {
-        $sql = "SELECT departures.*, tours.from_city, tours.to_city,
-                tours.time, tours.price, users.name as driver, users.phone as driver_contact, users.email
-                FROM departures
-                INNER JOIN tours on departures.tour_id = tours.id
-                INNER JOIN users on departures.driver_id = users.id
-                WHERE departures.deleted = 0
-        ";
-
-        try {
-            $res = $this->db->query($sql);
-            $num = $res->rowCount();
-
-            if($num > 0) {
-                $departures = [];
-                while($row = $res->fetch(PDO::FETCH_OBJ)) {
-                    array_push($departures, $row);
-                }
-                echo json_encode([
-                    'departures' => $departures
-                ], JSON_PRETTY_PRINT);
-            }
-        } catch (PDOException $e) {
-            echo json_encode([
-                'departure' => 'Došlo je do problema pri konekciji na bazu!',
-                'msg' => $e->getMessage()
-            ], JSON_PRETTY_PRINT);
-        }
-    }
-
     public function getOrdersOfDep()
     {
         $sql = "SELECT orders.id, orders.tour_id, orders.user_id, orders.places, tours.from_city, 
@@ -107,7 +76,13 @@ class Departure {
                 INNER JOIN users on departures.driver_id = users.id
                 WHERE departures.deleted = 0
         ";
-        if(isset($this->driver_id) && !empty($this->driver_id) && isset($this->date) && !empty($this->date)
+        if(isset($this->code) && !empty($this->code)) {
+            $sql = $this->getSql . "departures.code = :code";
+            $stmt = $this->db->prepare($sql);
+            $this->code = htmlspecialchars(strip_tags($this->code), ENT_QUOTES);
+            $stmt->bindParam(':code', $this->code); 
+        }
+        elseif(isset($this->driver_id) && !empty($this->driver_id) && isset($this->date) && !empty($this->date)
             && isset($this->tour_id) && !empty($this->tour_id)) {
             $sql = $this->getSql . "departures.driver_id = :driver_id AND departures.date = :date AND departures.tour_id = :tour_id";
             $stmt = $this->db->prepare($sql);
@@ -431,6 +406,38 @@ class Departure {
             ], JSON_PRETTY_PRINT);
         }
     }
+
+        public function getAll() 
+    {
+        $sql = "SELECT departures.*, tours.from_city, tours.to_city,
+                tours.time, tours.price, users.name as driver, users.phone as driver_contact, users.email
+                FROM departures
+                INNER JOIN tours on departures.tour_id = tours.id
+                INNER JOIN users on departures.driver_id = users.id
+                WHERE departures.deleted = 0
+        ";
+
+        try {
+            $res = $this->db->query($sql);
+            $num = $res->rowCount();
+
+            if($num > 0) {
+                $departures = [];
+                while($row = $res->fetch(PDO::FETCH_OBJ)) {
+                    array_push($departures, $row);
+                }
+                echo json_encode([
+                    'departures' => $departures
+                ], JSON_PRETTY_PRINT);
+            }
+        } catch (PDOException $e) {
+            echo json_encode([
+                'departure' => 'Došlo je do problema pri konekciji na bazu!',
+                'msg' => $e->getMessage()
+            ], JSON_PRETTY_PRINT);
+        }
+    }
+
       
      */
 }
