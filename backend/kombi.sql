@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 01, 2025 at 08:55 AM
+-- Generation Time: Jul 06, 2025 at 10:20 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -78,10 +78,10 @@ INSERT INTO `countries` (`id`, `name`) VALUES
 CREATE TABLE `departures` (
   `id` int(11) NOT NULL,
   `driver_id` int(11) NOT NULL,
-  `dep_orders` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `tour_id` int(11) DEFAULT NULL,
   `code` varchar(10) DEFAULT NULL,
   `file_path` varchar(255) DEFAULT NULL,
-  `time` datetime DEFAULT NULL,
+  `date` date DEFAULT NULL,
   `deleted` int(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -89,8 +89,8 @@ CREATE TABLE `departures` (
 -- Dumping data for table `departures`
 --
 
-INSERT INTO `departures` (`id`, `driver_id`, `dep_orders`, `code`, `file_path`, `time`, `deleted`) VALUES
-(6, 15, '2,83', '1265168KP', 'src/assets/pdfs/1265168KP.pdf', '2025-07-15 06:45:00', 0);
+INSERT INTO `departures` (`id`, `driver_id`, `tour_id`, `code`, `file_path`, `date`, `deleted`) VALUES
+(6, 15, 1, '1265168KP', 'src/assets/pdfs/1265168KP.pdf', '2025-07-15', 0);
 
 -- --------------------------------------------------------
 
@@ -109,6 +109,7 @@ CREATE TABLE `orders` (
   `total` int(11) NOT NULL,
   `code` varchar(55) DEFAULT NULL,
   `file_path` varchar(255) DEFAULT NULL,
+  `dep_id` int(11) DEFAULT NULL,
   `driver_id` int(11) DEFAULT NULL,
   `deleted` int(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -117,16 +118,16 @@ CREATE TABLE `orders` (
 -- Dumping data for table `orders`
 --
 
-INSERT INTO `orders` (`id`, `tour_id`, `user_id`, `places`, `add_from`, `add_to`, `date`, `total`, `code`, `file_path`, `driver_id`, `deleted`) VALUES
-(1, 1, 1, 3, 'Gajeva 3', 'Primorska 5', '2025-07-02', 150, '3693691KP', NULL, NULL, 0),
-(2, 1, 12, 2, 'Kočićeva 9', 'Zadarska 33', '2025-07-15', 100, '3693692KP', 'src/assets/pdfs/3693692KP.pdf', 15, 0),
-(3, 1, 3, 4, 'Krilova 6', 'Rudarska 99', '2025-06-27', 200, '3693693KP', NULL, NULL, 0),
-(4, 4, 3, 1, 'Krilova 6', 'Rudarska 99', '2025-06-28', 75, '3693694KP', NULL, NULL, 0),
-(5, 4, 2, 4, 'Ljubina 22', 'Glavna 3', '2025-06-26', 150, '3693695KP', NULL, NULL, 0),
-(6, 4, 1, 5, 'Balkanska 6', 'Jurice Štovca 102', '2025-06-28', 300, '3693696KP', NULL, NULL, 0),
-(7, 6, 2, 4, 'Kočićeva 6', 'Mornarska 99', '2025-07-01', 320, '3693697KP', NULL, NULL, 0),
-(9, 6, 1, 2, 'Gajeva 6', 'Mornarska 99', '2025-07-01', 160, '3693698KP', NULL, NULL, 0),
-(83, 1, 10, 2, 'Gajeva 9', 'Primorska 18', '2025-07-15', 100, '1016996KP', 'src/assets/pdfs/1016996KP.pdf', 15, 0);
+INSERT INTO `orders` (`id`, `tour_id`, `user_id`, `places`, `add_from`, `add_to`, `date`, `total`, `code`, `file_path`, `dep_id`, `driver_id`, `deleted`) VALUES
+(1, 1, 1, 3, 'Gajeva 3', 'Primorska 5', '2025-07-02', 150, '3693691KP', NULL, NULL, NULL, 0),
+(2, 1, 12, 2, 'Kočićeva 9', 'Zadarska 33', '2025-07-15', 100, '3693692KP', 'src/assets/pdfs/3693692KP.pdf', 6, 15, 0),
+(3, 1, 3, 4, 'Krilova 6', 'Rudarska 99', '2025-06-27', 200, '3693693KP', NULL, NULL, NULL, 0),
+(4, 4, 3, 1, 'Krilova 6', 'Rudarska 99', '2025-06-28', 75, '3693694KP', NULL, NULL, NULL, 0),
+(5, 4, 2, 4, 'Ljubina 22', 'Glavna 3', '2025-06-26', 150, '3693695KP', NULL, NULL, NULL, 0),
+(6, 4, 1, 5, 'Balkanska 6', 'Jurice Štovca 102', '2025-06-28', 300, '3693696KP', NULL, NULL, NULL, 0),
+(7, 6, 2, 4, 'Kočićeva 6', 'Mornarska 99', '2025-07-01', 320, '3693697KP', NULL, NULL, NULL, 0),
+(9, 6, 1, 2, 'Gajeva 6', 'Mornarska 99', '2025-07-01', 160, '3693698KP', NULL, NULL, NULL, 0),
+(83, 1, 10, 2, 'Gajeva 9', 'Primorska 18', '2025-07-15', 100, '1016996KP', 'src/assets/pdfs/1016996KP.pdf', 6, 15, 0);
 
 -- --------------------------------------------------------
 
