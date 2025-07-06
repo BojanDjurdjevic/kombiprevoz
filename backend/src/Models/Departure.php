@@ -11,27 +11,32 @@ class Departure {
     public $dep_orders;
     public $code;
     public $path;
-    public $time;
+    public $date;
 
+    private $getSql;
     private $db;
 
     public function __construct($db)
     {
         $this->db = $db;
+        $this->getSql = "
+            SELECT departures.*, tours.from_city, tours.to_city,
+                tours.time, tours.price
+                FROM departures
+                INNER JOIN tours on departures.tour_id = tours.id
+                WHERE
+        ";
     }
 
     public function getAll() 
     {
-        $sql = "SELECT departures.*, orders.id as ord_id, orders.places, tours.from_city, 
-                    orders.add_from as pickup, tours.to_city, orders.add_to as dropoff, tours.duration,
-                    orders.total as price, orders.code, orders.file_path as voucher, users.name as user, users.email, users.phone
-                    from departures 
-                    INNER JOIN orders on orders.driver_id = departures.driver_id
-                    INNER JOIN users on orders.user_id = users.id
-                    INNER JOIN tours on orders.tour_id = tours.id
-                    WHERE departures.deleted = 0
-                    order by departures.time"
-        ;
+        $sql = "SELECT departures.*, tours.from_city, tours.to_city,
+                tours.time, tours.price, users.name as driver, users.phone as driver_contact, users.email
+                FROM departures
+                INNER JOIN tours on departures.tour_id = tours.id
+                INNER JOIN users on departures.driver_id = users.id
+                WHERE departures.deleted = 0
+        ";
 
         try {
             $res = $this->db->query($sql);
@@ -54,16 +59,110 @@ class Departure {
         }
     }
 
-    public function getById()
+    public function getOrdersOfDep()
     {
-        $sql = "SELECT departures.*, tours.from_city, tours.to_city,
-                tours.time, tours.price
-                FROM departures
-                INNER JOIN tours on departures.tour_id = tours.id
-                WHERE departures.id = :id
+        $sql = "SELECT orders.id, orders.tour_id, orders.user_id, orders.places, tours.from_city, 
+                orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
+                orders.date, tours.time as pickuptime, tours.duration,
+                orders.total as price, orders.code, orders.file_path as voucher, users.name as user, users.email, users.phone
+                from orders 
+                INNER JOIN tours on orders.tour_id = tours.id
+                INNER JOIN users on orders.user_id = users.id
+                WHERE orders.dep_id = :id AND orders.deleted = 0
         ";
+
+        $stmt = $this->db->prepare($sql);
+
+        $this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
+        $stmt->bindParam(':id', $this->id);
+
+        try {
+            if($stmt->execute()) {
+                $departures = [];
+                $num = $stmt->rowCount();
+                if($num) {
+                    while($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+                        array_push($departures, $row);
+                    }
+                    echo json_encode(['drive' => $departures], JSON_PRETTY_PRINT);
+                } else
+               echo json_encode(['drive' => 'Nije pronađena vožnja!'], JSON_PRETTY_PRINT);
+            }
+        } catch (PDOException $e) {
+            echo json_encode([
+                'drive' => 'Došlo je do greške pri konekciji na bazu!',
+                'msg' => $e->getMessage()
+            ], JSON_PRETTY_PRINT);
+        }
     }
 
+    public function getByDriver()
+    {
+        $sql = $this->getSql . "departures.driver_id = :id";
+        $stmt = $this->db->prepare($sql);
+        $this->driver_id = htmlspecialchars(strip_tags($this->driver_id), ENT_QUOTES);
+        $stmt->bindParam(':id', $this->driver_id);
+
+        try {
+            if($stmt->execute()) {
+                $num = $stmt->rowCount();
+
+                if($num > 0) {
+                    $deps = [];
+                    while($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+                        array_push($deps, $row);
+                    }
+                    echo json_encode([
+                        'drive' => $deps
+                    ], JSON_PRETTY_PRINT);
+                } else {
+                    echo json_encode([
+                        'drive' => 'Nije pronađena vožnja!'
+                    ], JSON_PRETTY_PRINT);
+                }
+            }
+        } catch(PDOException $e) {
+            echo json_encode([
+                'drive' => 'Došlo je do greške pri konekciji na bazu!',
+                'msg' => $e->getMessage()
+            ], JSON_PRETTY_PRINT);
+        }
+    }
+
+    public function getByDate()
+    {
+        $sql = $this->getSql . "departures.date = :date";
+        $stmt = $this->db->prepare($sql);
+        $this->date = htmlspecialchars(strip_tags($this->date), ENT_QUOTES);
+        $stmt->bindParam(':date', $this->date);
+
+        try {
+            if($stmt->execute()) {
+                $num = $stmt->rowCount();
+
+                if($num > 0) {
+                    $deps = [];
+                    while($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+                        array_push($deps, $row);
+                    }
+                    echo json_encode([
+                        'drive' => $deps
+                    ], JSON_PRETTY_PRINT);
+                } else {
+                    echo json_encode([
+                        'drive' => 'Nije pronađena vožnja!'
+                    ], JSON_PRETTY_PRINT);
+                }
+            }
+        } catch(PDOException $e) {
+            echo json_encode([
+                'drive' => 'Došlo je do greške pri konekciji na bazu!',
+                'msg' => $e->getMessage()
+            ], JSON_PRETTY_PRINT);
+        }
+    }
+
+    /**
     public function getByDriver()
     {
         $sql = "SELECT departures.*, orders.id as ord_id, orders.places, tours.from_city, 
@@ -210,72 +309,6 @@ class Departure {
             ], JSON_PRETTY_PRINT);
         }
     }
-
-    public function byDriverOne()
-    {
-        $sql = "SELECT departures.*, tours.from_city, tours.to_city,
-                tours.time, tours.price
-                FROM departures
-                INNER JOIN tours on departures.tour_id = tours.id
-                WHERE departures.driver_id = :id
-        ";
-        $stmt = $this->db->prepare($sql);
-        $this->driver_id = htmlspecialchars(strip_tags($this->driver_id), ENT_QUOTES);
-        $stmt->bindParam(':id', $this->driver_id);
-
-        try {
-            if($stmt->execute()) {
-                $num = $stmt->rowCount();
-
-                if($num > 0) {
-                    $deps = [];
-                    while($row = $stmt->fetch(PDO::FETCH_OBJ)) {
-                        array_push($deps, $row);
-                    }
-                    echo json_encode([
-                        'drive' => $deps
-                    ], JSON_PRETTY_PRINT);
-                } else {
-                    echo json_encode([
-                        'drive' => 'Nije pronađena vožnja!'
-                    ], JSON_PRETTY_PRINT);
-                }
-            }
-        } catch(PDOException $e) {
-            echo json_encode([
-                'drive' => 'Došlo je do greške pri konekciji na bazu!',
-                'msg' => $e->getMessage()
-            ], JSON_PRETTY_PRINT);
-        }
-    }
-
-    /**
-     while($dep) {
-                        $ords = [];
-                        $ord_ids = explode(",", $dep->dep_orders);
-                        foreach($ord_ids as $id) {
-                            $query = "SELECT orders.id, orders.tour_id, orders.user_id, orders.places, tours.from_city, 
-                                        orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
-                                        orders.date, tours.time as pickuptime, tours.duration,
-                                        orders.total as price, orders.code, orders.file_path as voucher, users.name as user, users.email, users.phone
-                                        from orders 
-                                        INNER JOIN tours on orders.tour_id = tours.id
-                                        INNER JOIN users on orders.user_id = users.id
-                                        WHERE orders.id = $id
-                            ";
-                            $res = $this->db->query($query);
-                            while($order = $res->fetch(PDO::FETCH_OBJ)) {
-                                array_push($ords, $order);
-                            } 
-                        }
-                        array_push($departures, [
-                            'departure' => $dep,
-                            'orders' => $ords
-                        ]);
-                    }
-                    echo json_encode([
-                        'departures' => $departures
-                    ], JSON_PRETTY_PRINT);
       
      */
 }

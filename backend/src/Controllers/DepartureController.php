@@ -32,7 +32,7 @@ class DepartureController {
         if(isset($this->data->departure->dep_orders)) $this->departure->dep_orders = $this->data->departure->dep_orders; else $this->departure->dep_orders = null;
         if(isset($this->data->departure->code)) $this->departure->code = $this->data->departure->code; else $this->departure->code = null;
         if(isset($this->data->departure->path)) $this->departure->path = $this->data->departure->path; else $this->departure->path = null;
-        if(isset($this->data->departure->time)) $this->departure->time = $this->data->departure->time; else $this->departure->time = null;
+        if(isset($this->data->departure->date)) $this->departure->date = $this->data->departure->date; else $this->departure->date = null;
 
         switch($request) {
             case 'GET':
@@ -40,7 +40,13 @@ class DepartureController {
                     $this->departure->getAll();
                 }
                 if(isset($this->data->drive->byDriver) && !empty($this->data->drive->byDriver)) {
-                    $this->departure->byDriverOne();
+                    $this->departure->getByDriver();
+                }
+                if(isset($this->data->drive->byId) && !empty($this->data->drive->byId)) {
+                    $this->departure->getOrdersOfDep();
+                }
+                if(isset($this->data->drive->byDate) && !empty($this->data->drive->byDate)) {
+                    $this->departure->getByDate();
                 }
                 break;
             case 'POST':
