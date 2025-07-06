@@ -84,7 +84,7 @@ class Departure {
         }
         elseif(isset($this->driver_id) && !empty($this->driver_id) && isset($this->date) && !empty($this->date)
             && isset($this->tour_id) && !empty($this->tour_id)) {
-            $sql = $this->getSql . "departures.driver_id = :driver_id AND departures.date = :date AND departures.tour_id = :tour_id";
+            $sql = $this->getSql . "departures.driver_id = :driver_id AND departures.date = :date AND departures.tour_id = :tour_id AND departures.deleted = 0 ORDER BY departures.date";
             $stmt = $this->db->prepare($sql);
             $this->driver_id = htmlspecialchars(strip_tags($this->driver_id), ENT_QUOTES);
             $this->date = htmlspecialchars(strip_tags($this->date), ENT_QUOTES);
@@ -93,38 +93,41 @@ class Departure {
             $stmt->bindParam(':date', $this->date);
             $stmt->bindParam(':tour_id', $this->tour_id);
         } elseif (!empty($this->driver_id) && !empty($this->date) && empty($this->tour_id)) {
-            $sql = $this->getSql . "departures.driver_id = :driver_id AND departures.date = :date";
+            $sql = $this->getSql . "departures.driver_id = :driver_id AND departures.date = :date 
+            AND departures.deleted = 0 ORDER BY departures.date";
             $stmt = $this->db->prepare($sql);
             $this->driver_id = htmlspecialchars(strip_tags($this->driver_id), ENT_QUOTES);
             $this->date = htmlspecialchars(strip_tags($this->date), ENT_QUOTES);
             $stmt->bindParam(':driver_id', $this->driver_id);    
             $stmt->bindParam(':date', $this->date);
         } elseif (!empty($this->driver_id) && empty($this->date) && !empty($this->tour_id)) {
-            $sql = $this->getSql . "departures.driver_id = :driver_id AND departures.tour_id = :tour_id";
+            $sql = $this->getSql . "departures.driver_id = :driver_id AND departures.tour_id = :tour_id 
+            AND departures.deleted = 0 ORDER BY departures.date";
             $stmt = $this->db->prepare($sql);
             $this->driver_id = htmlspecialchars(strip_tags($this->driver_id), ENT_QUOTES);
             $this->tour_id = htmlspecialchars(strip_tags($this->tour_id), ENT_QUOTES);
             $stmt->bindParam(':driver_id', $this->driver_id);    
             $stmt->bindParam(':tour_id', $this->tour_id);
         } elseif (empty($this->driver_id) && !empty($this->date) && !empty($this->tour_id)) {
-            $sql = $this->getSql . "departures.date = :date AND departures.tour_id = :tour_id";
+            $sql = $this->getSql . "departures.date = :date AND departures.tour_id = :tour_id AND departures.deleted = 0 
+            ORDER BY departures.date";
             $stmt = $this->db->prepare($sql);
             $this->date = htmlspecialchars(strip_tags($this->date), ENT_QUOTES);
             $this->tour_id = htmlspecialchars(strip_tags($this->tour_id), ENT_QUOTES);
             $stmt->bindParam(':date', $this->date);    
             $stmt->bindParam(':tour_id', $this->tour_id);
         } elseif (!empty($this->driver_id) && empty($this->date) && empty($this->tour_id)) {
-            $sql = $this->getSql . "departures.driver_id = :driver_id";
+            $sql = $this->getSql . "departures.driver_id = :driver_id AND departures.deleted = 0 ORDER BY departures.date";
             $stmt = $this->db->prepare($sql);
             $this->driver_id = htmlspecialchars(strip_tags($this->driver_id), ENT_QUOTES);
             $stmt->bindParam(':driver_id', $this->driver_id);    
         } elseif (empty($this->driver_id) && !empty($this->date) && empty($this->tour_id)) {
-            $sql = $this->getSql . "departures.date = :date";
+            $sql = $this->getSql . "departures.date = :date AND departures.deleted = 0 ORDER BY departures.date";
             $stmt = $this->db->prepare($sql);
             $this->date = htmlspecialchars(strip_tags($this->date), ENT_QUOTES);
             $stmt->bindParam(':date', $this->date);    
         } elseif (empty($this->driver_id) && empty($this->date) && !empty($this->tour_id)) {
-            $sql = $this->getSql . "departures.tour_id = :tour_id";
+            $sql = $this->getSql . "departures.tour_id = :tour_id AND departures.deleted = 0 ORDER BY departures.date";
             $stmt = $this->db->prepare($sql);
             $this->tour_id = htmlspecialchars(strip_tags($this->tour_id), ENT_QUOTES);
             $stmt->bindParam(':tour_id', $this->tour_id);    

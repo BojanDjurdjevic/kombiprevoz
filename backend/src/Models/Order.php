@@ -10,6 +10,7 @@ use Dompdf\Options;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
+use tidy;
 
 class Order {
     public $id;
@@ -1097,7 +1098,31 @@ class Order {
         $stmt = $this->db->prepare($sql);
         $this->id = htmlspecialchars(strip_tags($this->id));
         $stmt->bindParam(":id", $this->id);
+        $id_sql = "SELECT dep_id FROM orders WHERE id = {$this->id}";
         if($stmt->execute()) {
+            $res = $this->db->query($id_sql);
+            $row = $res->fetch(PDO::FETCH_OBJ);
+            $d_id = $row->dep_id;
+            if($d_id != NULL) {
+                $sum = 0;
+                $dep_sql = "SELECT deleted FROM orders WHERE dep_id = {$d_id}";
+                $dels = $this->db->query($dep_sql);
+                if($dels->rowCount() > 0) {
+                    while($row = $dels->fetch(PDO::FETCH_OBJ)) {
+                        if($row->deleted == 0) {
+                            $sum++;
+                        }
+                    }
+                    if($sum < 1) {
+                        $del_sql = "UPDATE departures SET deleted = 1 WHERE id = :id";
+                        $stmt = $this->db->prepare($del_sql);
+                        $stmt->bindParam(':id', $d_id);
+                        $stmt->execute();
+                    }
+                }
+            } 
+            
+
             echo json_encode(["msg" => 'Uspešno ste obrisali rezervaciju!'], JSON_PRETTY_PRINT);
         } else
         echo json_encode(["msg" => 'Trenutno nije moguće obrisati ovu rezervaciju!']);
