@@ -5,6 +5,7 @@ namespace Controllers;
 use Models\Departure;
 use Models\Order;
 use Models\User;
+use Rules\Validator;
 
 class DepartureController {
     public $db;
@@ -37,8 +38,12 @@ class DepartureController {
         switch($request) {
             case 'GET':
                 if(isset($this->data->departure->id) && !empty($this->data->departure->id)) {
-                    $this->departure->getOrdersOfDep();
-                } else $this->departure->getByFilter();
+                    if(Validator::isDriver() || Validator::isAdmin() || Validator::isSuper()) $this->departure->getOrdersOfDep();
+                    else echo json_encode(['user' => 'Niste autorizovani da vidite vožnje!']);
+                } else {
+                    if(Validator::isDriver() || Validator::isAdmin() || Validator::isSuper()) $this->departure->getByFilter();
+                    else echo json_encode(['user' => 'Niste autorizovani da vidite vožnje!']);
+                } 
                 break;
             case 'POST':
                 if(isset($this->data->drive->create)) {

@@ -7,6 +7,7 @@ use PDO;
 class Country {
     public $id;
     public $name;
+    public $flag;
     public $db;
 
     public function __construct($db) {
@@ -58,6 +59,11 @@ class Country {
     }
 
     public function create() {
+        echo json_encode([
+            'name' => $this->name,
+            'flag' => $this->flag
+        ]);
+        exit();
         $sql = "INSERT INTO countries 
                 SET name = :name"
         ;

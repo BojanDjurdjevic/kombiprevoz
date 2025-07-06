@@ -42,7 +42,7 @@ $isLoged = User::isLoged($data->user->id, $data->user->email, $db);
 if(isset($data->users) && !empty($data->users)) {
     $user->handleRequest();
 }
-if(isset($data->country_id) || isset($data->country_name)) {
+if(isset($data->country) && !empty($data->country)) {
     $countries->handleRequest();
 } elseif(isset($data->cities) && !empty($data->cities)) {
     $cities->handleRequest();
