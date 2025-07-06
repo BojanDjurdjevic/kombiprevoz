@@ -29,25 +29,16 @@ class DepartureController {
 
         if(isset($this->data->departure->id)) $this->departure->id = $this->data->departure->id; else $this->departure->id = null;
         if(isset($this->data->departure->driver_id)) $this->departure->driver_id = $this->data->departure->driver_id; else $this->departure->driver_id = null;
-        if(isset($this->data->departure->dep_orders)) $this->departure->dep_orders = $this->data->departure->dep_orders; else $this->departure->dep_orders = null;
+        if(isset($this->data->departure->tour_id)) $this->departure->tour_id = $this->data->departure->tour_id; else $this->departure->tour_id = null;
         if(isset($this->data->departure->code)) $this->departure->code = $this->data->departure->code; else $this->departure->code = null;
         if(isset($this->data->departure->path)) $this->departure->path = $this->data->departure->path; else $this->departure->path = null;
         if(isset($this->data->departure->date)) $this->departure->date = $this->data->departure->date; else $this->departure->date = null;
 
         switch($request) {
             case 'GET':
-                if(isset($this->data->drive->all) && !empty($this->data->drive->all)) {
-                    $this->departure->getAll();
-                }
-                if(isset($this->data->drive->byDriver) && !empty($this->data->drive->byDriver)) {
-                    $this->departure->getByDriver();
-                }
-                if(isset($this->data->drive->byId) && !empty($this->data->drive->byId)) {
+                if(isset($this->data->departure->id) && !empty($this->data->departure->id)) {
                     $this->departure->getOrdersOfDep();
-                }
-                if(isset($this->data->drive->byDate) && !empty($this->data->drive->byDate)) {
-                    $this->departure->getByDate();
-                }
+                } else $this->departure->getByFilter();
                 break;
             case 'POST':
                 if(isset($this->data->drive->create)) {

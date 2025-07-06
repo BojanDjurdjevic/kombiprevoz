@@ -58,7 +58,7 @@ if(isset($data->orders) && !empty($data->orders)) {
         ], JSON_PRETTY_PRINT);
     }
 }
-if(isset($data->drive) && !empty($data->drive)) {
+if(isset($data->departure) && !empty($data->departure)) {
     if($isLoged && Validator::isDriver() || Validator::isAdmin() || Validator::isSuper()) 
     $departures->handleRequest();
     else {

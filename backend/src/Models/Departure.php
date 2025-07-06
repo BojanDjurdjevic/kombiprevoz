@@ -8,7 +8,7 @@ use PDOException;
 class Departure {
     public $id;
     public $driver_id;
-    public $dep_orders;
+    public $tour_id;
     public $code;
     public $path;
     public $date;
@@ -21,9 +21,10 @@ class Departure {
         $this->db = $db;
         $this->getSql = "
             SELECT departures.*, tours.from_city, tours.to_city,
-                tours.time, tours.price
+                tours.time, tours.price, users.name as driver, users.phone as driver_contact, users.email
                 FROM departures
                 INNER JOIN tours on departures.tour_id = tours.id
+                INNER JOIN users on departures.driver_id = users.id
                 WHERE
         ";
     }
@@ -96,12 +97,63 @@ class Departure {
         }
     }
 
-    public function getByDriver()
+    //
+    public function getByFilter()
     {
-        $sql = $this->getSql . "departures.driver_id = :id";
-        $stmt = $this->db->prepare($sql);
-        $this->driver_id = htmlspecialchars(strip_tags($this->driver_id), ENT_QUOTES);
-        $stmt->bindParam(':id', $this->driver_id);
+        $sql = "SELECT departures.*, tours.from_city, tours.to_city,
+                tours.time, tours.price, users.name as driver, users.phone as driver_contact, users.email
+                FROM departures
+                INNER JOIN tours on departures.tour_id = tours.id
+                INNER JOIN users on departures.driver_id = users.id
+                WHERE departures.deleted = 0
+        ";
+        if(isset($this->driver_id) && !empty($this->driver_id) && isset($this->date) && !empty($this->date)
+            && isset($this->tour_id) && !empty($this->tour_id)) {
+            $sql = $this->getSql . "departures.driver_id = :driver_id AND departures.date = :date AND departures.tour_id = :tour_id";
+            $stmt = $this->db->prepare($sql);
+            $this->driver_id = htmlspecialchars(strip_tags($this->driver_id), ENT_QUOTES);
+            $this->date = htmlspecialchars(strip_tags($this->date), ENT_QUOTES);
+            $this->tour_id = htmlspecialchars(strip_tags($this->tour_id), ENT_QUOTES);
+            $stmt->bindParam(':driver_id', $this->driver_id);    
+            $stmt->bindParam(':date', $this->date);
+            $stmt->bindParam(':tour_id', $this->tour_id);
+        } elseif (!empty($this->driver_id) && !empty($this->date) && empty($this->tour_id)) {
+            $sql = $this->getSql . "departures.driver_id = :driver_id AND departures.date = :date";
+            $stmt = $this->db->prepare($sql);
+            $this->driver_id = htmlspecialchars(strip_tags($this->driver_id), ENT_QUOTES);
+            $this->date = htmlspecialchars(strip_tags($this->date), ENT_QUOTES);
+            $stmt->bindParam(':driver_id', $this->driver_id);    
+            $stmt->bindParam(':date', $this->date);
+        } elseif (!empty($this->driver_id) && empty($this->date) && !empty($this->tour_id)) {
+            $sql = $this->getSql . "departures.driver_id = :driver_id AND departures.tour_id = :tour_id";
+            $stmt = $this->db->prepare($sql);
+            $this->driver_id = htmlspecialchars(strip_tags($this->driver_id), ENT_QUOTES);
+            $this->tour_id = htmlspecialchars(strip_tags($this->tour_id), ENT_QUOTES);
+            $stmt->bindParam(':driver_id', $this->driver_id);    
+            $stmt->bindParam(':tour_id', $this->tour_id);
+        } elseif (empty($this->driver_id) && !empty($this->date) && !empty($this->tour_id)) {
+            $sql = $this->getSql . "departures.date = :date AND departures.tour_id = :tour_id";
+            $stmt = $this->db->prepare($sql);
+            $this->date = htmlspecialchars(strip_tags($this->date), ENT_QUOTES);
+            $this->tour_id = htmlspecialchars(strip_tags($this->tour_id), ENT_QUOTES);
+            $stmt->bindParam(':date', $this->date);    
+            $stmt->bindParam(':tour_id', $this->tour_id);
+        } elseif (!empty($this->driver_id) && empty($this->date) && empty($this->tour_id)) {
+            $sql = $this->getSql . "departures.driver_id = :driver_id";
+            $stmt = $this->db->prepare($sql);
+            $this->driver_id = htmlspecialchars(strip_tags($this->driver_id), ENT_QUOTES);
+            $stmt->bindParam(':driver_id', $this->driver_id);    
+        } elseif (empty($this->driver_id) && !empty($this->date) && empty($this->tour_id)) {
+            $sql = $this->getSql . "departures.date = :date";
+            $stmt = $this->db->prepare($sql);
+            $this->date = htmlspecialchars(strip_tags($this->date), ENT_QUOTES);
+            $stmt->bindParam(':date', $this->date);    
+        } elseif (empty($this->driver_id) && empty($this->date) && !empty($this->tour_id)) {
+            $sql = $this->getSql . "departures.tour_id = :tour_id";
+            $stmt = $this->db->prepare($sql);
+            $this->tour_id = htmlspecialchars(strip_tags($this->tour_id), ENT_QUOTES);
+            $stmt->bindParam(':tour_id', $this->tour_id);    
+        } else $stmt = $this->db->prepare($sql);
 
         try {
             if($stmt->execute()) {
@@ -128,39 +180,7 @@ class Departure {
             ], JSON_PRETTY_PRINT);
         }
     }
-
-    public function getByDate()
-    {
-        $sql = $this->getSql . "departures.date = :date";
-        $stmt = $this->db->prepare($sql);
-        $this->date = htmlspecialchars(strip_tags($this->date), ENT_QUOTES);
-        $stmt->bindParam(':date', $this->date);
-
-        try {
-            if($stmt->execute()) {
-                $num = $stmt->rowCount();
-
-                if($num > 0) {
-                    $deps = [];
-                    while($row = $stmt->fetch(PDO::FETCH_OBJ)) {
-                        array_push($deps, $row);
-                    }
-                    echo json_encode([
-                        'drive' => $deps
-                    ], JSON_PRETTY_PRINT);
-                } else {
-                    echo json_encode([
-                        'drive' => 'Nije pronađena vožnja!'
-                    ], JSON_PRETTY_PRINT);
-                }
-            }
-        } catch(PDOException $e) {
-            echo json_encode([
-                'drive' => 'Došlo je do greške pri konekciji na bazu!',
-                'msg' => $e->getMessage()
-            ], JSON_PRETTY_PRINT);
-        }
-    }
+    //
 
     /**
     public function getByDriver()
@@ -305,6 +325,108 @@ class Departure {
         } catch (PDOException $e) {
             echo json_encode([
                 'departure' => 'Došlo je do greške pri konekciji na bazu!',
+                'msg' => $e->getMessage()
+            ], JSON_PRETTY_PRINT);
+        }
+    }
+
+
+    /////
+
+    public function getByDriver()
+    {
+        $sql = $this->getSql . "departures.driver_id = :id";
+        $stmt = $this->db->prepare($sql);
+        $this->driver_id = htmlspecialchars(strip_tags($this->driver_id), ENT_QUOTES);
+        $stmt->bindParam(':id', $this->driver_id);
+
+        try {
+            if($stmt->execute()) {
+                $num = $stmt->rowCount();
+
+                if($num > 0) {
+                    $deps = [];
+                    while($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+                        array_push($deps, $row);
+                    }
+                    echo json_encode([
+                        'drive' => $deps
+                    ], JSON_PRETTY_PRINT);
+                } else {
+                    echo json_encode([
+                        'drive' => 'Nije pronađena vožnja!'
+                    ], JSON_PRETTY_PRINT);
+                }
+            }
+        } catch(PDOException $e) {
+            echo json_encode([
+                'drive' => 'Došlo je do greške pri konekciji na bazu!',
+                'msg' => $e->getMessage()
+            ], JSON_PRETTY_PRINT);
+        }
+    }
+
+    public function getByDate()
+    {
+        $sql = $this->getSql . "departures.date = :date";
+        $stmt = $this->db->prepare($sql);
+        $this->date = htmlspecialchars(strip_tags($this->date), ENT_QUOTES);
+        $stmt->bindParam(':date', $this->date);
+
+        try {
+            if($stmt->execute()) {
+                $num = $stmt->rowCount();
+
+                if($num > 0) {
+                    $deps = [];
+                    while($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+                        array_push($deps, $row);
+                    }
+                    echo json_encode([
+                        'drive' => $deps
+                    ], JSON_PRETTY_PRINT);
+                } else {
+                    echo json_encode([
+                        'drive' => 'Nije pronađena vožnja!'
+                    ], JSON_PRETTY_PRINT);
+                }
+            }
+        } catch(PDOException $e) {
+            echo json_encode([
+                'drive' => 'Došlo je do greške pri konekciji na bazu!',
+                'msg' => $e->getMessage()
+            ], JSON_PRETTY_PRINT);
+        }
+    }
+
+    public function getByTour()
+    {
+        $sql = $this->getSql . "departures.tour_id = :tour_id";
+        $stmt = $this->db->prepare($sql);
+        $this->date = htmlspecialchars(strip_tags($this->date), ENT_QUOTES);
+        $stmt->bindParam(':tour_id', $this->tour_id);
+
+        try {
+            if($stmt->execute()) {
+                $num = $stmt->rowCount();
+
+                if($num > 0) {
+                    $deps = [];
+                    while($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+                        array_push($deps, $row);
+                    }
+                    echo json_encode([
+                        'drive' => $deps
+                    ], JSON_PRETTY_PRINT);
+                } else {
+                    echo json_encode([
+                        'drive' => 'Nije pronađena vožnja!'
+                    ], JSON_PRETTY_PRINT);
+                }
+            }
+        } catch(PDOException $e) {
+            echo json_encode([
+                'drive' => 'Došlo je do greške pri konekciji na bazu!',
                 'msg' => $e->getMessage()
             ], JSON_PRETTY_PRINT);
         }
