@@ -21,13 +21,12 @@ class CountryController {
         $request = $_SERVER['REQUEST_METHOD'];
 
         if($request === 'GET') {
-            if($this->data->country->country_id == null) {
+            if(empty($this->data->country->country_id)) {
                 $this->country->getCountries();
             } else {
                 $this->country->getCountry($this->data->country->country_id); 
             }
         } else if($request === 'POST') {
-            echo "Ovde";
             if(isset($this->data->country->country_name)) {
                 $this->country->name = $this->data->country->country_name;
                 $this->country->flag = $this->data->flag;

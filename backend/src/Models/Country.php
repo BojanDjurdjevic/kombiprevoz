@@ -32,7 +32,7 @@ class Country {
             ];
             $countries = [];
 
-            while($row = $result->fetch(PDO::FETCH_ASSOC)) {
+            while($row = $result->fetch(PDO::FETCH_OBJ)) {
                 array_push($countries, $row);
             }
 
@@ -59,11 +59,6 @@ class Country {
     }
 
     public function create() {
-        echo json_encode([
-            'name' => $this->name,
-            'flag' => $this->flag
-        ]);
-        exit();
         $sql = "INSERT INTO countries 
                 SET name = :name"
         ;

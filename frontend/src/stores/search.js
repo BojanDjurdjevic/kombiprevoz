@@ -95,7 +95,7 @@ export const useSearchStore = defineStore('search', () => {
         "phone": "062640227"
     },
     "country": {
-      "country_id": 1
+      "country_id": ""
     } 
 }
   async function allCountries() {

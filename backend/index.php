@@ -11,6 +11,7 @@ use Controllers\TourController;
 use Controllers\UserController;
 use Models\User;
 use Rules\Validator;
+use Rules\Input;
 
 header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json');
@@ -28,13 +29,13 @@ $dotenv->load();
 
 $database = new Database();
 $db = $database->connect();
-
+/*
 $method = $_SERVER['REQUEST_METHOD'];
 if($method === 'GET' && isset($_GET['data'])) {
-    //$input = is_array($_GET['query']) ? $_GET['query'] : [];
     $data = json_decode(json_encode($_GET['data']));
-} else $data = json_decode((file_get_contents("php://input")), true);
+} else $data = json_decode((file_get_contents("php://input")), true); */
 
+$data = Input::all();
 //$get = $_GET['data'];
 //echo json_encode(['primio' => $data]);
 //die();

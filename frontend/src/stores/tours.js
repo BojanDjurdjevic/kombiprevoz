@@ -142,7 +142,7 @@ export const useTourStore = defineStore('tours', () => {
         while (bookedTours.value.length > 0) {
             bookedTours.value.shift()
         }
-        totalPrice = 0
+        totalPrice.value = 0
     }
 
     function countSeats(id) {
