@@ -27,19 +27,19 @@ class CountryController {
                 $this->country->getCountry($this->data->country->country_id); 
             }
         } else if($request === 'POST') {
-            if(isset($this->data->country->country_name)) {
-                $this->country->name = $this->data->country->country_name;
-                $this->country->flag = $this->data->flag;
+            if(isset($this->data->country->name) && !empty($this->data->country->name)) {
+                $this->country->name = $this->data->country->name;
+                //$this->country->flag = $this->data->flag;
                 $this->country->create();
             }
         } elseif($request === 'PUT') {
-            if(isset($this->data->country->country_id)) {
+            if(isset($this->data->country->country_id) && !empty($this->data->country->country_id)) {
                 $this->country->id = $this->data->country->country_id;
                 $this->country->name = $this->data->country->country_name;
                 $this->country->update();
             }
         } elseif($request === 'DELETE') {
-            if(isset($this->data->country->country_id)) {
+            if(isset($this->data->country->country_id) && !empty($this->data->country->country_id)) {
                 $this->country->id = $this->data->country->country_id;
                 $this->country->delete();
             }

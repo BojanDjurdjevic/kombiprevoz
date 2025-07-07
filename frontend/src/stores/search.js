@@ -84,20 +84,11 @@ export const useSearchStore = defineStore('search', () => {
   })
   */ 
   const exCountry = { 
-    "user": {
-        "id": 10,
-        "name": "Valentina",
-        "email": "pininfarina164@gmail.com",
-        "pass": "Ljubavsonmojija!369",
-        "status": "Driver",
-        "city": "Novi Sad",
-        "address": "Seljačkih Buna 29",
-        "phone": "062640227"
-    },
-    "country": {
-      "country_id": ""
+    country: {
+      "country_id": 6,
+      "country_name": "Belgija"
     } 
-}
+  }
   async function allCountries() {
     try {
       const msg = await api.getCountries(exCountry)
@@ -107,11 +98,35 @@ export const useSearchStore = defineStore('search', () => {
     }
     
   }
+  async function newCountry() {
+    try {
+      const msg = await api.insertCountry(exCountry)
+      console.log(msg.data)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+  async function changeCountry() {
+    try {
+      const msg = await api.updateCountry(exCountry)
+      console.log(msg.data)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+  async function dropCountry() {
+    try {
+      const msg = await api.deleteCountry(exCountry)
+      console.log(msg.data)
+    } catch (error) {
+      console.log(error)
+    }
+  }
 
   return { 
     dialog, bound, countryFrom, countryTo, cityFrom, cityTo,/* searchData, */ outDate, inDate, seats, destinations,
     exCountry,
-    sendSearch, reverseCountries, cityRules, allCountries
+    sendSearch, reverseCountries, cityRules, allCountries, newCountry, changeCountry, dropCountry
   }
 
 })
