@@ -14,10 +14,12 @@ use Rules\Validator;
 
 header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json');
-/*
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
+header('Content-Type: multipart/form-data');
+
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE'); /*
 header('Access-Control-Allow-Headers: Access-Control-Allow-Headers, Content-Type,
 Access-Control-Allow-Methods, Authorization, X-Requested-With'); */
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 
 require __DIR__ . "../vendor/autoload.php";
 
@@ -27,8 +29,15 @@ $dotenv->load();
 $database = new Database();
 $db = $database->connect();
 
-$data = json_decode((file_get_contents("php://input")));
+$method = $_SERVER['REQUEST_METHOD'];
+if($method === 'GET' && isset($_GET['data'])) {
+    //$input = is_array($_GET['query']) ? $_GET['query'] : [];
+    $data = json_decode(json_encode($_GET['data']));
+} else $data = json_decode((file_get_contents("php://input")), true);
 
+//$get = $_GET['data'];
+//echo json_encode(['primio' => $data]);
+//die();
 $user = new UserController($db, $data);
 $countries = new CountryController($db, $data);
 $cities = new CityController($db, $data);

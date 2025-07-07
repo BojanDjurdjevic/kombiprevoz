@@ -2,6 +2,7 @@ import { ref, computed, shallowRef } from 'vue'
 import { defineStore } from 'pinia'
 import { useTourStore } from './tours'
 import router from '@/router'
+import api from '@/api'
 
 export const useSearchStore = defineStore('search', () => {
   const tours = useTourStore()
@@ -82,10 +83,35 @@ export const useSearchStore = defineStore('search', () => {
     seats: 1
   })
   */ 
+  const exCountry = { 
+    "user": {
+        "id": 10,
+        "name": "Valentina",
+        "email": "pininfarina164@gmail.com",
+        "pass": "Ljubavsonmojija!369",
+        "status": "Driver",
+        "city": "Novi Sad",
+        "address": "Seljačkih Buna 29",
+        "phone": "062640227"
+    },
+    "country": {
+      "country_id": 1
+    } 
+}
+  async function allCountries() {
+    try {
+      const msg = await api.getCountries(exCountry)
+      console.log(msg)
+    } catch (error) {
+      console.log(error)
+    }
+    
+  }
 
   return { 
     dialog, bound, countryFrom, countryTo, cityFrom, cityTo,/* searchData, */ outDate, inDate, seats, destinations,
-    sendSearch, reverseCountries, cityRules,
+    exCountry,
+    sendSearch, reverseCountries, cityRules, allCountries
   }
 
 })
