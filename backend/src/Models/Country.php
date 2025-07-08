@@ -36,7 +36,7 @@ class Country {
                 array_push($countries, $row);
             }
 
-            echo json_encode([['Broj' => $count], ['Drzave' => $countries]], JSON_PRETTY_PRINT);
+            echo json_encode(['drzave' => $countries], JSON_PRETTY_PRINT);
 
         } else {
             $msg = [

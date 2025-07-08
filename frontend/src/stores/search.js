@@ -89,10 +89,19 @@ export const useSearchStore = defineStore('search', () => {
       "country_name": "Belgija"
     } 
   }
-  async function allCountries() {
+
+  const availableCountries = ref([])
+
+  async function allCountries(data) {
     try {
-      const msg = await api.getCountries(exCountry)
-      console.log(msg)
+      const msg = await api.getCountries(data)
+      let arr = []
+      let input = Object.values(msg.data.drzave)
+      input.forEach(item => {
+        arr.push(item.name)
+      });
+      availableCountries.value = arr
+      console.log(availableCountries.value) 
     } catch (error) {
       console.log(error)
     }
@@ -125,7 +134,7 @@ export const useSearchStore = defineStore('search', () => {
 
   return { 
     dialog, bound, countryFrom, countryTo, cityFrom, cityTo,/* searchData, */ outDate, inDate, seats, destinations,
-    exCountry,
+    exCountry, availableCountries,
     sendSearch, reverseCountries, cityRules, allCountries, newCountry, changeCountry, dropCountry
   }
 

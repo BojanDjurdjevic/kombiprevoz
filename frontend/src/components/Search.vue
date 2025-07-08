@@ -4,6 +4,8 @@
     import { VNumberInput } from 'vuetify/labs/VNumberInput'
     import { useSearchStore } from '@/stores/search';
 
+    //onload(console.log('load radi'))
+
     const search = useSearchStore()
     const destinations = [ 'Srbija', 'Hrvatska', 'Slovenija', 'Nemačka', 'Austrija' ]
     const cities = {
@@ -34,7 +36,7 @@
                 clearable
                 width=""
                 label="From"
-                :items="destinations"
+                :items="search.availableCountries"
                 v-model="search.countryFrom"
               ></v-autocomplete>
               <v-spacer></v-spacer>
@@ -44,7 +46,7 @@
               <v-autocomplete
                 clearable
                 label="To"
-                :items="destinations"
+                :items="search.availableCountries"
                 v-model="search.countryTo"
               ></v-autocomplete>
             </v-sheet>
