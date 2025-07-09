@@ -45,14 +45,24 @@ export const useSearchStore = defineStore('search', () => {
 
   function sendSearch() {
     dialog.value = false
+
+    let d = new Date(outDate.value)
+    let year = String(d.getFullYear()) 
+    let months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+    let m = d.getMonth()
+    let month = months[m]
+    let date = String(d.getDate())
+
+    let formated = year + "-" + month + "-" + date
+
     let dto = {
-      'countryFrom' : countryFrom.value,
-      'countryTo' : countryTo.value,
-      'cityFrom' : cityFrom.value,
-      'cityTo' : cityTo.value,
-      'outbound': outDate.value,
-      'inbound': inDate.value,
-      'seats': seats.value
+        search: {
+          from: cityFrom.value,
+          to: cityTo.value,
+          date: formated,
+          'inbound': inDate.value,
+          seats: seats.value
+        }
     }
     console.log(dto)
     // mySearch: 
@@ -129,15 +139,20 @@ export const useSearchStore = defineStore('search', () => {
     });
   }
 
-  async function allCities(id) {
+  async function allCities(id, from) {
     getCountryFrom(id)
     let dto = {
       country_id: id
     }
     try {
       const msg = await api.getCities(dto)
-      availableCities.value = Object.values(msg.data.cities)
+      if(from) {
+        availableCities.value = Object.values(msg.data.cities)
+      } else {
+        availableCitiesTo.value = Object.values(msg.data.cities)
+      }
       console.log(availableCities.value)
+      console.log(availableCitiesTo.value)
     } catch (error) {
       console.log(error)
     }

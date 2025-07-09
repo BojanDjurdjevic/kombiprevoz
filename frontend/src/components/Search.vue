@@ -40,7 +40,7 @@
                 item-title="name"
                 item-value="id"
                 v-model="search.countryFrom"
-                v-on:update:model-value="search.allCities(search.countryFrom)"
+                v-on:update:model-value="search.allCities(search.countryFrom, true)"
               ></v-autocomplete>
               <v-spacer></v-spacer>
               <v-btn icon="mdi-unfold-more-vertical" class="d-none d-md-block" @click="search.reverseCountries"></v-btn>
@@ -53,6 +53,7 @@
                 item-title="name"
                 item-value="id"
                 v-model="search.countryTo"
+                v-on:update:model-value="search.allCities(search.countryTo, false)"
               ></v-autocomplete>
             </v-sheet>
           </v-row>
@@ -65,8 +66,11 @@
                 clearable
                 width=""
                 label="From"
-                :items="cities[search.countryFrom]"
+                :items="search.availableCities"
+                item-title="name"
+                item-value="id"
                 v-model="search.cityFrom"
+                v-on:update:model-value="console.log(search.cityFrom)"
               ></v-autocomplete>
               <v-spacer></v-spacer>
               <v-btn icon="mdi-unfold-more-vertical" class="d-none d-md-block" @click="search.reverseCountries"></v-btn>
@@ -75,8 +79,11 @@
               <v-autocomplete
                 clearable
                 label="To"
-                :items="cities[search.countryTo]"
+                :items="search.availableCitiesTo"
+                item-title="name"
+                item-value="id"
                 v-model="search.cityTo"
+                v-on:update:model-value="console.log(search.cityTo)"
               ></v-autocomplete>
             </v-sheet>
           </v-row>
