@@ -37,7 +37,10 @@
                 width=""
                 label="From"
                 :items="search.availableCountries"
+                item-title="name"
+                item-value="id"
                 v-model="search.countryFrom"
+                v-on:update:model-value="search.allCities(search.countryFrom)"
               ></v-autocomplete>
               <v-spacer></v-spacer>
               <v-btn icon="mdi-unfold-more-vertical" class="d-none d-md-block" @click="search.reverseCountries"></v-btn>
@@ -46,7 +49,9 @@
               <v-autocomplete
                 clearable
                 label="To"
-                :items="search.availableCountries"
+                :items="search.availableCountriesTo"
+                item-title="name"
+                item-value="id"
                 v-model="search.countryTo"
               ></v-autocomplete>
             </v-sheet>

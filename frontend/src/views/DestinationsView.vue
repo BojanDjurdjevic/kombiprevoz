@@ -15,7 +15,7 @@
     <v-container >
         <v-row>
             <v-col  class="text-center">
-               <h1 @click="search.dropCountry">Destinacije</h1>  
+               <h1 >Destinacije</h1>  
                <v-divider></v-divider>
             </v-col>
            

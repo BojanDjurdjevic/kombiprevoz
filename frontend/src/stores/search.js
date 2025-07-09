@@ -25,6 +25,7 @@ export const useSearchStore = defineStore('search', () => {
   const seats = ref(1)
 
   function reverseCountries() {
+    console.log(countryFrom.value + "\n" + countryTo.value)
     if(countryFrom.value != '' && cityFrom.value != '') {
       const temp1 = countryFrom.value
       const temp2 = countryTo.value
@@ -38,7 +39,7 @@ export const useSearchStore = defineStore('search', () => {
         cityTo.value = temp3
       }
     }
-    
+    console.log(countryFrom.value + "\n" + countryTo.value)
       
   } 
 
@@ -89,28 +90,61 @@ export const useSearchStore = defineStore('search', () => {
       "country_name": "Belgija"
     } 
   }
-
+  //const countryIds = ref([])
   const availableCountries = ref([])
-  const countryIds = ref([])
+  const availableCountriesTo = ref([])
+
+  const availableCities = ref([])
+  const availableCitiesTo = ref([])
 
   async function allCountries(data) {
     try {
       const msg = await api.getCountries(data)
+      /*
       let arrNames = []
       let ids = []
+      */
       let input = Object.values(msg.data.drzave)
+      /*
       input.forEach(item => {
         arrNames.push(item.name)
         ids.push(item.id)
       });
-      availableCountries.value = arrNames
-      countryIds.value = ids
+      */
+      availableCountries.value = input
+      //countryIds.value = ids
       console.log(availableCountries.value) 
     } catch (error) {
       console.log(error)
     }
     
   }
+
+  function getCountryFrom(id) {
+    availableCountriesTo.value = []
+    availableCountries.value.forEach(item => {
+      if(item.id != id) {
+        availableCountriesTo.value.push(item)
+      }
+    });
+  }
+
+  async function allCities(id) {
+    getCountryFrom(id)
+    let dto = {
+      country_id: id
+    }
+    try {
+      const msg = await api.getCities(dto)
+      availableCities.value = Object.values(msg.data.cities)
+      console.log(availableCities.value)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+
+
   async function newCountry() {
     try {
       const msg = await api.insertCountry(exCountry)
@@ -138,8 +172,9 @@ export const useSearchStore = defineStore('search', () => {
 
   return { 
     dialog, bound, countryFrom, countryTo, cityFrom, cityTo,/* searchData, */ outDate, inDate, seats, destinations,
-    exCountry, availableCountries, countryIds,
-    sendSearch, reverseCountries, cityRules, allCountries, newCountry, changeCountry, dropCountry
+    exCountry, availableCountries, availableCountriesTo, availableCities, availableCitiesTo,
+    sendSearch, reverseCountries, cityRules, allCountries, newCountry, changeCountry, dropCountry, getCountryFrom,
+    allCities,
   }
 
 })

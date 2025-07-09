@@ -27,9 +27,6 @@ class Country {
         //$num = $result->num_rows();
 
         if($num > 0) {
-            $count = [
-                'Broj drzava' => $num
-            ];
             $countries = [];
 
             while($row = $result->fetch(PDO::FETCH_OBJ)) {

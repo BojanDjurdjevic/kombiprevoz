@@ -5,8 +5,7 @@ export default {
         console.log(data)
         return axios.get("", {params: {data}}, {
             headers: {
-                "Content-type": "json/application",
-                "Content-type": "multipart/form-data"   
+                "Content-type": "json/application"   
             }
         })
         
@@ -37,5 +36,15 @@ export default {
             }
         })
         
-    }
+    },
+
+    getCities(cities) {
+        console.log(cities)
+        return axios.get("", {params: {cities}}, {
+            headers: {
+                "Content-type": "json/application"   
+            }
+        })
+        
+    },
 }
