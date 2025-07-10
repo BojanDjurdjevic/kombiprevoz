@@ -4,8 +4,6 @@
     import { VNumberInput } from 'vuetify/labs/VNumberInput'
     import { useSearchStore } from '@/stores/search';
 
-    //onload(console.log('load radi'))
-
     const search = useSearchStore()
     const destinations = [ 'Srbija', 'Hrvatska', 'Slovenija', 'Nemačka', 'Austrija' ]
     const cities = {
@@ -13,9 +11,18 @@
       'Hrvatska': ['Zagreb', 'Rijeka', 'Split'],
       'Slovenija': ['Ljubljana', 'Koper', 'Maribor']
     }
+
 </script>
 
 <template >
+    
+    <v-alert v-if="search.violated"
+      
+      text="Molimo Vas da popunite sva polja!"
+      title="Greška"
+      type="error"
+    ></v-alert>
+    
     <v-sheet color="indigo-darken-2" class="pa-1" :elevation="2" >
         <v-container class="ma-1 pa-3 d-flex flex-column flex-md-row justify-space-evenly">
           <v-row class="d-flex flex-column justify-space-evenly ma-1 pa-2">
@@ -39,6 +46,7 @@
                 :items="search.availableCountries"
                 item-title="name"
                 item-value="id"
+                :rules="[search.rules.required]"
                 v-model="search.countryFrom"
                 return-object
                 v-on:update:model-value="val => search.allCities(val.id, true)"
@@ -50,6 +58,7 @@
               <v-autocomplete
                 clearable
                 label="To"
+                :rules="[search.rules.required]"
                 :items="search.availableCountriesTo"
                 item-title="name"
                 item-value="id"
@@ -68,9 +77,10 @@
                 clearable
                 width=""
                 label="From"
+                :rules="[search.rules.required]"
                 :items="search.availableCities"
                 item-title="name"
-                item-value="id"
+                item-value="name"
                 return-object
                 v-model="search.cityFrom"
                 v-on:update:model-value="console.log(search.cityFrom.id)"
@@ -82,9 +92,10 @@
               <v-autocomplete
                 clearable
                 label="To"
+                :rules="[search.rules.required]"
                 :items="search.availableCitiesTo"
                 item-title="name"
-                item-value="id"
+                item-value="name"
                 return-object
                 v-model="search.cityTo"
                 v-on:update:model-value="console.log(search.cityTo.id)"
@@ -98,6 +109,7 @@
             <h4>Polazak</h4>
             <v-sheet color="indigo-darken-2" class="d-flex justify-space-evenly" width="90%" >
               <v-date-input 
+                :rules="[search.rules.required]"
                 v-model="search.outDate"
                 label="Datum Polaska" 
               ></v-date-input>
@@ -131,7 +143,11 @@
           <v-row class="d-flex flex-column justify-space-evenly ma-1 pa-2">
             <v-sheet color="indigo-darken-2" class="d-flex justify-space-evenly" width="90%">
               <v-fade-transition mode="out-in">
-                <v-btn variant="outlined" @click="search.sendSearch" >Traži</v-btn>
+                <v-btn 
+                  variant="outlined" 
+                  @click="search.sendSearch" 
+                  type="submit"
+                >Traži</v-btn>
               </v-fade-transition>
             </v-sheet>
           </v-row>

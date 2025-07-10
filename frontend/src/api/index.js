@@ -1,6 +1,9 @@
 import axios from "./config";
 
 export default {
+
+    //---------------------------- COUNTRIES ---------------------//
+
     getCountries(data) {
         console.log(data)
         return axios.get("", {params: {data}}, {
@@ -38,6 +41,8 @@ export default {
         
     },
 
+    //---------------------------- CITIES ---------------------//
+
     getCities(cities) {
         console.log(cities)
         return axios.get("", {params: {cities}}, {
@@ -47,4 +52,10 @@ export default {
         })
         
     },
+
+    //---------------------------- TOURS ---------------------//
+
+    getTours(tours) {
+        return axios.get("", {params: {tours}})
+    }
 }

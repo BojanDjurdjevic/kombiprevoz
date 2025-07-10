@@ -7,6 +7,13 @@ import api from '@/api'
 export const useSearchStore = defineStore('search', () => {
   const tours = useTourStore()
 
+  const rules = {
+    required: (value) => !!value || "Obavezno polje",
+    counter: (value) => value.length <= 21 || "Maksimum 21 karakter"   
+  }
+
+  const violated = ref(false)
+
   const destinations = [
     {country: 'Srbija'}, {country: 'Hrvatska'}, {country: 'Slovenija'}, {country: 'Nemačka'}, {country: 'Austrija'}
   ]
@@ -43,42 +50,52 @@ export const useSearchStore = defineStore('search', () => {
       
   } 
 
-  function sendSearch() {
-    dialog.value = false
+  async function sendSearch() {
+    if(!cityFrom.value || !cityTo.value || !countryFrom.value || !countryTo.value || !outDate.value) {
+      violated.value = true
+      return 
+    } else {
+        violated.value = false
+        dialog.value = false
 
-    let d = new Date(outDate.value)
-    let year = String(d.getFullYear()) 
-    let months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
-    let m = d.getMonth()
-    let month = months[m]
-    let date = String(d.getDate())
+        let d = new Date(outDate.value)
+        let year = String(d.getFullYear()) 
+        let months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+        let m = d.getMonth()
+        let month = months[m]
+        let date = String(d.getDate())
 
-    let formated = year + "-" + month + "-" + date
+        let formated = year + "-" + month + "-" + date
 
-    let dto = {
-        search: {
-          from: cityFrom.value.id,
-          to: cityTo.value.id,
-          date: formated,
-          'inbound': inDate.value,
-          seats: seats.value
+        let dto = {
+            search: {
+              from: cityFrom.value.name,
+              to: cityTo.value.name,
+              date: formated,
+              'inbound': inDate.value,
+              seats: seats.value
+            }
         }
-    }
-    console.log(dto)
-    // mySearch: 
-    tours.mySearch = dto
-    //console.log(tours.mySearch)
+        console.log(dto)
 
-    countryFrom.value = ''
-    countryTo.value = ''
-    cityFrom.value = ''
-    cityTo.value = ''
-    outDate.value = null
-    inDate.value = null
-    seats.value = 1
-    router.push({
-      name: 'rezultati'
-    })
+        const msg = await api.getTours(dto)
+        console.log(msg.data)
+        
+        // mySearch: 
+        tours.mySearch = dto
+        //console.log(tours.mySearch)
+
+        countryFrom.value = ''
+        countryTo.value = ''
+        cityFrom.value = ''
+        cityTo.value = ''
+        outDate.value = null
+        inDate.value = null
+        seats.value = 1
+        router.push({
+          name: 'rezultati'
+        })
+    }
   }
   function cityRules(val) {
     if(val) {
@@ -188,7 +205,8 @@ export const useSearchStore = defineStore('search', () => {
 
   return { 
     dialog, bound, countryFrom, countryTo, cityFrom, cityTo,/* searchData, */ outDate, inDate, seats, destinations,
-    exCountry, availableCountries, availableCountriesTo, availableCities, availableCitiesTo,
+    exCountry, availableCountries, availableCountriesTo, availableCities, availableCitiesTo, rules, violated,
+
     sendSearch, reverseCountries, cityRules, allCountries, newCountry, changeCountry, dropCountry, getCountryFrom,
     allCities,
   }

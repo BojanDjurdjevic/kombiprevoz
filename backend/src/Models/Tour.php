@@ -23,6 +23,31 @@ class Tour {
         $this->db = $db;
     }
 
+    //------------------------------ BEFOR ACTION --------------------------//
+
+    public function isDepartureDay($d): bool
+    {
+        $days = $d;
+        
+        $days = explode(",", $days);
+
+        $depDays = [];
+
+        foreach( $days as $day ) {
+            array_push( $depDays, (int)$day);
+        }
+
+        $orderDate = date('w', strtotime($this->date));
+
+        if(in_array($orderDate, $depDays)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    //------------------------------ GET -----------------------------//
+
     public function getAll() 
     {
         $sql = "SELECT * from tours WHERE deleted = 0";
@@ -106,48 +131,51 @@ class Tour {
 
             if($num > 0) {
                 $row = $res->fetch(PDO::FETCH_OBJ);
-                $ordSql = "SELECT places from orders WHERE orders.tour_id = '$row->id' 
-                and orders.date = '$this->date'
-                ";
-                $ordRes = $this->db->query($ordSql);
-                if($ordRes->rowCount() > 0) {
-                    $occupated = 0;
-                    while($ordRow = $ordRes->fetch(PDO::FETCH_OBJ)) {
-                        $occupated += $ordRow->places;
-                    }
-                    $available = $row->seats - $occupated;
-                    if($available >= $this->requestedSeats) {
+                if($this->isDepartureDay($row->departures)) {
+                    $ordSql = "SELECT places from orders WHERE orders.tour_id = '$row->id' 
+                    and orders.date = '$this->date'
+                    ";
+                    $ordRes = $this->db->query($ordSql);
+                    if($ordRes->rowCount() > 0) {
+                        $occupated = 0;
+                        while($ordRow = $ordRes->fetch(PDO::FETCH_OBJ)) {
+                            $occupated += $ordRow->places;
+                        }
+                        $available = $row->seats - $occupated;
+                        if($available >= $this->requestedSeats) {
+                            $tour = [
+                                'id' => $row->id,
+                                'from' => $row->from_city,
+                                'to' => $row->to_city,
+                                'date' => $this->date,
+                                'time' => $row->time,
+                                'left' => $available,
+                                'duration' => $row->duration,
+                                'price' => $row->price
+                            ];
+                            echo json_encode(["tour"=> $tour]);
+                            exit();
+                        } else {
+                            echo json_encode(["msg"=> 'Nema dovoljno mesta za traženi datum. Molimo promenite broj mesta ili datum.']);
+                            exit();
+                        }
+                    } else {
                         $tour = [
                             'id' => $row->id,
                             'from' => $row->from_city,
                             'to' => $row->to_city,
                             'date' => $this->date,
                             'time' => $row->time,
-                            'left' => $available,
+                            'left' => $row->seats,
                             'duration' => $row->duration,
                             'price' => $row->price
                         ];
                         echo json_encode(["tour"=> $tour]);
                         exit();
-                    } else {
-                        echo json_encode(["msg"=> 'Nema dovoljno mesta za traženi datum. Molimo promenite broj mesta ili datum.']);
-                        exit();
                     }
-                } else {
-                    $tour = [
-                        'id' => $row->id,
-                        'from' => $row->from_city,
-                        'to' => $row->to_city,
-                        'date' => $this->date,
-                        'time' => $row->time,
-                        'left' => $row->seats,
-                        'duration' => $row->duration,
-                        'price' => $row->price
-                    ];
-                    echo json_encode(["tour"=> $tour]);
+                } else echo json_encode(["msg"=> "Nema dostupnih vožnji prema zadatim parametrima
+                                    Dostupni dani su: ."]);
                     exit();
-                }
-
             } else {
                 echo json_encode(["msg"=> "Nema dostupnih vožnji prema zadatim parametrima."]);
                 exit();
