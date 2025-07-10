@@ -40,7 +40,8 @@
                 item-title="name"
                 item-value="id"
                 v-model="search.countryFrom"
-                v-on:update:model-value="search.allCities(search.countryFrom, true)"
+                return-object
+                v-on:update:model-value="val => search.allCities(val.id, true)"
               ></v-autocomplete>
               <v-spacer></v-spacer>
               <v-btn icon="mdi-unfold-more-vertical" class="d-none d-md-block" @click="search.reverseCountries"></v-btn>
@@ -52,8 +53,9 @@
                 :items="search.availableCountriesTo"
                 item-title="name"
                 item-value="id"
+                return-object
                 v-model="search.countryTo"
-                v-on:update:model-value="search.allCities(search.countryTo, false)"
+                v-on:update:model-value="val => search.allCities(val.id, false)"
               ></v-autocomplete>
             </v-sheet>
           </v-row>
@@ -69,8 +71,9 @@
                 :items="search.availableCities"
                 item-title="name"
                 item-value="id"
+                return-object
                 v-model="search.cityFrom"
-                v-on:update:model-value="console.log(search.cityFrom)"
+                v-on:update:model-value="console.log(search.cityFrom.id)"
               ></v-autocomplete>
               <v-spacer></v-spacer>
               <v-btn icon="mdi-unfold-more-vertical" class="d-none d-md-block" @click="search.reverseCountries"></v-btn>
@@ -82,8 +85,9 @@
                 :items="search.availableCitiesTo"
                 item-title="name"
                 item-value="id"
+                return-object
                 v-model="search.cityTo"
-                v-on:update:model-value="console.log(search.cityTo)"
+                v-on:update:model-value="console.log(search.cityTo.id)"
               ></v-autocomplete>
             </v-sheet>
           </v-row>

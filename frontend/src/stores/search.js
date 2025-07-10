@@ -57,8 +57,8 @@ export const useSearchStore = defineStore('search', () => {
 
     let dto = {
         search: {
-          from: cityFrom.value,
-          to: cityTo.value,
+          from: cityFrom.value.id,
+          to: cityTo.value.id,
           date: formated,
           'inbound': inDate.value,
           seats: seats.value
@@ -100,7 +100,7 @@ export const useSearchStore = defineStore('search', () => {
       "country_name": "Belgija"
     } 
   }
-  //const countryIds = ref([])
+
   const availableCountries = ref([])
   const availableCountriesTo = ref([])
 
@@ -108,25 +108,26 @@ export const useSearchStore = defineStore('search', () => {
   const availableCitiesTo = ref([])
 
   async function allCountries(data) {
-    try {
-      const msg = await api.getCountries(data)
-      /*
-      let arrNames = []
-      let ids = []
-      */
-      let input = Object.values(msg.data.drzave)
-      /*
-      input.forEach(item => {
-        arrNames.push(item.name)
-        ids.push(item.id)
-      });
-      */
-      availableCountries.value = input
-      //countryIds.value = ids
-      console.log(availableCountries.value) 
-    } catch (error) {
-      console.log(error)
+    if(data && data.id) {
+      try {
+        const msg = await api.getCountries(data.id)
+        let input = Object.values(msg.data.drzave)
+        availableCountries.value = input
+        console.log(availableCountries.value) 
+      } catch (error) {
+        console.log(error)
+      }
+    } else {
+      try {
+        const msg = await api.getCountries(data)
+        let input = Object.values(msg.data.drzave)
+        availableCountries.value = input
+        console.log(availableCountries.value) 
+      } catch (error) {
+        console.log(error)
+      }
     }
+    
     
   }
 
