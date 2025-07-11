@@ -57,7 +57,8 @@ class Tour {
             $this->from_city = htmlspecialchars(strip_tags($this->from_city), ENT_QUOTES);
             $this->to_city = htmlspecialchars(strip_tags($this->to_city), ENT_QUOTES);
 
-            $stmt->bindParam([':from_city' => $this->from_city], [':to_city' => $this->to_city]);
+            $stmt->bindParam(':from_city', $this->from_city);
+            $stmt->bindParam(':to_city', $this->to_city);
         } else {
             $sql = "SELECT id, seats from tours 
                 WHERE id = :id AND deleted = 0
