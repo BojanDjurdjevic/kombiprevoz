@@ -112,7 +112,23 @@
                 :rules="[search.rules.required]"
                 v-model="search.outDate"
                 label="Datum Polaska" 
-              ></v-date-input>
+                :allowed-dates="search.isDateAllowed"
+              >
+                <template #day="{ date }">
+                  <div
+                    :class="[
+                      'v-btn',
+                      'v-size-default',
+                      {
+                        'bg-red-darken-2 text-white pointer-events-none' : search.allowedDays.fulls.includes(date),
+                        'opacity-50 pointer-events-none': !search.isDateAllowed(date)
+                      }
+                    ]"
+                  >
+
+                  </div>
+                </template>
+              </v-date-input>
             </v-sheet>
           </v-row>
           

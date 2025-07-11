@@ -133,6 +133,7 @@ export const useSearchStore = defineStore('search', () => {
 
   const allowedDays = ref({
     fullyBooked: [],
+    fulls: [],
     allowed: []
   })
 
@@ -146,18 +147,26 @@ export const useSearchStore = defineStore('search', () => {
     }
     try {
       const msg = await api.checkAvailableDates(dto)
+      
       let full = msg.data.fullyBooked
       full.forEach(item => {
         allowedDays.value.fullyBooked.push(new Date(item))
-      });
-      
+      }); 
+      //allowedDays.value.fullyBooked = msg.data.fullyBooked
       allowedDays.value.allowed = msg.data.allowed
-      console.log(allowedDays.value.allowed)
+      console.log(allowedDays.value.fullyBooked)
     } catch (error) {
       console.log(error)
     }
     
   }
+  
+  const isDateAllowed = (dateStr) => {
+    const date = new Date(dateStr)
+    const dayOfWeek = date.getDay()
+
+    return allowedDays.value.allowed.includes(dayOfWeek) && !allowedDays.value.fullyBooked.includes(dateStr)
+  } 
 
   async function sendSearch() {
     if(!cityFrom.value || !cityTo.value || !countryFrom.value || !countryTo.value || !outDate.value) {
@@ -239,9 +248,9 @@ export const useSearchStore = defineStore('search', () => {
   return { 
     dialog, bound, countryFrom, countryTo, cityFrom, cityTo,/* searchData, */ outDate, inDate, seats, destinations,
     exCountry, availableCountries, availableCountriesTo, availableCities, availableCitiesTo, rules, violated,
-
+    allowedDays,
     sendSearch, reverseCountries, cityRules, allCountries, newCountry, changeCountry, dropCountry, getCountryFrom,
-    allCities, dateQuery,
+    allCities, dateQuery, isDateAllowed, 
   }
 
 })
