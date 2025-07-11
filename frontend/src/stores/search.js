@@ -130,6 +130,12 @@ export const useSearchStore = defineStore('search', () => {
   }
 
   // check the dates for Date Picker
+
+  const allowedDays = ref({
+    fullyBooked: [],
+    allowed: []
+  })
+
   async function dateQuery() {
     let dto = {
       days: {
@@ -140,7 +146,13 @@ export const useSearchStore = defineStore('search', () => {
     }
     try {
       const msg = await api.checkAvailableDates(dto)
-      console.log(msg.data)
+      let full = msg.data.fullyBooked
+      full.forEach(item => {
+        allowedDays.value.fullyBooked.push(new Date(item))
+      });
+      
+      allowedDays.value.allowed = msg.data.allowed
+      console.log(allowedDays.value.allowed)
     } catch (error) {
       console.log(error)
     }
