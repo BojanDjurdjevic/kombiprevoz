@@ -98,7 +98,7 @@
                 item-value="name"
                 return-object
                 v-model="search.cityTo"
-                v-on:update:model-value="console.log(search.cityTo.id)"
+                v-on:update:model-value="search.dateQuery"
               ></v-autocomplete>
             </v-sheet>
           </v-row>

@@ -57,5 +57,9 @@ export default {
 
     getTours(tours) {
         return axios.get("", {params: {tours}})
+    },
+    
+    checkAvailableDates(tours) {
+        return axios.get("", {params: {tours}})
     }
 }

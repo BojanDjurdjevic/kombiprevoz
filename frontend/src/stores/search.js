@@ -50,53 +50,6 @@ export const useSearchStore = defineStore('search', () => {
       
   } 
 
-  async function sendSearch() {
-    if(!cityFrom.value || !cityTo.value || !countryFrom.value || !countryTo.value || !outDate.value) {
-      violated.value = true
-      return 
-    } else {
-        violated.value = false
-        dialog.value = false
-
-        let d = new Date(outDate.value)
-        let year = String(d.getFullYear()) 
-        let months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
-        let m = d.getMonth()
-        let month = months[m]
-        let date = String(d.getDate())
-
-        let formated = year + "-" + month + "-" + date
-
-        let dto = {
-            search: {
-              from: cityFrom.value.name,
-              to: cityTo.value.name,
-              date: formated,
-              'inbound': inDate.value,
-              seats: seats.value
-            }
-        }
-        console.log(dto)
-
-        const msg = await api.getTours(dto)
-        console.log(msg.data)
-        
-        // mySearch: 
-        tours.mySearch = dto
-        //console.log(tours.mySearch)
-
-        countryFrom.value = ''
-        countryTo.value = ''
-        cityFrom.value = ''
-        cityTo.value = ''
-        outDate.value = null
-        inDate.value = null
-        seats.value = 1
-        router.push({
-          name: 'rezultati'
-        })
-    }
-  }
   function cityRules(val) {
     if(val) {
       return true
@@ -176,8 +129,76 @@ export const useSearchStore = defineStore('search', () => {
     }
   }
 
+  // check the dates for Date Picker
+  async function dateQuery() {
+    let dto = {
+      days: {
+        from: cityFrom.value.name,
+        to: cityTo.value.name,
+        format: '2025-07%'
+      }
+    }
+    try {
+      const msg = await api.checkAvailableDates(dto)
+      console.log(msg.data)
+    } catch (error) {
+      console.log(error)
+    }
+    
+  }
 
+  async function sendSearch() {
+    if(!cityFrom.value || !cityTo.value || !countryFrom.value || !countryTo.value || !outDate.value) {
+      violated.value = true
+      return 
+    } else {
+        violated.value = false
+        dialog.value = false
 
+        let d = new Date(outDate.value)
+        let year = String(d.getFullYear()) 
+        let months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+        let m = d.getMonth()
+        let month = months[m]
+        let date = String(d.getDate())
+
+        let formated = year + "-" + month + "-" + date
+
+        let dto = {
+            search: {
+              from: cityFrom.value.name,
+              to: cityTo.value.name,
+              date: formated,
+              'inbound': inDate.value,
+              seats: seats.value
+            }
+        }
+        console.log(dto)
+        try {
+          const msg = await api.getTours(dto)
+          console.log(msg.data)
+        } catch (error) {
+          console.log(error)
+        } finally {
+          // mySearch: 
+          tours.mySearch = dto
+          //console.log(tours.mySearch)
+
+          countryFrom.value = ''
+          countryTo.value = ''
+          cityFrom.value = ''
+          cityTo.value = ''
+          outDate.value = null
+          inDate.value = null
+          seats.value = 1
+          router.push({
+            name: 'rezultati'
+          })
+        }
+    }
+  }
+
+  //--------------------- TESTING API
   async function newCountry() {
     try {
       const msg = await api.insertCountry(exCountry)
@@ -208,7 +229,7 @@ export const useSearchStore = defineStore('search', () => {
     exCountry, availableCountries, availableCountriesTo, availableCities, availableCitiesTo, rules, violated,
 
     sendSearch, reverseCountries, cityRules, allCountries, newCountry, changeCountry, dropCountry, getCountryFrom,
-    allCities,
+    allCities, dateQuery,
   }
 
 })
