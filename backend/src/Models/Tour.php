@@ -46,6 +46,37 @@ class Tour {
         }
     }
 
+    public function getIdAndSeats() 
+    {
+        $sql = "SELECT id, seats from tours 
+                WHERE from_city = :from_city AND to_city = :to_city and deleted = 0
+        ";
+        $stmt = $this->db->prepare($sql);
+
+        $this->from_city = htmlspecialchars(strip_tags($this->from_city), ENT_QUOTES);
+        $this->to_city = htmlspecialchars(strip_tags($this->to_city), ENT_QUOTES);
+
+        $stmt->bindParam([':from_city' => $this->from_city], [':to_city' => $this->to_city]);
+
+        try {
+            if($stmt->execute()) {
+                $tour = $stmt->fetch(PDO::FETCH_OBJ);
+
+                if($tour) {
+                    return [
+                        'id' => $tour->id,
+                        'seats' => $tour->seats 
+                    ];
+                }
+            }
+        } catch (PDOException $e) {
+            echo json_encode([
+                    'allowed' => 'Došlo je do greške pri konekciji na bazu!',
+                    'msg' => $e->getMessage()
+            ], JSON_PRETTY_PRINT);
+        }
+    }
+
     //------------------------------ GET -----------------------------//
 
     public function getAll() 
@@ -100,7 +131,10 @@ class Tour {
     }
 
     public function getDays() {
+        if(!empty($this->from_city) && !empty($this->to_city))
         $sql = "SELECT tours.departures from tours where from_city = '$this->from_city' and to_city = '$this->to_city' and deleted = 0";
+        elseif(!empty($this->id))
+        $sql = "SELECT tours.departures from tours where {$this->id} and deleted = 0";
         $res = $this->db->query($sql);
         $num = $res->rowCount();
 
@@ -114,10 +148,34 @@ class Tour {
                 array_push($tourDep, (int)$day); 
             }
 
-            echo json_encode(["tourDep"=> $tourDep], JSON_PRETTY_PRINT);
+            //echo json_encode(["allowed"=> $tourDep], JSON_PRETTY_PRINT);
+            return $tourDep;
         } else {
             echo json_encode(["msg"=> "Nema dostupnih vožnji prema zadatim parametrima."]);
             exit();
+        }
+    }
+
+    public function fullyBooked()
+    {
+        $sql = "SELECT date, seats, SUM(places) as totall FROM orders
+                WHERE tour_id = :tour_id 
+                GROUP BY date
+        ";
+        $stmt = $this->db->prepare($sql);
+
+        $this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
+        $stmt->bindParam(':tour_id', $this->id);
+
+        try {
+            if($stmt->execute()) {
+
+            }
+        } catch (PDOException $e) {
+            echo json_encode([
+                'fullyBooked' => 'Došlo je do greške pri konekciji na bazu!',
+                'msg' => $e->getMessage()
+            ], JSON_PRETTY_PRINT);
         }
     }
 
