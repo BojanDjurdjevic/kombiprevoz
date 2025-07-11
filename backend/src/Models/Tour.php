@@ -48,21 +48,33 @@ class Tour {
 
     public function getIdAndSeats() 
     {
-        $sql = "SELECT id, seats from tours 
-                WHERE from_city = :from_city AND to_city = :to_city and deleted = 0
-        ";
-        $stmt = $this->db->prepare($sql);
+        if(empty($this->id)) {
+            $sql = "SELECT id, seats from tours 
+                    WHERE from_city = :from_city AND to_city = :to_city and deleted = 0
+            ";
+            $stmt = $this->db->prepare($sql);
 
-        $this->from_city = htmlspecialchars(strip_tags($this->from_city), ENT_QUOTES);
-        $this->to_city = htmlspecialchars(strip_tags($this->to_city), ENT_QUOTES);
+            $this->from_city = htmlspecialchars(strip_tags($this->from_city), ENT_QUOTES);
+            $this->to_city = htmlspecialchars(strip_tags($this->to_city), ENT_QUOTES);
 
-        $stmt->bindParam([':from_city' => $this->from_city], [':to_city' => $this->to_city]);
+            $stmt->bindParam([':from_city' => $this->from_city], [':to_city' => $this->to_city]);
+        } else {
+            $sql = "SELECT id, seats from tours 
+                WHERE id = :id AND deleted = 0
+            ";
+            $stmt = $this->db->prepare($sql);
 
+            $this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
+
+            $stmt->bindParam(':id', $this->id);
+        }
         try {
             if($stmt->execute()) {
                 $tour = $stmt->fetch(PDO::FETCH_OBJ);
 
                 if($tour) {
+                    $this->id = $tour->id;
+                    $this->seats = $tour->seats;
                     return [
                         'id' => $tour->id,
                         'seats' => $tour->seats 
@@ -156,20 +168,38 @@ class Tour {
         }
     }
 
-    public function fullyBooked()
+    public function fullyBooked($format)
     {
-        $sql = "SELECT date, seats, SUM(places) as totall FROM orders
-                WHERE tour_id = :tour_id 
+        $tour = $this->getIdAndSeats();
+        
+        $sql = "SELECT date, SUM(places) as totall FROM orders
+                WHERE tour_id = :tour_id AND 
+                date LIKE :format
                 GROUP BY date
         ";
         $stmt = $this->db->prepare($sql);
 
         $this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
+        $format = htmlspecialchars(strip_tags($format), ENT_QUOTES);
         $stmt->bindParam(':tour_id', $this->id);
+        $stmt->bindParam(':format', $format);
 
         try {
             if($stmt->execute()) {
+                $fullyBooked = [];
+                $availableDates = [];
+                while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+                    if($row->totall >= $this->seats) {
+                        array_push($fullyBooked, $row->date);
+                    } else
+                        array_push($availableDates, $row->date);
+                }
 
+                echo json_encode([
+                    'fullyBooked' => $fullyBooked,
+                    'availableD' => $availableDates,
+                    'allowed' => $this->getDays()
+                ], JSON_PRETTY_PRINT);
             }
         } catch (PDOException $e) {
             echo json_encode([
