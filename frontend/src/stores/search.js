@@ -147,12 +147,12 @@ export const useSearchStore = defineStore('search', () => {
     }
     try {
       const msg = await api.checkAvailableDates(dto)
-      
+      /*
       let full = msg.data.fullyBooked
       full.forEach(item => {
         allowedDays.value.fullyBooked.push(new Date(item))
-      }); 
-      //allowedDays.value.fullyBooked = msg.data.fullyBooked
+      }); */
+      allowedDays.value.fullyBooked = msg.data.fullyBooked
       allowedDays.value.allowed = msg.data.allowed
       console.log(allowedDays.value.fullyBooked)
     } catch (error) {

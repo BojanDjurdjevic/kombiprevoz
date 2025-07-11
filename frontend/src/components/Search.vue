@@ -125,7 +125,7 @@
                       }
                     ]"
                   >
-
+                      {{ new Date(date).getDate() }}
                   </div>
                 </template>
               </v-date-input>
