@@ -265,19 +265,19 @@ class Tour {
                     OR
                     (from_city = '$this->to_city' AND to_city = '$this->from_city' AND deleted = 0)
             ";
-
+            /*
             $this->from_city = htmlspecialchars(strip_tags($this->from_city));
             $this->to_city = htmlspecialchars(strip_tags($this->to_city));
             $this->date = htmlspecialchars(strip_tags($this->date));
-            $this->inbound = htmlspecialchars(strip_tags($this->inbound));
+            $this->inbound = htmlspecialchars(strip_tags($this->inbound)); */
         } elseif(!empty($this->from_city) && !empty($this->to_city) && !empty($this->date)) {
             $sql = "SELECT * from tours WHERE
                     from_city = '$this->from_city' AND to_city = '$this->to_city' AND deleted = 0
             ";
-
+            /*
             $this->from_city = htmlspecialchars(strip_tags($this->from_city));
             $this->to_city = htmlspecialchars(strip_tags($this->to_city));
-            $this->date = htmlspecialchars(strip_tags($this->date));
+            $this->date = htmlspecialchars(strip_tags($this->date)); */
         } else {
             echo json_encode([
                 http_response_code(401),
@@ -285,19 +285,22 @@ class Tour {
             ]);
             exit();
         }
+        
+        
         if(Validator::validateString($this->from_city) && Validator::validateString($this->to_city)) {
             $res = $this->db->query($sql);
             $num = $res->rowCount();
-
+            $tours = [];
             if($num > 0) {
-                $tours = [];
                 while($row = $res->fetch(PDO::FETCH_OBJ)) {
                     if($this->isDepartureDay($row->departures)) {
                         $ordSql = "SELECT places from orders WHERE orders.tour_id = '$row->id' 
                         and orders.date = '$this->date'
                         ";
+                        
                         $ordRes = $this->db->query($ordSql);
                         if($ordRes->rowCount() > 0) {
+                            //
                             $occupated = 0;
                             while($ordRow = $ordRes->fetch(PDO::FETCH_OBJ)) {
                                 $occupated += $ordRow->places;
@@ -307,8 +310,7 @@ class Tour {
                                 $dateTime = date_create($this->date . " " . $row->time);
                                 $dur = "+". $row->duration . " " . "hours";
                                 $arrival = date("H:i", strtotime($dur, date_timestamp_get($dateTime)));
-                                array_push($tours, 
-                                    [
+                                $t = [
                                         'id' => $row->id,
                                         'from' => $row->from_city,
                                         'to' => $row->to_city,
@@ -320,8 +322,8 @@ class Tour {
                                         'price' => $row->price,
                                         'seats' => 1,
                                         'priceTotal' => $row->price
-                                    ]
-                                );
+                                ];
+                                array_push($tours, $t);
                             } else {
                                 echo json_encode(["msg"=> 'Nema dovoljno mesta za traženi datum. Molimo promenite broj mesta ili datum.']);
                                 exit();
@@ -330,8 +332,7 @@ class Tour {
                             $dateTime = date_create($this->date . " " . $row->time);
                             $dur = "+". $row->duration . " " . "hours";
                             $arrival = date("H:i", strtotime($dur, date_timestamp_get($dateTime)));
-                            array_push($tours,
-                                [
+                            $t = [
                                     'id' => $row->id,
                                     'from' => $row->from_city,
                                     'to' => $row->to_city,
@@ -343,17 +344,19 @@ class Tour {
                                     'price' => $row->price,
                                     'seats' => 1,
                                     'priceTotal' => $row->price
-                                ]
-                            );
+                            ];
+                            array_push($tours, $t);
+                            
                         }
+                    
                     } else echo json_encode([
                         http_response_code(404),
                         "msg"=> "Nema dostupnih vožnji prema zadatim parametrima. Dostupni dani su: ."]);
-                        exit();
+                        exit(); 
                 }
                 echo json_encode(["tour"=> $tours]);
                 exit();
-            }    
+            }
         } else {
             echo json_encode([
                 http_response_code(401),

@@ -193,10 +193,10 @@ export const useSearchStore = defineStore('search', () => {
 
         if(inDate.value != null) {
           dIn = new Date(inDate.value)
-          yearIn = String(d.getFullYear()) 
-          mIn = d.getMonth()
+          yearIn = String(dIn.getFullYear()) 
+          mIn = dIn.getMonth()
           monthIn = months[mIn]
-          dateIn = String(d.getDate())
+          dateIn = String(dIn.getDate())
           formatedIn = yearIn + "-" + monthIn + "-" + dateIn
         } else {
           formatedIn = null
@@ -215,7 +215,7 @@ export const useSearchStore = defineStore('search', () => {
         try {
           const msg = await api.getTours(dto)
           console.log(msg.data)
-          tours.available = msg.data
+          tours.available = msg.data.tour 
         } catch (error) {
           console.log(error)
         } finally {

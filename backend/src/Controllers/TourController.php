@@ -34,7 +34,9 @@ class TourController {
                             $this->tour->from_city = $this->data->tours->search->from;
                             $this->tour->to_city = $this->data->tours->search->to;
                             $this->tour->date = $this->data->tours->search->date;
+                            if(isset($this->data->tours->search->inbound) && !empty($this->data->tours->search->inbound))
                             $this->tour->inbound = $this->data->tours->search->inbound;
+                            else $this->tour->inbound = null;
                             $this->tour->requestedSeats = $this->data->tours->search->seats;
                             $this->tour->getBySearch();
                         } 
