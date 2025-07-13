@@ -182,15 +182,32 @@ export const useSearchStore = defineStore('search', () => {
         let m = d.getMonth()
         let month = months[m]
         let date = String(d.getDate())
-
         let formated = year + "-" + month + "-" + date
+
+        let dIn 
+        let yearIn 
+        let mIn 
+        let monthIn 
+        let dateIn 
+        let formatedIn 
+
+        if(inDate.value != null) {
+          dIn = new Date(inDate.value)
+          yearIn = String(d.getFullYear()) 
+          mIn = d.getMonth()
+          monthIn = months[mIn]
+          dateIn = String(d.getDate())
+          formatedIn = yearIn + "-" + monthIn + "-" + dateIn
+        } else {
+          formatedIn = null
+        }
 
         let dto = {
             search: {
               from: cityFrom.value.name,
               to: cityTo.value.name,
               date: formated,
-              'inbound': inDate.value,
+              inbound: formatedIn,
               seats: seats.value
             }
         }
@@ -198,6 +215,7 @@ export const useSearchStore = defineStore('search', () => {
         try {
           const msg = await api.getTours(dto)
           console.log(msg.data)
+          tours.available = msg.data
         } catch (error) {
           console.log(error)
         } finally {

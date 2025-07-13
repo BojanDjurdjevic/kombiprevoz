@@ -15,6 +15,7 @@ class Tour {
     public $price;
     public $seats;
     public $date;
+    public $inbound;
     public $requestedSeats;
     private $db;
 
@@ -211,7 +212,7 @@ class Tour {
     }
 
     public function getBySearch() {
-        if($this->from_city != "" && $this->to_city != "" && $this->date != "") {
+        if(!empty($this->from_city) && !empty($this->to_city) && !empty($this->date)) {
             $sql = "SELECT * from tours where from_city = '$this->from_city' 
             and to_city = '$this->to_city' and deleted = 0";
 
@@ -232,15 +233,21 @@ class Tour {
                         }
                         $available = $row->seats - $occupated;
                         if($available >= $this->requestedSeats) {
+                            $dateTime = date_create($this->date . " " . $row->time);
+                            $dur = "+". $row->duration . " " . "hours";
+                            $arrival = date("H:i", strtotime($dur, date_timestamp_get($dateTime)));
                             $tour = [
                                 'id' => $row->id,
                                 'from' => $row->from_city,
                                 'to' => $row->to_city,
-                                'date' => $this->date,
-                                'time' => $row->time,
+                                'date' => date("d.m.Y", date_timestamp_get(date_create($this->date))),
+                                'departure' => date("H:i", date_timestamp_get(date_create($row->time))),
+                                'arrival' => $arrival,
                                 'left' => $available,
                                 'duration' => $row->duration,
-                                'price' => $row->price
+                                'price' => $row->price,
+                                'seats' => 1,
+                                'priceTotal' => $row->price
                             ];
                             echo json_encode(["tour"=> $tour]);
                             exit();
@@ -249,17 +256,32 @@ class Tour {
                             exit();
                         }
                     } else {
+                        $dateTime = date_create($this->date . " " . $row->time);
+                        $dur = "+". $row->duration . " " . "hours";
+                        $arrival = date("H:i", strtotime($dur, date_timestamp_get($dateTime)));
                         $tour = [
                             'id' => $row->id,
                             'from' => $row->from_city,
                             'to' => $row->to_city,
-                            'date' => $this->date,
-                            'time' => $row->time,
+                            'date' => date("d.m.Y", date_timestamp_get(date_create($this->date))),
+                            'departure' => date("H:i", date_timestamp_get(date_create($row->time))),
+                            'arrival' => $arrival,
                             'left' => $row->seats,
                             'duration' => $row->duration,
-                            'price' => $row->price
+                            'price' => $row->price,
+                            'seats' => 1,
+                            'priceTotal' => $row->price
                         ];
                         echo json_encode(["tour"=> $tour]);
+                        if(!empty($this->inbound)) {
+                            $this->date = $this->inbound;
+                            $this->inbound = null;
+                            $from = $this->to_city;
+                            $to = $this->from_city;
+                            $this->from_city = $from;
+                            $this->to_city = $to;
+                            $this->getBySearch();
+                        }
                         exit();
                     }
                 } else echo json_encode(["msg"=> "Nema dostupnih vožnji prema zadatim parametrima

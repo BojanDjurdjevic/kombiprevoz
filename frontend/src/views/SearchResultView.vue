@@ -8,72 +8,6 @@
     const user = useUserStore()
     const tours = useTourStore()
 
-    /*
-    const active = ref(false)
-
-    function addTour(t) {
-        active.value = true
-        
-        const added = {
-            id: t.id,
-            from: t.from,
-            to: t.to,
-            date: t.date,
-            time: t.departure,
-            price: t.priceTotal,
-            seats: t.seats,
-            addressFrom: user.user.address,
-            addressTo: ''
-        }
-        if(tours.bookedTours.length > 0) {
-            let sum = 0
-            tours.bookedTours.forEach(item => {
-                if(item.id == added.id) {
-                    sum++
-                }
-            })
-            if(sum === 0) {
-                tours.bookedTours.push(added)
-            } else {
-                alert(`Već ste dodali ovu vožnju u korpu`)
-                active.value = false
-            }
-            
-        } else {
-            tours.bookedTours.push(added)
-        }
-        tours.calculateTotal()
-    }
-    function removeTour(id) {
-        tours.bookedTours.forEach(t => {
-            if(t.id == id) {
-                tours.bookedTours.splice(tours.bookedTours.indexOf(t), 1)  
-            }
-        })
-        tours.calculateTotal()
-    }
-    function removeAll() {
-        while (tours.bookedTours.length > 0) {
-            tours.bookedTours.shift()
-        }
-        tours.totalPrice = 0
-    }
-
-    function countSeats(id) {
-        tours.available.forEach(item => {
-            if(item.id == id) {
-                item.priceTotal = item.price * item.seats
-            }
-        })
-    }
-
-    function book() {
-        active.value = false
-        router.push({
-            name: 'korpa'
-        })
-    }
-    */
 </script>
 
 <template>
@@ -131,6 +65,10 @@
 
                         v-on:update:model-value="tours.countSeats(t.id)"
                     ></v-number-input>
+                    <v-card-text 
+                        
+                        color="red-darken-3"
+                    >Trenutno: {{ t.left }} slobodnih mesta</v-card-text>
                     <v-btn
                         color="red-darken-3"
                         variant="outlined"
