@@ -136,6 +136,11 @@ export const useSearchStore = defineStore('search', () => {
     fulls: [],
     allowed: []
   })
+  const allowedDaysIn = ref({
+    fullyBooked: [],
+    fulls: [],
+    allowed: []
+  })
 
   async function dateQuery() {
     let dto = {
@@ -147,14 +152,13 @@ export const useSearchStore = defineStore('search', () => {
     }
     try {
       const msg = await api.checkAvailableDates(dto)
-      /*
-      let full = msg.data.fullyBooked
-      full.forEach(item => {
-        allowedDays.value.fullyBooked.push(new Date(item))
-      }); */
       allowedDays.value.fullyBooked = msg.data.fullyBooked
       allowedDays.value.allowed = msg.data.allowed
-      console.log(allowedDays.value.fullyBooked)
+
+      allowedDaysIn.value.fullyBooked = msg.data.fullyBookedIn
+      allowedDaysIn.value.allowed = msg.data.allowedIn
+      //console.log(allowedDays.value.fullyBooked)
+      console.log(allowedDays.value.fullyBooked + "\n" + allowedDaysIn.value.fullyBooked)
     } catch (error) {
       console.log(error)
     }
@@ -165,7 +169,29 @@ export const useSearchStore = defineStore('search', () => {
     const date = new Date(dateStr)
     const dayOfWeek = date.getDay()
 
-    return allowedDays.value.allowed.includes(dayOfWeek) && !allowedDays.value.fullyBooked.includes(dateStr)
+    let d = date
+    let year = String(d.getFullYear()) 
+    let months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+    let m = d.getMonth()
+    let month = months[m]
+    let dates = String(d.getDate())
+    let formated = year + "-" + month + "-" + dates
+
+    return allowedDays.value.allowed.includes(dayOfWeek) && !allowedDays.value.fullyBooked.includes(formated)
+  } 
+  const isDateInAllowed = (dateStr) => {
+    const date = new Date(dateStr)
+    const dayOfWeek = date.getDay()
+
+    let d = date
+    let year = String(d.getFullYear()) 
+    let months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+    let m = d.getMonth()
+    let month = months[m]
+    let dates = String(d.getDate())
+    let formated = year + "-" + month + "-" + dates
+
+    return allowedDaysIn.value.allowed.includes(dayOfWeek) && !allowedDaysIn.value.fullyBooked.includes(formated)
   } 
 
   async function sendSearch() {
@@ -266,9 +292,9 @@ export const useSearchStore = defineStore('search', () => {
   return { 
     dialog, bound, countryFrom, countryTo, cityFrom, cityTo,/* searchData, */ outDate, inDate, seats, destinations,
     exCountry, availableCountries, availableCountriesTo, availableCities, availableCitiesTo, rules, violated,
-    allowedDays,
+    allowedDays, allowedDaysIn,
     sendSearch, reverseCountries, cityRules, allCountries, newCountry, changeCountry, dropCountry, getCountryFrom,
-    allCities, dateQuery, isDateAllowed, 
+    allCities, dateQuery, isDateAllowed, isDateInAllowed,
   }
 
 })

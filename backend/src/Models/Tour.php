@@ -27,7 +27,7 @@ class Tour {
 
     //------------------------------ BEFOR ACTION --------------------------//
 
-    public function isDepartureDay($d): bool
+    public function isDepartureDay($d, $requested): bool
     {
         $days = $d;
         
@@ -39,7 +39,7 @@ class Tour {
             array_push( $depDays, (int)$day);
         }
 
-        $orderDate = date('w', strtotime($this->date));
+        $orderDate = date('w', strtotime($requested));
 
         if(in_array($orderDate, $depDays)) {
             return true;
@@ -180,6 +180,7 @@ class Tour {
                 date LIKE :format
                 GROUP BY date
         ";
+        
         $stmt = $this->db->prepare($sql);
 
         $this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
@@ -203,6 +204,7 @@ class Tour {
                     } else
                         array_push($availableDates, $row->date);
                 }
+                
             }
         } catch (PDOException $e) {
             echo json_encode([
@@ -210,7 +212,7 @@ class Tour {
                 'msg' => $e->getMessage()
             ], JSON_PRETTY_PRINT);
         }
-
+        
         $this->id = null;
         $from = $this->from_city;
         $to = $this->to_city;
@@ -234,11 +236,11 @@ class Tour {
         try {
             if($stmt->execute()) {
                 
-                while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
-                    if($row->totall >= $this->seats) {
-                        array_push($fullyBookedIn, $row->date);
+                while ($row2 = $stmt->fetch(PDO::FETCH_OBJ)) {
+                    if($row2->totall >= $this->seats) {
+                        array_push($fullyBookedIn, $row2->date);
                     } else
-                        array_push($availableDatesIn, $row->date);
+                        array_push($availableDatesIn, $row2->date);
                 }
             }
         } catch (PDOException $e) {
@@ -255,7 +257,7 @@ class Tour {
             'fullyBookedIn' => $fullyBookedIn,
             'availableDIn' => $availableDatesIn,
             'allowedIn' => $allowedIn
-        ], JSON_PRETTY_PRINT);
+        ], JSON_PRETTY_PRINT); 
     }
     //------------------- Search avaailable tours ----------------------------//
     public function getBySearch() {
@@ -293,9 +295,18 @@ class Tour {
             $tours = [];
             if($num > 0) {
                 while($row = $res->fetch(PDO::FETCH_OBJ)) {
-                    if($this->isDepartureDay($row->departures)) {
+                    if($row->from_city == $this->from_city)
+                        $checkDeps = $this->isDepartureDay($row->departures, $this->date);
+                    else
+                        $checkDeps = $this->isDepartureDay($row->departures, $this->inbound);
+                    if($checkDeps) {
+                        if($row->from_city == $this->from_city)
                         $ordSql = "SELECT places from orders WHERE orders.tour_id = '$row->id' 
                         and orders.date = '$this->date'
+                        ";
+                        else
+                        $ordSql = "SELECT places from orders WHERE orders.tour_id = '$row->id' 
+                        and orders.date = '$this->inbound'
                         ";
                         
                         $ordRes = $this->db->query($ordSql);
@@ -310,18 +321,22 @@ class Tour {
                                 $dateTime = date_create($this->date . " " . $row->time);
                                 $dur = "+". $row->duration . " " . "hours";
                                 $arrival = date("H:i", strtotime($dur, date_timestamp_get($dateTime)));
+                                if($row->from_city == $this->from_city)
+                                    $myDate = date("d.m.Y", date_timestamp_get(date_create($this->date)));
+                                else
+                                    $myDate = date("d.m.Y", date_timestamp_get(date_create($this->inbound)));
                                 $t = [
                                         'id' => $row->id,
                                         'from' => $row->from_city,
                                         'to' => $row->to_city,
-                                        'date' => date("d.m.Y", date_timestamp_get(date_create($this->date))),
+                                        'date' => $myDate,
                                         'departure' => date("H:i", date_timestamp_get(date_create($row->time))),
                                         'arrival' => $arrival,
                                         'left' => $available,
                                         'duration' => $row->duration,
                                         'price' => $row->price,
-                                        'seats' => 1,
-                                        'priceTotal' => $row->price
+                                        'seats' => (int)$this->requestedSeats,
+                                        'priceTotal' => $row->price * (int)$this->requestedSeats
                                 ];
                                 array_push($tours, $t);
                             } else {
@@ -332,27 +347,32 @@ class Tour {
                             $dateTime = date_create($this->date . " " . $row->time);
                             $dur = "+". $row->duration . " " . "hours";
                             $arrival = date("H:i", strtotime($dur, date_timestamp_get($dateTime)));
+                            if($row->from_city == $this->from_city)
+                                $myDate = date("d.m.Y", date_timestamp_get(date_create($this->date)));
+                            else
+                                $myDate = date("d.m.Y", date_timestamp_get(date_create($this->inbound)));
                             $t = [
                                     'id' => $row->id,
                                     'from' => $row->from_city,
                                     'to' => $row->to_city,
-                                    'date' => date("d.m.Y", date_timestamp_get(date_create($this->date))),
+                                    'date' => $myDate,
                                     'departure' => date("H:i", date_timestamp_get(date_create($row->time))),
                                     'arrival' => $arrival,
                                     'left' => $row->seats,
                                     'duration' => $row->duration,
                                     'price' => $row->price,
-                                    'seats' => 1,
-                                    'priceTotal' => $row->price
+                                    'seats' => (int)$this->requestedSeats,
+                                    'priceTotal' => $row->price * (int)$this->requestedSeats
                             ];
                             array_push($tours, $t);
                             
                         }
                     
-                    } else echo json_encode([
-                        http_response_code(404),
+                    } else { echo json_encode([
+                        
                         "msg"=> "Nema dostupnih vožnji prema zadatim parametrima. Dostupni dani su: ."]);
                         exit(); 
+                    }
                 }
                 echo json_encode(["tour"=> $tours]);
                 exit();

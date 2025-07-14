@@ -120,7 +120,7 @@
                       'v-btn',
                       'v-size-default',
                       {
-                        'bg-red-darken-2 text-white pointer-events-none' : search.allowedDays.fulls.includes(date),
+                        'red-darken-2 text-red-darken-2 pointer-events-none' : search.allowedDays.fullyBooked.includes(date),
                         'opacity-50 pointer-events-none': !search.isDateAllowed(date)
                       }
                     ]"
@@ -138,7 +138,23 @@
               <v-date-input  
                 v-model="search.inDate"
                 label="Datum Povratka" v-if="search.bound == 'allbound'"
-              ></v-date-input>
+                :allowed-dates="search.isDateInAllowed"
+              >
+              <template #day="{ date }">
+                  <div
+                    :class="[
+                      'v-btn',
+                      'v-size-default',
+                      {
+                        'bg-red-darken-2 text-white pointer-events-none' : search.allowedDaysIn.fullyBooked.includes(date),
+                        'opacity-50 pointer-events-none': !search.isDateInAllowed(date)
+                      }
+                    ]"
+                  >
+                      {{ new Date(date).getDate() }}
+                  </div>
+              </template>
+            </v-date-input>
             </v-sheet>
           </v-row>
         </v-container>
