@@ -57,13 +57,17 @@ export const useSearchStore = defineStore('search', () => {
       return false
     }
   }
-  /*
-  const searchData = shallowRef({
-    outDate: null,
-    inDate: null,
-    seats: 1
-  })
-  */ 
+  function dateFormat(date) {
+    let d = new Date(date)
+    let year = String(d.getFullYear()) 
+    let months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+    let m = d.getMonth()
+    let month = months[m]
+    let dates = String(d.getDate())
+    let formated = year + "-" + month + "-" + dates
+
+    return formated
+  }
   const exCountry = { 
     country: {
       "country_id": 6,
@@ -157,7 +161,6 @@ export const useSearchStore = defineStore('search', () => {
 
       allowedDaysIn.value.fullyBooked = msg.data.fullyBookedIn
       allowedDaysIn.value.allowed = msg.data.allowedIn
-      //console.log(allowedDays.value.fullyBooked)
       console.log(allowedDays.value.fullyBooked + "\n" + allowedDaysIn.value.fullyBooked)
     } catch (error) {
       console.log(error)
@@ -182,14 +185,7 @@ export const useSearchStore = defineStore('search', () => {
   const isDateInAllowed = (dateStr) => {
     const date = new Date(dateStr)
     const dayOfWeek = date.getDay()
-
-    let d = date
-    let year = String(d.getFullYear()) 
-    let months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
-    let m = d.getMonth()
-    let month = months[m]
-    let dates = String(d.getDate())
-    let formated = year + "-" + month + "-" + dates
+    let formated = dateFormat(dateStr)
 
     return allowedDaysIn.value.allowed.includes(dayOfWeek) && !allowedDaysIn.value.fullyBooked.includes(formated)
   } 
@@ -201,29 +197,11 @@ export const useSearchStore = defineStore('search', () => {
     } else {
         violated.value = false
         dialog.value = false
-
-        let d = new Date(outDate.value)
-        let year = String(d.getFullYear()) 
-        let months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
-        let m = d.getMonth()
-        let month = months[m]
-        let date = String(d.getDate())
-        let formated = year + "-" + month + "-" + date
-
-        let dIn 
-        let yearIn 
-        let mIn 
-        let monthIn 
-        let dateIn 
+        let formated = dateFormat(outDate.value) 
         let formatedIn 
 
         if(inDate.value != null) {
-          dIn = new Date(inDate.value)
-          yearIn = String(dIn.getFullYear()) 
-          mIn = dIn.getMonth()
-          monthIn = months[mIn]
-          dateIn = String(dIn.getDate())
-          formatedIn = yearIn + "-" + monthIn + "-" + dateIn
+          formatedIn = dateFormat(inDate.value)
         } else {
           formatedIn = null
         }
@@ -242,12 +220,11 @@ export const useSearchStore = defineStore('search', () => {
           const msg = await api.getTours(dto)
           console.log(msg.data)
           tours.available = msg.data.tour 
+          localStorage.setItem('avTours', JSON.stringify(tours.available))
         } catch (error) {
           console.log(error)
-        } finally {
-          // mySearch: 
+        } finally { 
           tours.mySearch = dto
-          //console.log(tours.mySearch)
 
           countryFrom.value = ''
           countryTo.value = ''

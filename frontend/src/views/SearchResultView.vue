@@ -7,6 +7,10 @@
 
     const user = useUserStore()
     const tours = useTourStore()
+    
+    onload = () => {
+        tours.available = JSON.parse(localStorage.getItem('avTours'))
+    }
 
 </script>
 

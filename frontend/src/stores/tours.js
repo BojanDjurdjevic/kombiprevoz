@@ -11,61 +11,7 @@ export const useTourStore = defineStore('tours', () => {
     const mySearch = ref({})
 
     const available = ref([
-        {
-            'id': 1,
-            'from': 'Novi Sad',
-            'to': 'Rijeka',
-            'date': '12/04/2025',
-            'departure': '08:00',
-            'arrival': '14:30',
-            'price': 60,
-            'priceTotal': 60,
-            'seats': 1
-        },
-        {
-            'id': 2,
-            'from': 'Rijeka',
-            'to': 'Novi Sad',
-            'date': '13/04/2025',
-            'departure': '08:00',
-            'arrival': '14:30',
-            'price': 60,
-            'priceTotal': 60,
-            'seats': 1
-        },
-        {
-            'id': 3,
-            'from': 'Beograd',
-            'to': 'Koper',
-            'date': '12/04/2025',
-            'departure': '07:00',
-            'arrival': '15:30',
-            'price': 75,
-            'priceTotal': 75,
-            'seats': 1
-        },
-        {
-            'id': 4,
-            'from': 'Novi Sad',
-            'to': 'Zagreb',
-            'date': '12/04/2025',
-            'departure': '08:00',
-            'arrival': '14:30',
-            'price': 50,
-            'priceTotal': 50,
-            'seats': 1
-        },
-        {
-            'id': 5,
-            'from': 'Ljubljana',
-            'to': 'Novi Sad',
-            'date': '12/04/2025',
-            'departure': '08:00',
-            'arrival': '14:30',
-            'price': 75,
-            'priceTotal': 75,
-            'seats': 1
-        },
+        
     ])
 
     const bookedTours = ref([])
@@ -107,7 +53,7 @@ export const useTourStore = defineStore('tours', () => {
             time: t.departure,
             price: t.priceTotal,
             seats: t.seats,
-            addressFrom: user.user.address,
+            addressFrom: '', //user.user.address,
             addressTo: ''
         }
         if(bookedTours.value.length > 0) {
@@ -163,6 +109,7 @@ export const useTourStore = defineStore('tours', () => {
 
     function book() {
         active.value = false
+        localStorage.removeItem('avTours')
         router.push({
             name: 'korpa'
         })
