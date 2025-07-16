@@ -31,9 +31,16 @@ export const useSearchStore = defineStore('search', () => {
   const inDate = ref(null)
   const seats = ref(1)
 
+  const allCount = {
+    country: {
+      id: "",
+      name: ""
+    }
+  }
+
   function reverseCountries() {
-    console.log(countryFrom.value + "\n" + countryTo.value)
-    if(countryFrom.value != '' && cityFrom.value != '') {
+    console.log(countryFrom.value.name + "\n" + countryTo.value.name)
+    if(countryFrom.value != '' && countryTo.value != '') {
       const temp1 = countryFrom.value
       const temp2 = countryTo.value
       countryFrom.value = temp2
@@ -45,8 +52,12 @@ export const useSearchStore = defineStore('search', () => {
         cityFrom.value = temp4
         cityTo.value = temp3
       }
+
+      allCities(countryFrom.value.id, true)
+      allCities(countryTo.value.id, false)
+      dateQuery()
     }
-    console.log(countryFrom.value + "\n" + countryTo.value)
+    console.log(countryFrom.value.name + "\n" + countryTo.value.name)
       
   } 
 
@@ -67,6 +78,15 @@ export const useSearchStore = defineStore('search', () => {
     let formated = year + "-" + month + "-" + dates
 
     return formated
+  }
+  function qDateForm() {
+    let d = new Date()
+    let year = String(d.getFullYear()) 
+    let month = String(d.getMonth())
+    let months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+    let formD = year + "-" + months[month] + "%"
+
+    return formD
   }
   const exCountry = { 
     country: {
@@ -147,11 +167,12 @@ export const useSearchStore = defineStore('search', () => {
   })
 
   async function dateQuery() {
+    let formD = qDateForm()
     let dto = {
       days: {
         from: cityFrom.value.name,
         to: cityTo.value.name,
-        format: '2025-07%'
+        format: formD
       }
     }
     try {
@@ -161,6 +182,7 @@ export const useSearchStore = defineStore('search', () => {
 
       allowedDaysIn.value.fullyBooked = msg.data.fullyBookedIn
       allowedDaysIn.value.allowed = msg.data.allowedIn
+      console.log(dto.days.format)
       console.log(allowedDays.value.fullyBooked + "\n" + allowedDaysIn.value.fullyBooked)
     } catch (error) {
       console.log(error)
@@ -269,7 +291,7 @@ export const useSearchStore = defineStore('search', () => {
   return { 
     dialog, bound, countryFrom, countryTo, cityFrom, cityTo,/* searchData, */ outDate, inDate, seats, destinations,
     exCountry, availableCountries, availableCountriesTo, availableCities, availableCitiesTo, rules, violated,
-    allowedDays, allowedDaysIn,
+    allowedDays, allowedDaysIn, allCount,
     sendSearch, reverseCountries, cityRules, allCountries, newCountry, changeCountry, dropCountry, getCountryFrom,
     allCities, dateQuery, isDateAllowed, isDateInAllowed,
   }

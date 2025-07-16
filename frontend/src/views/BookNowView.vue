@@ -8,6 +8,10 @@ import { useSearchStore } from '@/stores/search';
 const search = useSearchStore()
 const user = useUserStore()
 const tours = useTourStore()
+/*
+onload = () => {
+    tours.bookedTours = JSON.parse(localStorage.getItem('myCart'))
+} */
 
 </script>
 
@@ -63,18 +67,18 @@ const tours = useTourStore()
                 </v-text-field>
                 <v-label> Adresa Polaska: </v-label>
                 <v-combobox 
-                    v-model="t.addressFrom"
+                    v-model="t.add_from"
                 ></v-combobox>
                 <v-label>Adresa Dolaska:</v-label>
                 <v-combobox
-                    v-model="t.addressTo"
+                    v-model="t.add_to"
                 ></v-combobox>
 
                 <v-label>Broj mesta:</v-label>
                 <v-number-input
                     control-variant="split" 
-                    v-model="t.seats"
-                    :max="7"
+                    v-model="t.places"
+                    :max="t.left"
                     :min="1"
                     v-on:update:model-value="tours.countChangeSeats(t)"
                 > 
@@ -84,7 +88,7 @@ const tours = useTourStore()
             <v-card-actions class="d-flex justify-center">
                 <v-btn
                     icon="mdi-delete"
-                    @click="tours.removeTour(t.id)"
+                    @click="tours.removeTour(t.tour_id)"
                 >
 
                 </v-btn>

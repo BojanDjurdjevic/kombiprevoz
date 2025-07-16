@@ -28,14 +28,14 @@ export const useTourStore = defineStore('tours', () => {
     function customAddress() {
         bookedTours.value.forEach(item => {
             if(item.from == user.user.town) {
-                item.addressFrom = user.user.address
-                item.addressTo = ''
+                item.add_from = user.user.address
+                item.add_to = ''
             } else if(item.to == user.user.town) {
-                item.addressFrom = ''
-                item.addressTo = user.user.address
+                item.add_from = ''
+                item.add_to = user.user.address
             } else {
-                item.addressFrom = ''
-                item.addressTo = ''
+                item.add_from = ''
+                item.add_to = ''
             }
         })
     }
@@ -46,20 +46,22 @@ export const useTourStore = defineStore('tours', () => {
         active.value = true
         
         const added = {
-            id: t.id,
+            tour_id: t.id,
+            user_id: user.user.id,
             from: t.from,
             to: t.to,
             date: t.date,
             time: t.departure,
             price: t.priceTotal,
-            seats: t.seats,
-            addressFrom: '', //user.user.address,
-            addressTo: ''
+            places: t.seats,
+            add_from: '',
+            add_to: '',
+            left: t.left
         }
         if(bookedTours.value.length > 0) {
             let sum = 0
             bookedTours.value.forEach(item => {
-                if(item.id == added.id) {
+                if(item.tour_id == added.tour_id) {
                     sum++
                 }
             })
@@ -75,10 +77,11 @@ export const useTourStore = defineStore('tours', () => {
         }
         calculateTotal()
         customAddress()
+        console.log(bookedTours.value)
     }
     function removeTour(id) {
         bookedTours.value.forEach(t => {
-            if(t.id == id) {
+            if(t.tour_id == id) {
                 bookedTours.value.splice(bookedTours.value.indexOf(t), 1)  
             }
         })
@@ -89,6 +92,8 @@ export const useTourStore = defineStore('tours', () => {
             bookedTours.value.shift()
         }
         totalPrice.value = 0
+        localStorage.removeItem('myCart')
+        localStorage.removeItem('avTours')
     }
 
     function countSeats(id) {
@@ -100,16 +105,17 @@ export const useTourStore = defineStore('tours', () => {
     }
     function countChangeSeats(t) {
         available.value.forEach(item => {
-            if(item.id == t.id) {
-                t.price = item.price * t.seats
+            if(item.id == t.tour_id) {
+                t.price = item.price * t.places
             }
         })
         calculateTotal()
+        localStorage.setItem('myCart', JSON.stringify(bookedTours.value))
     }
 
     function book() {
         active.value = false
-        localStorage.removeItem('avTours')
+        localStorage.setItem('myCart', JSON.stringify(bookedTours.value))
         router.push({
             name: 'korpa'
         })
@@ -120,6 +126,8 @@ export const useTourStore = defineStore('tours', () => {
             orders.myorders.push(item)
         })
         bookedTours.value = []
+        localStorage.removeItem('avTours')
+        localStorage.removeItem('myCart')
         router.push({
             name: 'rezervacije'
         })

@@ -8,9 +8,12 @@
     const user = useUserStore()
     const tours = useTourStore()
     
-    onload = () => {
-        tours.available = JSON.parse(localStorage.getItem('avTours'))
+    if(localStorage.getItem('avTours')) {
+        onload = () => {
+            tours.available = JSON.parse(localStorage.getItem('avTours'))
+        }
     }
+    
 
 </script>
 
@@ -64,7 +67,7 @@
                         v-model="t.seats"
                         control-variant="split" 
                         placeholder="1"
-                        :max="7"
+                        :max="t.left"
                         :min="1"
 
                         v-on:update:model-value="tours.countSeats(t.id)"
@@ -133,10 +136,10 @@
                     class="pa-3" elevation="3"
                     color="indigo-darken-2"
                 >
-                    <input type="hidden" :value="b.id">
+                    <input type="hidden" :value="b.tour_id">
                     <v-card-title> {{ b.from }} - {{ b.to }} </v-card-title>
                     <v-card-subtitle> {{ b.date }} </v-card-subtitle>
-                    <v-card-subtitle>Broj mesta: {{ b.seats }} </v-card-subtitle>
+                    <v-card-subtitle>Broj mesta: {{ b.places }} </v-card-subtitle>
                     <v-card-title> {{ b.price }} EUR</v-card-title>
                     <v-divider></v-divider>
                     <v-card-actions class="d-flex justify-center">
@@ -144,7 +147,7 @@
                             icon="mdi-delete"
                             variant="plain"
                             color="red"
-                            @click="tours.removeTour(b.id)"
+                            @click="tours.removeTour(b.tour_id)"
                         >
                         </v-btn> 
                     </v-card-actions>

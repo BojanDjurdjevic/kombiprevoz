@@ -5,9 +5,10 @@ import { ref } from 'vue'
 
 export const useUserStore = defineStore('user', () => {
     const user = ref({
+        id: 10,
         initials: 'BD',
         fullName: 'Bojan Đurđević',
-        email: 'bojan@test.com',
+        email: 'pininfarina164@gmail.com',
         town: 'Novi Sad',
         address: 'Gavrila Principa 6',
         phone: '062640273'

@@ -19,11 +19,11 @@ function changeTheme() {
   theme.global.name.value = darkTheme.value ? 'dark' : 'light'
 }
 
-// TO API:
-const allCount = {
-  country: {
-    id: "",
-    name: ""
+if(localStorage.getItem('myCart')) {
+  onload = () => {
+    tours.available = JSON.parse(localStorage.getItem('avTours'))
+    tours.bookedTours = JSON.parse(localStorage.getItem('myCart'))
+    tours.calculateTotal()
   }
 }
 
@@ -65,7 +65,7 @@ const allCount = {
               variant="plain"
               v-bind="activatorProps"
               class="d-none d-md-block"
-              @click="search.allCountries(allCount)"
+              @click="search.allCountries(search.allCount)"
               >Pretraga
             </v-btn>
             <v-btn 
