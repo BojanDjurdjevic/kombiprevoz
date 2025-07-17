@@ -1,4 +1,5 @@
 <?php
+ini_set('session.gc_maxlifetime', 3600);
 session_start();
 $sid = session_id();
 date_default_timezone_set("Europe/Belgrade");
@@ -48,7 +49,7 @@ $orders = new OrderController($db, $data, $sid);
 $departures = new DepartureController($db, $data);
 
 if(isset($data->user) && !empty($data->user->id)) 
-$isLoged = User::isLoged($data->user->id, $data->user->email, $db);
+$isLoged = User::isLoged( $db);
 else $isLoged = false;
 
 

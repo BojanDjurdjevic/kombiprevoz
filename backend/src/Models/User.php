@@ -35,7 +35,7 @@ class User {
     // -------------------------  FUNCTIONS BEFORE ACTION --------------------------------- //
 
     // Check if it the User is logedin:
-    public static function isLoged($id, $email, $db)
+    public static function isLoged($db)
     {
         if(!isset($_SESSION['user']) && isset($_COOKIE['remember_me'])) {
             $sql = "SELECT * FROM users WHERE id = :id";
@@ -54,7 +54,7 @@ class User {
                             array_push($arr, strtoupper($s[0]));
                         }
                         $initials = implode("", $arr);
-                        
+
                         $_SESSION['user'] = [
                             'id' => $user->id,
                             'name' => $user->name,
@@ -74,24 +74,21 @@ class User {
                 ], JSON_PRETTY_PRINT);
             }
         }
-        elseif(isset($id) && !empty($id)) {
-            $find = "SELECT * FROM users WHERE id = '$id' AND deleted = 0";
-            $res = $db->query($find);
-            $user = $res->fetch(PDO::FETCH_OBJ);
-            if($user) {
-                if($email == $user->email) {
-                    $_SESSION['user_id'] = $user->id;
-                    $_SESSION['user_name'] = $user->name;
-                    $_SESSION['user_email'] = $user->email;
-                    $_SESSION['user_status'] = $user->status;
-                    $_SESSION['sid'] = session_id();
-                    return true;
-                } else return false;
-            } else return false;
-            
-        } else return false;
+        
+        if(isset($_SESSION['user'])) {
+            echo json_encode([
+                'user' => $_SESSION['user']
+            ], JSON_PRETTY_PRINT);
+            return true;
+        } else {
+            http_response_code(401);
+            echo json_encode([
+                'error' => 'Korisnik nije prepoznat, molmo Vas da se ulogujete'
+            ], JSON_PRETTY_PRINT);
+            return false;
+        } 
     }
-    // Check if the User i owner of account
+    // Check if the User is owner of account
     public function isOwner()
     {
         if(isset($_SESSION['user_id']) && !empty($this->id) && $this->id == $_SESSION['user_id']) return true;
@@ -541,7 +538,7 @@ class User {
         session_unset();
         session_destroy();
         setcookie('remember_me', '', time() - 3600, '/', '', false, true);
-        echo json_encode(['msg' => "Doviđenja {$name}"], JSON_PRETTY_PRINT);
+        echo json_encode(['msg' => "Doviđenja $name"], JSON_PRETTY_PRINT);
     }
 
     // -------------------------  PUT --------------------------------- // 
