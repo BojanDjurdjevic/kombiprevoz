@@ -15,6 +15,8 @@ const logUser = ref({
 
 function logSubmit() {
     if(logUser.value.users.email && logUser.value.users.pass) {
+        logUser.value.users.email = logUser.value.users.email.trim()
+        logUser.value.users.pass = logUser.value.users.pass.trim()
         user.actions.handleLogin(logUser.value)
     } else {
         return

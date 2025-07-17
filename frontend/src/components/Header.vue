@@ -5,6 +5,7 @@ import MyAvatar from './MyAvatar.vue';
 import { useSearchStore } from '@/stores/search';
 import { useTourStore } from '@/stores/tours';
 import { useTheme } from 'vuetify'
+import { useUserStore } from '@/stores/user';
 
 const active = ref(false)
 const search = useSearchStore()
@@ -18,6 +19,8 @@ function changeTheme() {
 
   theme.global.name.value = darkTheme.value ? 'dark' : 'light'
 }
+
+const user = useUserStore()
 
 if(localStorage.getItem('myCart')) {
   onload = () => {
@@ -111,4 +114,9 @@ if(localStorage.getItem('myCart')) {
         <MyAvatar />
 
       </v-toolbar>
+      <v-alert v-if="user.successMsg"
+        :text="user.successMsg"
+        title="Pozdrav!"
+        type="success"
+      ></v-alert>
 </template>

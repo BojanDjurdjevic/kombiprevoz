@@ -19,7 +19,8 @@ export const useUserStore = defineStore('user', () => {
         address: 'Gavrila Principa 6',
         phone: '062640273'
     } */)
-    const errorMsg = ref('')
+    const errorMsg = ref(false)
+    const successMsg = ref(false)
     const loading = ref(false)
 
     const getters = ref({
@@ -37,7 +38,9 @@ export const useUserStore = defineStore('user', () => {
                     user.value = null
                 }
             } catch (error) {
+                console.log(error)
                 errorMsg.value = res.data.error
+                
             } finally {
                 loading.value = false
             }
@@ -53,13 +56,13 @@ export const useUserStore = defineStore('user', () => {
                 if(res.data.success) {
                     //user.value = res.data.user
                     actions.value.setUser(res.data.user)
+                    successMsg.value = res.data.msg 
                     const redirectPath = route.query.redirect || '/'
                     router.push(redirectPath)
+                    setTimeout(() => {
+                        successMsg.value = false
+                    }, 3000)
                 } else {
-                    if(res.data.poruka) {
-                        console.log(res.data.poruka)
-                    }
-                    //console.log('Ušao ali nije prošao')
                     console.log(res.data)
                 }
             } catch (error) {
@@ -70,8 +73,25 @@ export const useUserStore = defineStore('user', () => {
                 loading.value = false
             }
         },
-        logout: () => {
-            user.value = null
+        logout: async (users) => {
+            loading.value = true
+            try {
+                const res = await api.logUser(users)
+                if(res.data.success) {
+                    user.value = null
+                    successMsg.value = res.data.msg 
+                    setTimeout(() => {
+                        successMsg.value = false
+                    }, 4000)
+                } else {
+                    console.log(res.data)
+                }
+            } catch (error) {
+                console.dir(error, {depth: null})
+            } finally {
+                loading.value = false
+                user.value = null
+            }  
         }
     })
 
@@ -86,7 +106,7 @@ export const useUserStore = defineStore('user', () => {
     }
 
     return {
-        user, errorMsg, loading, getters, actions,
+        user, errorMsg, loading, getters, actions, successMsg,
         logout,
     }
 })

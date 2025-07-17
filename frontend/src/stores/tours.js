@@ -126,14 +126,15 @@ export const useTourStore = defineStore('tours', () => {
     }
 
     function book() {
-        /*
         if(!user.user) {
             alert('Niste ulogovani! Molimo da se ulogujete')
+            const myRoute = route.fullPath
             router.push({
-                name: 'login'
+                name: 'login',
+                query: { redirect: myRoute }
             })
             return
-        } */
+        }
         active.value = false
         localStorage.setItem('myCart', JSON.stringify(bookedTours.value))
         router.push({

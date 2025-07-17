@@ -2,6 +2,11 @@
   import { ref } from 'vue'
   import { useUserStore } from '@/stores/user';
   const user = useUserStore()
+
+  const outUser = ref({
+    users: true,
+    logout: true
+  })
 </script>
 
 <template>
@@ -55,7 +60,7 @@
                     <v-btn
                       variant="text"
                       rounded
-                      @click="user.logout"
+                      @click="user.actions.logout(outUser)"
                     >
                       Izloguj se
                     </v-btn>

@@ -82,7 +82,7 @@ class User {
             ], JSON_PRETTY_PRINT);
             return true;
         } else {
-            http_response_code(401);
+            //http_response_code(401);
             echo json_encode([
                 'error' => 'Korisnik nije prepoznat, molmo Vas da se ulogujete'
             ], JSON_PRETTY_PRINT);
@@ -499,10 +499,11 @@ class User {
                                     'samesite' => 'Lax'
                                 ]);
                             }
-
+                            $name = $_SESSION['user']['name'];
                             echo json_encode([
                                 'success' => true,
-                                'user' => $_SESSION['user']
+                                'user' => $_SESSION['user'],
+                                'msg' => "Dobrodošli nazad $name!" 
                             ], JSON_PRETTY_PRINT);
                         } else {
                             http_response_code(401);
@@ -541,7 +542,10 @@ class User {
         session_unset();
         session_destroy();
         setcookie('remember_me', '', time() - 3600, '/', '', false, true);
-        echo json_encode(['msg' => "Doviđenja $name"], JSON_PRETTY_PRINT);
+        echo json_encode([
+            'success' => true,
+            'msg' => "Doviđenja $name"
+        ], JSON_PRETTY_PRINT);
     }
 
     // -------------------------  PUT --------------------------------- // 

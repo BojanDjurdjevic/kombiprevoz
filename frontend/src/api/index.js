@@ -70,5 +70,8 @@ export default {
     },
     logUser(users) {
         return axios.post("", users)
-    }
+    }, /* // Realno mi ne treba
+    logout(users) {
+        return axios.post("", users)
+    } */
 }
