@@ -19,20 +19,20 @@ class UserController {
 
     public function handleRequest()
     {
-        if(isset($this->data->user->id)) {
-            $this->user->id = $this->data->user->id;
+        if(isset($this->data->users->id)) {
+            $this->user->id = $this->data->users->id;
         }
-        if(isset($this->data->user->name)) {
-            $this->user->name = $this->data->user->name;
+        if(isset($this->data->users->name)) {
+            $this->user->name = $this->data->users->name;
         }
-        if(isset($this->data->user->email)) {
-            $this->user->email = $this->data->user->email;
+        if(isset($this->data->users->email)) {
+            $this->user->email = $this->data->users->email;
         }
-        if(isset($this->data->user->pass)) {
-            $this->user->pass = $this->data->user->pass;
+        if(isset($this->data->users->pass)) {
+            $this->user->pass = $this->data->users->pass;
         }
-        if(isset($this->data->user->remember)) {
-            $this->user->remember = $this->data->user->remember;
+        if(isset($this->data->users->remember)) {
+            $this->user->remember = $this->data->users->remember;
         }
         if(isset($this->data->new_pass->password)) {
             $this->user->new_pass = $this->data->new_pass->password;
@@ -40,17 +40,17 @@ class UserController {
         if(isset($this->data->new_pass->password)) {
             $this->user->new_pass_confirm = $this->data->new_pass->confirmation_pass;
         }
-        if(isset($this->data->user->status)) {
-            $this->user->status = $this->data->user->status;
+        if(isset($this->data->users->status)) {
+            $this->user->status = $this->data->users->status;
         }
-        if(isset($this->data->user->city)) {
-            $this->user->city = $this->data->user->city;
+        if(isset($this->data->users->city)) {
+            $this->user->city = $this->data->users->city;
         }
-        if(isset($this->data->user->address)) {
-            $this->user->address = $this->data->user->address;
+        if(isset($this->data->users->address)) {
+            $this->user->address = $this->data->users->address;
         }
-        if(isset($this->data->user->phone)) {
-            $this->user->phone = $this->data->user->phone;
+        if(isset($this->data->users->phone)) {
+            $this->user->phone = $this->data->users->phone;
         }
         if(isset($this->data->token)) {
             $this->user->token = $this->data->token;
@@ -88,7 +88,7 @@ class UserController {
                 }
                 break;
             case 'POST':
-                if(isset($this->data->signin) && !empty($this->data->signin)) {
+                if(isset($this->data->users->signin) && !empty($this->data->users->signin)) {
                     if(!empty($this->user->name) && !empty($this->user->email) && !empty($this->user->pass) 
                     && !empty($this->user->address) && !empty($this->user->city) && !empty($this->user->phone)) {
                         $this->user->create();
@@ -103,7 +103,7 @@ class UserController {
                     } else
                     echo json_encode(['error' => 'Nije moguće kreirati korisnika, molimo Vas da unesete sve podatke!']);
                 }
-                if(isset($this->data->login) && !empty($this->data->login)) {
+                if(isset($this->data->users->login) && !empty($this->data->users->login)) {
                     if(!empty($this->user->email) && !empty($this->user->pass)) {
                         $this->user->login();
                     } else

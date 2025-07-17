@@ -2,14 +2,17 @@
 import { ref } from 'vue';
 import { useUserStore } from '@/stores/user';
 
+const user = useUserStore()
+
 const logUser = ref({
     email: '',
-    password: ''
+    pass: '',
+    remember: false
 })
 
 function logSubmit() {
     if(logUser.value.email && logUser.value.password) {
-        alert('Email: ' + logUser.value.email + "\n" + 'Pass: ' + logUser.value.password)
+        user.actions.handleLogin(logUser)
     } else {
         return
     }
@@ -18,7 +21,8 @@ function logSubmit() {
 function clsData() {
     logUser.value = {
         email: null,
-        password: null
+        password: null,
+        remember: false
     }
 }
 
@@ -68,6 +72,10 @@ const rules = {
                     type="password"
                     clearable
                 ></v-text-field>
+                <v-checkbox
+                    v-model="remember"
+                    label="Zapamti me"
+                />
                 <div>
                     <v-btn
                         variant="elevated"

@@ -67,5 +67,8 @@ export default {
 
     isLogged(user) {
         return axios.post("", user)
+    },
+    logUser(users) {
+        return axios.post("", users)
     }
 }

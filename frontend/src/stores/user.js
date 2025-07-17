@@ -1,10 +1,12 @@
 import api from "@/api";
 import router from "@/router";
 import { defineStore } from "pinia";
+import { useRoute } from "vue-router";
 import { ref } from 'vue'
 
 
 export const useUserStore = defineStore('user', () => {
+    const route = useRoute()
     const user = ref(null /*{
         id: 10,
         initials: 'BD',
@@ -40,6 +42,22 @@ export const useUserStore = defineStore('user', () => {
         setUser: (userData) => {
             user.value = userData
         }, 
+        handleLogin: async (logUser) => {
+            loading.value = true
+            try {
+                const res = await api.logUser(logUser)
+                if(res.data.success) {
+                    //user.value = res.data.user
+                    this.setUser(res.data.user)
+                    const redirectPath = route.query.redirect || '/'
+                    router.push(redirectPath)
+                }
+            } catch (error) {
+                errorMsg.value = res.data.error
+            } finally {
+                loading.value = false
+            }
+        },
         logout: () => {
             user.value = null
         }

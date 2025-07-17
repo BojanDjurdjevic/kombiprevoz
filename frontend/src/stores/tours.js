@@ -43,6 +43,13 @@ export const useTourStore = defineStore('tours', () => {
     const active = ref(false)
 
     function addTour(t) {
+        if(!user.user) {
+            alert('Niste ulogovani! Molimo da se ulogujete')
+            router.push({
+                name: 'login'
+            })
+            return
+        }
         active.value = true
         
         const added = {
@@ -114,6 +121,13 @@ export const useTourStore = defineStore('tours', () => {
     }
 
     function book() {
+        if(!user.user) {
+            alert('Niste ulogovani! Molimo da se ulogujete')
+            router.push({
+                name: 'login'
+            })
+            return
+        }
         active.value = false
         localStorage.setItem('myCart', JSON.stringify(bookedTours.value))
         router.push({
