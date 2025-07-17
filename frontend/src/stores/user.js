@@ -20,7 +20,7 @@ export const useUserStore = defineStore('user', () => {
     const loading = ref(false)
 
     const getters = ref({
-        isAuthenticated: (state) => !! user.value
+        isAuthenticated: () => !! user.value
     })
     const actions = ref({
         checkSession: async () => {
@@ -42,18 +42,26 @@ export const useUserStore = defineStore('user', () => {
         setUser: (userData) => {
             user.value = userData
         }, 
-        handleLogin: async (logUser) => {
+        handleLogin: async (users) => {
             loading.value = true
             try {
-                const res = await api.logUser(logUser)
+                const res = await api.logUser(users)
                 if(res.data.success) {
                     //user.value = res.data.user
-                    this.setUser(res.data.user)
+                    actions.value.setUser(res.data.user)
                     const redirectPath = route.query.redirect || '/'
                     router.push(redirectPath)
+                } else {
+                    if(res.data.poruka) {
+                        console.log(res.data.poruka)
+                    }
+                    //console.log('Ušao ali nije prošao')
+                    console.log(res.data)
                 }
             } catch (error) {
-                errorMsg.value = res.data.error
+                console.dir(error, {depth: null})
+                //console.log(error)
+                //errorMsg.value = res.data.error
             } finally {
                 loading.value = false
             }

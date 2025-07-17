@@ -63,7 +63,7 @@ onload = () => {
                 <v-text-field
                     disabled
                 >
-                  Ime:  {{ user.user.fullName }}
+                  Ime:  {{ user.user.name }}
                 </v-text-field>
                 <v-label> Adresa Polaska: </v-label>
                 <v-combobox 

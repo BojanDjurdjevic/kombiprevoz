@@ -14,7 +14,7 @@ use Models\User;
 use Rules\Validator;
 use Rules\Input;
 
-header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Origin: http://localhost:5173');
 header('Content-Type: application/json');
 header('Content-Type: multipart/form-data');
 

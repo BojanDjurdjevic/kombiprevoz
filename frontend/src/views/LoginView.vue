@@ -5,24 +5,28 @@ import { useUserStore } from '@/stores/user';
 const user = useUserStore()
 
 const logUser = ref({
-    email: '',
-    pass: '',
-    remember: false
+    users: {
+        email: '',
+        pass: '',
+        remember: false,
+        login: true 
+    }
 })
 
 function logSubmit() {
-    if(logUser.value.email && logUser.value.password) {
-        user.actions.handleLogin(logUser)
+    if(logUser.value.users.email && logUser.value.users.pass) {
+        user.actions.handleLogin(logUser.value)
     } else {
         return
     }
 }
 
 function clsData() {
-    logUser.value = {
+    logUser.value.users = {
         email: null,
-        password: null,
-        remember: false
+        pass: null,
+        remember: false,
+        login: true
     }
 }
 
@@ -53,7 +57,7 @@ const rules = {
                 class="d-flex flex-column align-center"
             >
                 <v-text-field
-                    v-model="logUser.email"
+                    v-model="logUser.users.email"
                     class="w-75"
                     prepend-icon="mdi-email"
                     type="email"
@@ -63,7 +67,7 @@ const rules = {
                     clearable
                 ></v-text-field>
                 <v-text-field
-                    v-model="logUser.password"
+                    v-model="logUser.users.pass"
                     class="w-75"
                     prepend-icon="mdi-key"
                     label="Lozinka"
@@ -73,7 +77,7 @@ const rules = {
                     clearable
                 ></v-text-field>
                 <v-checkbox
-                    v-model="remember"
+                    v-model="logUser.users.remember"
                     label="Zapamti me"
                 />
                 <div>

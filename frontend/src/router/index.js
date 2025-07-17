@@ -66,6 +66,9 @@ const router = createRouter({
       path: '/korpa',
       name: 'korpa',
       component: BookNow,
+      meta: {
+        requireAuth: true
+      }
     },
     {
       path: '/uredi',

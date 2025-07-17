@@ -3,9 +3,11 @@ import { ref, computed, shallowRef } from 'vue'
 import { useUserStore } from './user'
 import { useMyOrdersStore } from './myorders';
 import router from '@/router';
+import { useRoute } from 'vue-router';
 
 
 export const useTourStore = defineStore('tours', () => {
+    const route = useRoute()
     const user = useUserStore()
     const orders = useMyOrdersStore()
     const mySearch = ref({})
@@ -27,10 +29,10 @@ export const useTourStore = defineStore('tours', () => {
 
     function customAddress() {
         bookedTours.value.forEach(item => {
-            if(item.from == user.user.town) {
+            if(item.from == user.user.city) {
                 item.add_from = user.user.address
                 item.add_to = ''
-            } else if(item.to == user.user.town) {
+            } else if(item.to == user.user.city) {
                 item.add_from = ''
                 item.add_to = user.user.address
             } else {
@@ -43,13 +45,16 @@ export const useTourStore = defineStore('tours', () => {
     const active = ref(false)
 
     function addTour(t) {
+        
         if(!user.user) {
             alert('Niste ulogovani! Molimo da se ulogujete')
+            const myRoute = route.fullPath
             router.push({
-                name: 'login'
+                name: 'login',
+                query: { redirect: myRoute }
             })
             return
-        }
+        } 
         active.value = true
         
         const added = {
@@ -121,13 +126,14 @@ export const useTourStore = defineStore('tours', () => {
     }
 
     function book() {
+        /*
         if(!user.user) {
             alert('Niste ulogovani! Molimo da se ulogujete')
             router.push({
                 name: 'login'
             })
             return
-        }
+        } */
         active.value = false
         localStorage.setItem('myCart', JSON.stringify(bookedTours.value))
         router.push({
