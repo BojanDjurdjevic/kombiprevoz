@@ -1,10 +1,11 @@
+import api from "@/api";
 import router from "@/router";
 import { defineStore } from "pinia";
 import { ref } from 'vue'
 
 
 export const useUserStore = defineStore('user', () => {
-    const user = ref({
+    const user = ref(null /*{
         id: 10,
         initials: 'BD',
         fullName: 'Bojan Đurđević',
@@ -12,7 +13,39 @@ export const useUserStore = defineStore('user', () => {
         town: 'Novi Sad',
         address: 'Gavrila Principa 6',
         phone: '062640273'
+    } */)
+    const errorMsg = ref('')
+    const loading = ref(false)
+
+    const getters = ref({
+        isAuthenticated: (state) => !! user.value
     })
+    const actions = ref({
+        checkSession: async () => {
+            loading.value = true
+            try {
+                const res = await api.isLogged(true)
+                if(res.data.user) {
+                    user.value = res.data.user
+                } else {
+                    user.value = null
+                }
+            } catch (error) {
+                errorMsg.value = res.data.error
+            } finally {
+                loading.value = false
+            }
+            
+        },
+        setUser: (userData) => {
+            user.value = userData
+        }, 
+        logout: () => {
+            user.value = null
+        }
+    })
+
+    
 
     function logout() {
         user.value = null
@@ -23,7 +56,7 @@ export const useUserStore = defineStore('user', () => {
     }
 
     return {
-        user,
+        user, errorMsg, loading, getters, actions,
         logout,
     }
 })

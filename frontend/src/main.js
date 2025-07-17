@@ -13,6 +13,7 @@ import { VNumberInput } from 'vuetify/labs/VNumberInput'
 
 import App from './App.vue'
 import router from './router'
+import { useUserStore } from './stores/user'
 
 
 const vuetify = createVuetify({
@@ -32,4 +33,9 @@ app.use(createPinia())
 app.use(router)
 app.use(vuetify)
 
-app.mount('#app')
+const user = useUserStore()
+user.actions.checkSession().then(() => {
+    app.mount('#app')
+})
+
+

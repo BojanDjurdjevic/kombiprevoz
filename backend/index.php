@@ -48,7 +48,7 @@ $tours = new TourController($db, $data);
 $orders = new OrderController($db, $data, $sid);
 $departures = new DepartureController($db, $data);
 
-if(isset($data->user) && !empty($data->user->id)) 
+if(isset($data->user) && !empty($data->user)) 
 $isLoged = User::isLoged( $db);
 else $isLoged = false;
 
