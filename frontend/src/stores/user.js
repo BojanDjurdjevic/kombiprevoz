@@ -7,6 +7,9 @@ import { ref } from 'vue'
 
 export const useUserStore = defineStore('user', () => {
     const route = useRoute()
+    const isLoggedUser = ref({
+        user: true
+    })
     const user = ref(null /*{
         id: 10,
         initials: 'BD',
@@ -24,9 +27,10 @@ export const useUserStore = defineStore('user', () => {
     })
     const actions = ref({
         checkSession: async () => {
+            isLoggedUser.value.user = true
             loading.value = true
             try {
-                const res = await api.isLogged(true)
+                const res = await api.isLogged(isLoggedUser.value)
                 if(res.data.user) {
                     user.value = res.data.user
                 } else {
