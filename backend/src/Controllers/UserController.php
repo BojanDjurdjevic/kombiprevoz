@@ -31,6 +31,9 @@ class UserController {
         if(isset($this->data->user->pass)) {
             $this->user->pass = $this->data->user->pass;
         }
+        if(isset($this->data->user->remember)) {
+            $this->user->remember = $this->data->user->remember;
+        }
         if(isset($this->data->new_pass->password)) {
             $this->user->new_pass = $this->data->new_pass->password;
         }
@@ -90,7 +93,7 @@ class UserController {
                     && !empty($this->user->address) && !empty($this->user->city) && !empty($this->user->phone)) {
                         $this->user->create();
                     } else
-                    echo json_encode(['user' => 'Nije moguće kreirati korisnika, molimo Vas da unesete sve podatke!']);
+                    echo json_encode(['error' => 'Nije moguće kreirati korisnika, molimo Vas da unesete sve podatke!']);
                 }
                 if(isset($this->data->byAdmin) && !empty($this->data->byAdmin)) {
                     if(!empty($this->user->name) && !empty($this->user->email) && !empty($this->user->pass) 
@@ -98,13 +101,13 @@ class UserController {
                         if(Validator::isSuper() || Validator::isAdmin()) $this->user->createByAdmin();
                         else echo json_encode(['user' => 'Niste autorizovani da kreirate korisnike!']);
                     } else
-                    echo json_encode(['user' => 'Nije moguće kreirati korisnika, molimo Vas da unesete sve podatke!']);
+                    echo json_encode(['error' => 'Nije moguće kreirati korisnika, molimo Vas da unesete sve podatke!']);
                 }
                 if(isset($this->data->login) && !empty($this->data->login)) {
                     if(!empty($this->user->email) && !empty($this->user->pass)) {
                         $this->user->login();
                     } else
-                    echo json_encode(['user' => 'Nije moguće ulogovati se, molimo Vas da unesete sve podatke!']);
+                    echo json_encode(['error' => 'Nije moguće ulogovati se, molimo Vas da unesete sve podatke!']);
                 }
                 if(isset($this->data->logout) && !empty($this->data->logout)) {
                     $this->user->logout();

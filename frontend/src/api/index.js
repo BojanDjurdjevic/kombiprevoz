@@ -62,4 +62,8 @@ export default {
     checkAvailableDates(tours) {
         return axios.get("", {params: {tours}})
     }
+
+    //------------------------------- USER -----------------------//
+
+    
 }

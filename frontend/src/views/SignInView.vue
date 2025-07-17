@@ -169,7 +169,7 @@ const { handleSubmit, handleReset } = useForm({
                 :items="items"
                 label="Adresa"
                 clearable
-                @update:model-value="handleAddress(address.value.value)"
+                
                 ></v-combobox>
 
                 <v-checkbox

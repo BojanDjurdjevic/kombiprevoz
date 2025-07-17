@@ -16,6 +16,7 @@ class User {
     public $pass;
     public $new_pass;
     public $new_pass_confirm;
+    public $remember;
     public $status;
     public $city;
     public $address;
@@ -36,7 +37,43 @@ class User {
     // Check if it the User is logedin:
     public static function isLoged($id, $email, $db)
     {
-        if(isset($_SESSION['user_id']) && $_SESSION['user_id'] == $id && isset($_SESSION['user_name']) && isset($_SESSION['user_email'])) return true;
+        if(!isset($_SESSION['user']) && isset($_COOKIE['remember_me'])) {
+            $sql = "SELECT * FROM users WHERE id = :id";
+            $stmt = $db->prepare($sql);
+
+            $stmt->bindParam(':id', $_COOKIE['remember_me']);
+
+            try {
+                if($stmt->execute()) {
+                    $user = $stmt->fetch(PDO::FETCH_OBJ);
+
+                    if($user) {
+                        $splited = explode(" ", $user->name);
+                        $arr = [];
+                        foreach($splited as $s) {
+                            array_push($arr, strtoupper($s[0]));
+                        }
+                        $initials = implode("", $arr);
+                        
+                        $_SESSION['user'] = [
+                            'id' => $user->id,
+                            'name' => $user->name,
+                            'email' => $user->email,
+                            'status' => $user->status,
+                            'city' => $user->city,
+                            'address' => $user->address,
+                            'phone' => $user->phone,
+                            'initials' => $initials
+                        ];
+                    }
+                }
+            } catch (PDOException $e) {
+                echo json_encode([
+                    'error' => $e->getMessage(),
+                    'msg' => 'Došlo je do greške pri konekcidji na bazu!'
+                ], JSON_PRETTY_PRINT);
+            }
+        }
         elseif(isset($id) && !empty($id)) {
             $find = "SELECT * FROM users WHERE id = '$id' AND deleted = 0";
             $res = $db->query($find);
@@ -327,7 +364,10 @@ class User {
             
             
         } else {
-            echo json_encode(['user' => 'Molimo Vas da pravilno unesete podatke!']);
+            http_response_code(422);
+            echo json_encode([
+                'user' => 'Molimo Vas da pravilno unesete sve podatke!'
+            ]);
         }
         
     }
@@ -422,11 +462,7 @@ class User {
 
                     if($user) {
                         if(password_verify($this->pass, $user->pass)) {
-                            $_SESSION['user_id'] = $user->id;
-                            $_SESSION['user_name'] = $user->name;
-                            $_SESSION['user_email'] = $user->email;
-                            $_SESSION['user_status'] = $user->status;
-                            $_SESSION['sid'] = session_id();
+                            session_regenerate_id();
 
                             $splited = explode(" ", $user->name);
                             $arr = [];
@@ -435,6 +471,17 @@ class User {
                             }
                             $initials = implode("", $arr);
 
+                            $_SESSION['user'] = [
+                                'id' => $user->id,
+                                'name' => $user->name,
+                                'email' => $user->email,
+                                'status' => $user->status,
+                                'city' => $user->city,
+                                'address' => $user->address,
+                                'phone' => $user->phone,
+                                'initials' => $initials
+                            ];
+                            /*
                             $logedUser = [
                                 'id' => $user->id,
                                 'name' => $user->name,
@@ -443,31 +490,58 @@ class User {
                                 "address" => $user->address,
                                 'phone' => $user->phone,
                                 'initials' => $initials
-                            ];
+                            ]; */
+
+                            if($this->remember) {
+                                setcookie('remember_token', $user->id, [
+                                    'expires' => time() + (86400 * 30),
+                                    'path' => "/",
+                                    'secure' => false,
+                                    'httponly' => true,
+                                    'samesite' => 'Lax'
+                                ]);
+                            }
 
                             echo json_encode([
-                                'sid' => $_SESSION['sid'],
-                                'user' => $logedUser
+                                'success' => 'true'
                             ], JSON_PRETTY_PRINT);
-                        } else
-                        echo json_encode(['user' => 'Pogrešan email / lozinka!'], JSON_PRETTY_PRINT);
+                        } else {
+                            http_response_code(401);
+                            echo json_encode([
+                                'success' => false,
+                                'error' => 'Pogrešan email ili lozinka!'
+                            ], JSON_PRETTY_PRINT);
+                        }
+                        
                     } else
-                    echo json_encode(['user' => 'Pogrešan email ili lozinka!'], JSON_PRETTY_PRINT);
+                    http_response_code(401);
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'Pogrešan email ili lozinka!'
+                    ], JSON_PRETTY_PRINT);
                 }
             } catch (PDOException $e) {
                 echo json_encode([
-                    'user' => 'Došlo je do greške pri konektovanju na bazu!',
+                    'error' => 'Došlo je do greške pri konektovanju na bazu!',
                     'msg' => $e->getMessage()
                 ], JSON_PRETTY_PRINT);
             }
-        } else echo json_encode(['user' => 'Pogrešno upisan email! Molimo Vas da unesete validan email!'], JSON_PRETTY_PRINT);
+        } else {
+            http_response_code(401);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Pogrešno upisan email! Molimo Vas da unesete validan email!'
+            ], JSON_PRETTY_PRINT);
+        }
     }
 
     public function logout()
     {
-        echo json_encode(['user' => "Doviđenja {$_SESSION['user_name']}"], JSON_PRETTY_PRINT);
+        $name = $_SESSION['user']['name'];
         session_unset();
         session_destroy();
+        setcookie('remember_me', '', time() - 3600, '/', '', false, true);
+        echo json_encode(['msg' => "Doviđenja {$name}"], JSON_PRETTY_PRINT);
     }
 
     // -------------------------  PUT --------------------------------- // 
