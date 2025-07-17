@@ -77,6 +77,7 @@ class User {
         
         if(isset($_SESSION['user'])) {
             echo json_encode([
+                'success' => true,
                 'user' => $_SESSION['user']
             ], JSON_PRETTY_PRINT);
             return true;
@@ -500,7 +501,8 @@ class User {
                             }
 
                             echo json_encode([
-                                'success' => 'true'
+                                'success' => true,
+                                'user' => $_SESSION['user']
                             ], JSON_PRETTY_PRINT);
                         } else {
                             http_response_code(401);
@@ -510,12 +512,13 @@ class User {
                             ], JSON_PRETTY_PRINT);
                         }
                         
-                    } else
-                    http_response_code(401);
-                    echo json_encode([
-                        'success' => false,
-                        'error' => 'Pogrešan email ili lozinka!'
-                    ], JSON_PRETTY_PRINT);
+                    } else {
+                        http_response_code(401);
+                        echo json_encode([
+                            'success' => false,
+                            'error' => 'Pogrešan email ili lozinka!'
+                        ], JSON_PRETTY_PRINT);
+                    }
                 }
             } catch (PDOException $e) {
                 echo json_encode([
