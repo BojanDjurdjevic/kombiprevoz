@@ -93,9 +93,10 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to, form, next) => {
+router.beforeEach((to, from, next) => {
   const user = useUserStore()
-  if(to.meta.requireAuth && !user.getters.isAuthenticated) {
+  console.log(user)
+  if(to.meta.requireAuth && !user.getters.isAuthenticated(user.user)) {
     next({
       path: '/login',
       query: { redirect: to.fullPath }

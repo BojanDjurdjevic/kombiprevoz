@@ -24,7 +24,7 @@ export const useUserStore = defineStore('user', () => {
     const loading = ref(false)
 
     const getters = ref({
-        isAuthenticated: () => !! user.value
+        isAuthenticated: (value) => !! value || false
     })
     const actions = ref({
         checkSession: async () => {
