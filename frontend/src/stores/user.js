@@ -124,6 +124,7 @@ export const useUserStore = defineStore('user', () => {
             loading.value = true
             try {
                 const res = await api.requestReset(users)
+                console.log(res.data)
                 if(res.data.success) {
                     showSucc(res, 9000)
                 }

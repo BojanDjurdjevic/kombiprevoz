@@ -151,7 +151,7 @@ class User {
     {
         $template = Validator::mailerTemplate($html, $code, $name);
         $mail = new PHPMailer(true);
-        $mail->SMTPDebug = SMTP::DEBUG_SERVER;
+        //$mail->SMTPDebug = SMTP::DEBUG_SERVER;
         $mail->isSMTP();
         $mail->SMTPAuth = true;
 
@@ -175,7 +175,10 @@ class User {
         try {
             $mail->send();
             //http_response_code(200);
-            
+            echo json_encode([
+                        'success' => true,
+                        'msg' => $output
+                    ], JSON_PRETTY_PRINT);
         } catch (Exception $e) {
             echo json_encode([
                 'user' => 'Došlo je do greške!',
@@ -692,10 +695,7 @@ class User {
                     $output = 'Link je upravo poslat na Vašu email adresu. Molimo proverite Vaš email!';
                     
                     $this->sendEmail($html, $token, $this->name, 'Ponistavanje Lozinke', $output);
-                    echo json_encode([
-                        'success' => true,
-                        'msg' => 'Link je upravo poslat na Vašu email adresu. Molimo proverite Vaš email!'
-                    ], JSON_PRETTY_PRINT);
+                    
                     //return $mail; // sbps uiqu hdmt besz  
                 } //else
                 
