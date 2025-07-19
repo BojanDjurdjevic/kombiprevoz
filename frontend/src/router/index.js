@@ -12,6 +12,7 @@ import SignInView from '@/views/SignInView.vue'
 import LoginView from '@/views/LoginView.vue'
 import ResetPassView from '@/views/ResetPassView.vue'
 import { useUserStore } from '@/stores/user'
+import RequestPassResetView from '@/views/RequestPassResetView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -89,6 +90,11 @@ const router = createRouter({
       path: '/password-reset',
       name: 'password-reset',
       component: ResetPassView,
+    },
+    {
+      path: '/request-password-reset',
+      name: 'request-password-reset',
+      component: RequestPassResetView,
     },
   ],
 })

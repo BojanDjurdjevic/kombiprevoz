@@ -32,28 +32,13 @@ function clsData() {
     }
 }
 
-const rules = {
-    required: (value) => !!value || "Obavezno polje.",
-    counter: (value) => value.length <= 21 || "Maksimum 21 karakter",
-    email: (value) => {
-        const pattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-        
-        return pattern.test(value) || 'Neadekvatan e-mail.'
-    },
-    password: (value) => {
-        const pattern = /(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9])(?!.*\s).{8,20}$/
-
-        return pattern.test(value) || 'Neadekvatna Lozinka. '
-    }
-}
-
 </script>
 <template>
     <v-container class="text-center">
         <h1>Uloguj se</h1>
         <v-divider></v-divider>
     </v-container>
-    <v-container class="d-flex justify-center align-center">
+    <v-container class="d-flex flex-column justify-center align-center">
         <v-card class="w-75 h-100 pa-12">
             <v-form @submit.prevent="logSubmit"
                 class="d-flex flex-column align-center"
@@ -64,7 +49,7 @@ const rules = {
                     prepend-icon="mdi-email"
                     type="email"
                     hint="Unesite email"
-                    :rules="[rules.required, rules.email]"
+                    :rules="[user.rules.required, user.rules.email]"
                     label="Email"
                     clearable
                 ></v-text-field>
@@ -74,7 +59,7 @@ const rules = {
                     prepend-icon="mdi-key"
                     label="Lozinka"
                     hint="Unesite lozinku"
-                    :rules="[rules.required, rules.password]"
+                    :rules="[user.rules.required, user.rules.password]"
                     type="password"
                     clearable
                 ></v-text-field>
@@ -96,6 +81,23 @@ const rules = {
                 </div>
                 
             </v-form>
+            
+        </v-card>
+        <v-card class="w-75 h-20 pa-12 ma-3">
+            <div class="d-flex justify-space-between align-center">
+                <p>Nemate nalog: <v-btn
+                    variant="elevated"
+                    color="indigo-darken-4"
+                    class="ma-6" 
+                    to="/registracija"   
+                >Registruj se</v-btn> </p>
+                <p>Zaboraili ste lozinku? <v-btn
+                    variant="elevated"
+                    color="indigo-darken-4"
+                    class="ma-6"    
+                    to="/request-password-reset"
+                >Reset Lozinke</v-btn> </p>
+            </div>
         </v-card>
     </v-container>
 

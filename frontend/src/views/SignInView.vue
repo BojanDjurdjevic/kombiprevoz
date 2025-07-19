@@ -118,9 +118,7 @@ const { handleSubmit, handleReset } = useForm({
         <v-divider></v-divider>
     </v-container>
     <v-container class="d-flex justify-center align-center" height="95%">
-        <v-card class="pa-6 d-flex justify-center align-center" 
-            width="60%"
-            height="100%"
+        <v-card class="pa-6 d-flex justify-center align-center h-100 w-75"
         >
             <v-form @submit.prevent="submit"
                 class="w-75 h-75"
@@ -179,17 +177,30 @@ const { handleSubmit, handleReset } = useForm({
                 type="checkbox"
                 value="1"
                 ></v-checkbox>
+                <div class="d-flex justify-space-between align-center">
+                  <div>
+                    <v-btn
+                    class="me-4"
+                    type="submit"
+                    color="indigo-darken-4"
+                    >
+                    Potvrdi
+                    </v-btn>
 
-                <v-btn
-                class="me-4"
-                type="submit"
-                >
-                Potvrdi
-                </v-btn>
-
-                <v-btn @click="handleReset">
-                Obriši
-                </v-btn>
+                    <v-btn @click="handleReset">
+                    Obriši
+                    </v-btn>
+                  </div>
+                  <div>
+                    <span class="ma-6">Već imate nalog? <v-btn
+                        variant="elevated"
+                        color="indigo-darken-4"
+                        class="ma-6" 
+                        to="/login"   
+                      >Uloguj se</v-btn> 
+                    </span>
+                  </div>
+                </div>
             </v-form>
         </v-card>
     </v-container>

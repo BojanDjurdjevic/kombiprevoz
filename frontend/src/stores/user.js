@@ -19,6 +19,22 @@ export const useUserStore = defineStore('user', () => {
         address: 'Gavrila Principa 6',
         phone: '062640273'
     } */)
+
+    const rules = {
+        required: (value) => !!value || "Obavezno polje.",
+        counter: (value) => value.length <= 21 || "Maksimum 21 karakter",
+        email: (value) => {
+            const pattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+            
+            return pattern.test(value) || 'Neadekvatan e-mail.'
+        },
+        password: (value) => {
+            const pattern = /(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9])(?!.*\s).{8,20}$/
+
+            return pattern.test(value) || 'Neadekvatna Lozinka. '
+        }
+    }
+
     const errorMsg = ref(false)
     const successMsg = ref(false)
     const loading = ref(false)
@@ -106,7 +122,7 @@ export const useUserStore = defineStore('user', () => {
     }
 
     return {
-        user, errorMsg, loading, getters, actions, successMsg,
+        user, errorMsg, loading, getters, actions, successMsg, rules,
         logout,
     }
 })
