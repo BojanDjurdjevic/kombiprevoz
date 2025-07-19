@@ -112,16 +112,18 @@ class User {
                 $user = $stmt->fetch(PDO::FETCH_OBJ);
 
                 if(!$user) {
+                    http_response_code(401);
                     echo json_encode([
                         'token' => 404,
-                        'msg' => 'Token nije pronađen.'
+                        'error' => 'Token nije pronađen. Molimo Vas da ponovo kliknete dugme: Pošalji novi link!'
                     ], JSON_PRETTY_PRINT);
                     return false;
                 }
                 if(strtotime($user->reset_token_expires) <= time()) {
+                    http_response_code(401);
                     echo json_encode([
                         'token' => 404,
-                        'msg' => 'Token je istekao. Molimo Vas da ponovo kliknete link: Zaboravljena Lozinka'
+                        'error' => 'Token je istekao. Molimo Vas da ponovo kliknete dugme: Pošalji novi link!'
                     ], JSON_PRETTY_PRINT);
                     return false;
                 }
@@ -129,11 +131,11 @@ class User {
                 $this->id = $user->id;
                 $this->name = $user->name;
                 $this->email = $user->email;
-
+                /*
                 echo json_encode([
                     'token' => 200,
                     'msg' => 'Token je u redu. Molimo Vas da izmenite lozinku.'
-                ], JSON_PRETTY_PRINT);
+                ], JSON_PRETTY_PRINT); */
                 return true;
             }
         } catch (PDOException $e) {
@@ -172,7 +174,8 @@ class User {
 
         try {
             $mail->send();
-            echo json_encode(['user' => $output]);
+            //http_response_code(200);
+            
         } catch (Exception $e) {
             echo json_encode([
                 'user' => 'Došlo je do greške!',
@@ -679,21 +682,23 @@ class User {
             if($stmt->execute()) {
                 if($stmt->rowCount() == 1) {
                     $html = "
-                        <p>Poštovani/a {{ name }}</p>
+                        <p>Poštovani/a <? echo $this->name ?></p>
                         <br>
                         <p>Da biste promenili vašu zaboravljenu lozinku, molimo Vas da kliknete na link: </p>
                         <p>http://localhost:5173/password-reset?token={{ code }}</p>
                         <br>
                         <p>Srdačan pozdrav od KombiPrevoz tima!</p>
                     ";
-                    $output = 'Link je upravo poslat na Vašu email adresu!';
-                    $this->sendEmail($html, $token, $this->name, 'Poništavanje Lozinke', $output);
-                    //return $mail; // sbps uiqu hdmt besz
-                } else
-                echo json_encode([
-                    'user' => 'Link je upravo poslat na Vašu email adresu. Molimo proverite Vaš email!',
-                    'msg' => 'Korisnik nije pronađen !!!'
-                ]);
+                    $output = 'Link je upravo poslat na Vašu email adresu. Molimo proverite Vaš email!';
+                    
+                    $this->sendEmail($html, $token, $this->name, 'Ponistavanje Lozinke', $output);
+                    echo json_encode([
+                        'success' => true,
+                        'msg' => 'Link je upravo poslat na Vašu email adresu. Molimo proverite Vaš email!'
+                    ], JSON_PRETTY_PRINT);
+                    //return $mail; // sbps uiqu hdmt besz  
+                } //else
+                
             }
         } catch (PDOException $e) {
             echo json_encode([
@@ -720,8 +725,8 @@ class User {
                     try {
                         if($stmt->execute()) {
                             echo json_encode([
-                                'user' => 200,
-                                'msg' => "Poštovani/a {$this->name} spešno ste izmenili lozinku. Sada možete da se ulogujete."
+                                'success' => true,
+                                'msg' => "Poštovani/a $this->name uspešno ste izmenili lozinku. Sada možete da se ulogujete."
                             ], JSON_PRETTY_PRINT);
                         }
                     } catch (PDOException $e) {
@@ -730,16 +735,21 @@ class User {
                         'msg' => $e->getMessage()
                     ], JSON_PRETTY_PRINT);
                     }
-                } else
+                } else {
+                    http_response_code(401);
+                    echo json_encode([
+                        'user' => 404,
+                        'error' => 'Lozinka i potvrda lozinke se ne podudaraju, pokušajte ponovo.'
+                    ], JSON_PRETTY_PRINT);
+                }
+            } else {
+                http_response_code(401);
                 echo json_encode([
                     'user' => 404,
-                    'msg' => 'Vaša nova lozinka mora da se podudara sa potvrdom lozinke. Molmo proverite još jednom i pošaljite ponovo!'
+                    'error' => 'Lozinka nije validna! Lozinka obavezno mora da sadrži najmanje: 8 karaktera, 1 veliko/malo slovo, 1 broj i 1 specijalni karakter.'
                 ], JSON_PRETTY_PRINT);
-            } else
-            echo json_encode([
-                'user' => 404,
-                'msg' => 'Lozinka nije validna! Lozinka obavezno mora da sadrži najmanje: 8 karaktera, 1 veliko/malo slovo, 1 broj i 1 specijalni karakter.'
-            ], JSON_PRETTY_PRINT);
+            }
+            
         }
     }
 

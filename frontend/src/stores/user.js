@@ -39,6 +39,19 @@ export const useUserStore = defineStore('user', () => {
     const successMsg = ref(false)
     const loading = ref(false)
 
+    function showErr(error, time) {
+        errorMsg.value = error.response.data.error
+        setTimeout(() => {
+            errorMsg.value = false
+        }, time)
+    }
+    function showSucc(res, time) {
+        successMsg.value = res.data.msg
+        setTimeout(() => {
+            successMsg.value = false
+        }, time)
+    }
+
     const getters = ref({
         isAuthenticated: (value) => !! value || false
     })
@@ -72,19 +85,20 @@ export const useUserStore = defineStore('user', () => {
                 if(res.data.success) {
                     //user.value = res.data.user
                     actions.value.setUser(res.data.user)
-                    successMsg.value = res.data.msg 
+                    //successMsg.value = res.data.msg 
                     const redirectPath = route.query.redirect || '/'
                     router.push(redirectPath)
-                    setTimeout(() => {
-                        successMsg.value = false
-                    }, 3000)
+                    showSucc(res, 6000)
                 } else {
                     console.log(res.data)
                 }
             } catch (error) {
                 console.dir(error, {depth: null})
-                //console.log(error)
-                //errorMsg.value = res.data.error
+                if(error.response.data.error) {
+                    showErr(error, 9000)
+                } else {
+                    console.log('pogrešno dohvatanje')
+                }
             } finally {
                 loading.value = false
             }
@@ -95,10 +109,7 @@ export const useUserStore = defineStore('user', () => {
                 const res = await api.logUser(users)
                 if(res.data.success) {
                     user.value = null
-                    successMsg.value = res.data.msg 
-                    setTimeout(() => {
-                        successMsg.value = false
-                    }, 4000)
+                    showSucc(res, 4000)
                 } else {
                     console.log(res.data)
                 }
@@ -108,6 +119,35 @@ export const useUserStore = defineStore('user', () => {
                 loading.value = false
                 user.value = null
             }  
+        },
+        requestPassReset: async (users) => {
+            loading.value = true
+            try {
+                const res = await api.requestReset(users)
+                if(res.data.success) {
+                    showSucc(res, 9000)
+                }
+            } catch (error) {
+                console.dir(error)
+            } finally {
+                loading.value = false
+            }
+        },
+        sendToken: async (token) => {
+            loading.value = true
+            try {
+                const res = await api.requestReset(token)
+                if(res.data.success) {
+                    showSucc(res, 9000)
+                    router.push('/login')
+                }
+            } catch (error) {
+                console.dir(error)
+                showErr(error, 9000)
+                router.push('/request-password-reset')
+            } finally {
+                loading.value = false
+            }
         }
     })
 

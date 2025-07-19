@@ -1,15 +1,28 @@
 <script setup>
-    import { useUserStore } from '@/stores/user';
+    import api from '@/api';
+import { useUserStore } from '@/stores/user';
     import { ref } from 'vue';
 
     const user = useUserStore()
     const request = ref({
         users: {
             email: null
-        }
+        },
+        resetPass: null
     })
     function reqSubmit() {
-        console.log(request.value.users.email)
+        
+        if(request.value.users.email) {
+            request.value.users.email = request.value.users.email.trim()
+            request.value.resetPass = true
+            user.actions.requestPassReset(request.value)
+        } else {
+            user.errorMsg = "Neispravno unet Email! Molimo Vas da ispravno unesete email sa kojim je povezan Vaš nalog."
+            setTimeout(() => {
+                user.errorMsg = null
+                return
+            }, 6000)
+        }
     }
     function clsData() {
         request.value.users = {
@@ -20,7 +33,7 @@
 
 <template>
     <v-container class="text-center">
-        <h1>Uloguj se</h1>
+        <h1>Unesite Vaš email, povezan sa vašim nalogom</h1>
         <v-divider></v-divider>
     </v-container>
     <v-container class="d-flex flex-column justify-center align-center">

@@ -74,4 +74,7 @@ export default {
     logout(users) {
         return axios.post("", users)
     } */
+   requestReset(users) {
+        return axios.put("", users)
+   }
 }

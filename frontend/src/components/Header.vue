@@ -114,9 +114,5 @@ if(localStorage.getItem('myCart')) {
         <MyAvatar />
 
       </v-toolbar>
-      <v-alert v-if="user.successMsg"
-        :text="user.successMsg"
-        title="Pozdrav!"
-        type="success"
-      ></v-alert>
+      
 </template>
