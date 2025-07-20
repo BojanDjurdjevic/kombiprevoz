@@ -82,7 +82,7 @@ class User {
             ], JSON_PRETTY_PRINT);
             return true;
         } else {
-            //http_response_code(401);
+            http_response_code(401);
             echo json_encode([
                 'error' => 'Korisnik nije prepoznat, molmo Vas da se ulogujete'
             ], JSON_PRETTY_PRINT);
@@ -92,7 +92,7 @@ class User {
     // Check if the User is owner of account
     public function isOwner()
     {
-        if(isset($_SESSION['user_id']) && !empty($this->id) && $this->id == $_SESSION['user_id']) return true;
+        if(isset($_SESSION['user']) && !empty($this->id) && $this->id == $_SESSION['user']['id']) return true;
         else return false;
     }
 
@@ -558,7 +558,8 @@ class User {
 
     // Update User general data:
     public function update() 
-    {   if($this->isOwner() || Validator::isSuper() || Validator::isAdmin()) {
+    {   
+        if($this->isOwner() || Validator::isSuper() || Validator::isAdmin()) {
             $sql = "UPDATE users SET name = :name, email = :email, city = :city, address = :address, phone = :phone
                     WHERE id = :id and deleted = 0"
             ;
@@ -581,9 +582,6 @@ class User {
 
                 try {
                     if($stmt->execute()) {
-                        $_SESSION['user_name'] = $this->name;
-                        $_SESSION['user_email'] = $this->email;
-
                         $splited = explode(" ", $this->name);
                         $arr = [];
                         foreach($splited as $s) {
@@ -591,17 +589,26 @@ class User {
                         }
                         $initials = implode("", $arr);
 
+                        $_SESSION['user']['name'] = $this->name;
+                        $_SESSION['user']['email'] = $this->email;
+                        $_SESSION['user']['city'] = $this->city;
+                        $_SESSION['user']['address'] = $this->address;
+                        $_SESSION['user']['phone'] = $this->phone;
+                        $_SESSION['user']['initials'] = $initials;
+
                         $logedUser = [
                             'id' => $this->id,
                             'name' => $this->name,
                             'email' => $this->email,
+                            'status' => $_SESSION['user']['status'],
                             'city' => $this->city,
                             "address" => $this->address,
                             'phone' => $this->phone,
                             'initials' => $initials
                         ];
-
+                        http_response_code(200);
                         echo json_encode([
+                            'success' => true,
                             'msg' => 'Uspešno ste ažurirali lične podatke.',
                             'user' => $logedUser
                         ]);
@@ -616,7 +623,10 @@ class User {
             } else {
                 echo json_encode(['user' => 'Nije moguće ažurirati profil. Molimo Vas da pravilno unesete podatke!']);
             }
-        } else echo json_encode(['user' => 'Niste autorizovani da ažurirate profil!']);
+        } else {
+            http_response_code(401);
+            echo json_encode(['error' => 'Niste autorizovani da ažurirate profil!']);
+        } 
     }
 
     // PASSWORD Update

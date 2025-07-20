@@ -1,20 +1,9 @@
 <script setup>
+import ProfileEditForm from '../components/ProfileEditForm.vue';
 import { useUserStore } from '@/stores/user';
 import { ref } from 'vue';
 
 const user = useUserStore()
-
-const profile = ref({
-    user: true,
-    users: {
-        name: user.user.name,
-        email: user.user.email,
-        city: user.user.city,
-        address: user.user.address,
-        phone: user.user.phone
-    },
-    updateProfile: true
-})
 
 const newPass = ref({
     updatePass: true,
@@ -29,12 +18,20 @@ const newPass = ref({
     }
 })
 
+function fill() {
+    user.profile.users.name = user.user.name,
+    user.profile.users.email = user.user.email,
+    user.profile.users.address = user.user.address,
+    user.profile.users.phone = user.user.phone
+    user.profile.users.city = user.user.city
+}
+
 </script>
 
 <template>
     <v-container>
         <h1 class="text-center">Moj Profil</h1>
-        <hr>
+        <v-divider></v-divider>
     </v-container>
     <v-container class="d-flex justify-center">
         <v-card class="w-75 h-75">
@@ -46,39 +43,47 @@ const newPass = ref({
                     <p class="text-center">Ime</p>
                     <p class="text-center font-weight-bold font-italic">{{ user.user.name }}</p>
                 </div>
-                <hr>
+                <v-divider></v-divider>
                 <div class="ma-6 d-flex justify-space-between align-center">
                     <p class="text-center">Email</p>
                     <p class="text-center font-weight-bold font-italic">{{ user.user.email }}</p>
                 </div>
-                <hr>
+                <v-divider></v-divider>
                 <div class="ma-6 d-flex justify-space-between align-center">
                     <p class="text-center">Grad</p>
                     <p class="text-center font-weight-bold font-italic">{{ user.user.city }}</p>
                 </div>
-                <hr>
+                <v-divider></v-divider>
                 <div class="ma-6 d-flex justify-space-between align-center">
                     <p class="text-center">Adresa</p>
                     <p class="text-center font-weight-bold font-italic">{{ user.user.address }}</p>
                 </div>
-                <hr>
+                <v-divider></v-divider>
                 <div class="ma-6 d-flex justify-space-between align-center">
                     <p class="text-center">Telefon</p>
                     <p class="text-center font-weight-bold font-italic">{{ user.user.phone }}</p>
                 </div>
             </v-card-text>
             <v-card-actions class="d-flex justify-center">
-                <v-btn 
-                    color="indigo-darken-4"
-                    variant="elevated"
-                    mb-5
-                    height="3rem"
+                <v-dialog
+                    v-model="user.profileDialog"
+                    max-width="75%"
+                    transition="dialog-transition"
                 >
-                <v-btn 
-                    icon="mdi-pencil-circle"
-                    variant="plain"
-                ></v-btn>
-                Uredi podatke</v-btn>
+                    <template v-slot:activator="{ props: activatorProps }" >
+                        <v-btn 
+                            color="indigo-darken-4"
+                            variant="elevated"
+                            mb-5
+                            height="3rem"
+                            prepend-icon="mdi-pencil-circle"
+                            v-bind="activatorProps"
+                            @click="fill"
+                        >
+                        Uredi podatke</v-btn>
+                    </template>
+                    <ProfileEditForm />
+                </v-dialog>
             </v-card-actions>
         </v-card>
     </v-container>
@@ -130,7 +135,7 @@ const newPass = ref({
                     mb-1
                     height="3rem"
                     min-width="12rem"
-                    prepend-icon="mdi-pencil-circle"
+                    prepend-icon="mdi-checkbox-marked-circle"
                 >
                 
                 Potvrdi</v-btn>

@@ -121,7 +121,10 @@ class UserController {
                 }
                 if(isset($this->data->updatePass) && !empty($this->data->updatePass)) {
                     if($this->user->isOwner()) $this->user->updatePassword();
-                    else echo json_encode(['user' => 'Niste autorizovani da vršite izmene!']);
+                    else {
+                        http_response_code(401);
+                        echo json_encode(['error' => 'Niste autorizovani da vršite izmene!']);
+                    } 
                 }
                 if(isset($this->data->resetPass) && !empty($this->data->resetPass)) {
                     $this->user->resetPassword();

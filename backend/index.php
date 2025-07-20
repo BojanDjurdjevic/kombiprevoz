@@ -64,16 +64,17 @@ if(isset($data->country) && !empty($data->country)) {
     $tours->handleRequest();
 } 
 if(isset($data->orders) && !empty($data->orders)) {
-    if($isLoged) $orders->handleRequest();
+    if(isset($_SESSION['user'])) $orders->handleRequest();
     else {
+        http_response_code(401);
         echo json_encode([
             'user' => 404,
-            'msg' => 'Vaša sesija je istekla, molimo Vas da se ulogujete ponovo!'
+            'error' => 'Vaša sesija je istekla, molimo Vas da se ulogujete ponovo!'
         ], JSON_PRETTY_PRINT);
     }
 }
 if(isset($data->departure) && !empty($data->departure)) {
-    if($isLoged && Validator::isDriver() || Validator::isAdmin() || Validator::isSuper()) 
+    if(isset($_SESSION['user']) && Validator::isDriver() || Validator::isAdmin() || Validator::isSuper()) 
     $departures->handleRequest();
     else {
         echo json_encode([

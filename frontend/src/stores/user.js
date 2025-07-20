@@ -20,6 +20,29 @@ export const useUserStore = defineStore('user', () => {
         phone: '062640273'
     } */)
 
+    const profile = ref({
+        //user: true,
+        users: {
+            id: null,
+            name: null,
+            email: null,
+            city: null,
+            address: null,
+            phone: null
+        },
+        updateProfile: true
+    }) 
+    
+    if(user.value) {
+        profile.value.users.id = user.id,
+        profile.value.users.name = user.name,
+        profile.value.users.email = user.email,
+        profile.value.users.address = user.address,
+        profile.value.users.phone = user.phone
+        profile.value.users.city = user.city
+    }
+     
+
     const rules = {
         required: (value) => !!value || "Obavezno polje.",
         counter: (value) => value.length <= 21 || "Maksimum 21 karakter",
@@ -38,6 +61,7 @@ export const useUserStore = defineStore('user', () => {
     const errorMsg = ref(false)
     const successMsg = ref(false)
     const loading = ref(false)
+    const profileDialog = ref(false)
 
     function showErr(error, time) {
         errorMsg.value = error.response.data.error
@@ -63,12 +87,15 @@ export const useUserStore = defineStore('user', () => {
                 const res = await api.isLogged(isLoggedUser.value)
                 if(res.data.user) {
                     user.value = res.data.user
+                    return true
                 } else {
                     user.value = null
+                    return true
                 }
             } catch (error) {
                 console.log(error)
                 errorMsg.value = res.data.error
+                return false
                 
             } finally {
                 loading.value = false
@@ -149,7 +176,23 @@ export const useUserStore = defineStore('user', () => {
             } finally {
                 loading.value = false
             }
-        }
+        },
+        profileUpdate: async (users) => {
+            loading.value = true
+            try {
+                const res = await api.requestReset(users)
+                console.log(res.data)
+                if(res.data.success) {
+                    showSucc(res, 9000)
+                    user.value = res.data.user
+                    console.log(user.value)
+                }
+            } catch (error) {
+                console.dir(error)
+            } finally {
+                loading.value = false
+            }
+        },
     })
 
     
@@ -163,7 +206,7 @@ export const useUserStore = defineStore('user', () => {
     }
 
     return {
-        user, errorMsg, loading, getters, actions, successMsg, rules,
+        user, errorMsg, loading, getters, actions, successMsg, rules, profileDialog, profile,
         logout,
     }
 })
