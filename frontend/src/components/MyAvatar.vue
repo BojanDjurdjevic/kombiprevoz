@@ -46,13 +46,15 @@
                     <v-btn
                       variant="text"
                       rounded
+                      to="/profil"
                     >
-                      Uredi Profil
+                      Moj Profil
                     </v-btn>
                     <v-divider class="my-3"></v-divider>
                     <v-btn
                       variant="text"
                       rounded
+                      to="/rezervacije"
                     >
                       Moje vožnje
                     </v-btn>

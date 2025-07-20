@@ -13,6 +13,7 @@ import LoginView from '@/views/LoginView.vue'
 import ResetPassView from '@/views/ResetPassView.vue'
 import { useUserStore } from '@/stores/user'
 import RequestPassResetView from '@/views/RequestPassResetView.vue'
+import MyProfileView from '@/views/MyProfileView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -96,6 +97,14 @@ const router = createRouter({
       name: 'request-password-reset',
       component: RequestPassResetView,
     },
+    {
+      path: '/profil',
+      name: 'profil',
+      component: MyProfileView,
+      meta: {
+        requireAuth: true
+      }
+    },
   ],
 })
 
@@ -103,10 +112,15 @@ router.beforeEach((to, from, next) => {
   const user = useUserStore()
   console.log(user)
   if(to.meta.requireAuth && !user.getters.isAuthenticated(user.user)) {
-    next({
-      path: '/login',
-      query: { redirect: to.fullPath }
-    })
+    user.errorMsg = "Niste ulogovani! Molimo da se ulogujete pre nego što pristupite ovoj stranici."
+    setTimeout(() => {
+      next({
+        path: '/login',
+        query: { redirect: to.fullPath }
+      })
+      user.errorMsg = null
+    }, 1000);
+    
   } else {
     next()
   }

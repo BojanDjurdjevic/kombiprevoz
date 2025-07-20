@@ -115,7 +115,7 @@ class User {
                     http_response_code(401);
                     echo json_encode([
                         'token' => 404,
-                        'error' => 'Token nije pronađen. Molimo Vas da ponovo kliknete dugme: Pošalji novi link!'
+                        'error' => 'Token nije pronađen. Molimo Vas da ponovo unesete email i kliknete dugme: Pošalji'
                     ], JSON_PRETTY_PRINT);
                     return false;
                 }
