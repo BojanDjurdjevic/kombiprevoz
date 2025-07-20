@@ -49,8 +49,19 @@ import { useUserStore } from '@/stores/user';
         <v-divider></v-divider>
     </v-container>
     <v-container class="d-flex justify-center align-center" height="80%">
-        <v-card class="pa-6 d-flex justify-center align-center h-100 w-75"
+        <v-card class="pa-6 d-flex flex-column justify-center align-center h-100 w-75"
         >
+            <v-card-title primary-title>
+                <div>
+                    <v-btn @click="user.profileDialog = false"
+                        variant="elevated"
+                        color="error"
+                        prepend-icon="mdi-close-circle"
+                    >
+                    Zatvori
+                    </v-btn>
+                </div>
+            </v-card-title>
             <v-form @submit.prevent="submit"
                 class="w-75 h-75"
                 elevation-9
@@ -100,13 +111,14 @@ import { useUserStore } from '@/stores/user';
                 
                 ></v-text-field>
 
-                <v-card-actions class="w-100">
+                <v-card-actions class="w-100 ">
                     <div class="w-100 pa-3 d-flex justify-space-between">
                         <v-btn
                         class="me-4"
                         type="submit"
                         color="success"
                         variant="elevated"
+                        prepend-icon="mdi-checkbox-marked-circle"
                         >
                         Potvrdi
                         </v-btn>
@@ -124,6 +136,7 @@ import { useUserStore } from '@/stores/user';
                         Obriši sve 
                         </v-btn>
                     </div>
+                    
                 </v-card-actions>
                   
             </v-form>

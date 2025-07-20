@@ -651,7 +651,11 @@ class User {
 
                         try {
                             if($stmt->execute()) {
-                                echo json_encode(['user' => 'Vaša lozinka je uspešno izmenjena!']);
+                                http_response_code(200);
+                                echo json_encode([
+                                    'success' => true,
+                                    'msg' => 'Vaša lozinka je uspešno izmenjena!'
+                                ]);
                             }
                         } catch (PDOException $e) {
                             echo json_encode([
@@ -660,12 +664,14 @@ class User {
                             ], JSON_PRETTY_PRINT);
                         }
                     } else 
+                    http_response_code(401);
                     echo json_encode([
-                        'user' => 'Nedovoljno jaka lozinka! Lozinka mora sadržati najmenje: 1 karakter, 1 malo/veliko slovo i 1 broj.'
+                        'error' => 'Nedovoljno jaka lozinka! Lozinka mora sadržati najmenje: 1 karakter, 1 malo/veliko slovo i 1 broj.'
                     ], JSON_PRETTY_PRINT);
                 } else
+                    http_response_code(401);
                     echo json_encode([
-                        'user' => 'Lozinka i potvrda lozinke se ne poklapaju. Molimo pokušajte ponovo.'
+                        'error' => 'Lozinka i potvrda lozinke se ne poklapaju. Molimo pokušajte ponovo.'
                     ], JSON_PRETTY_PRINT);
                 
             } else echo json_encode(['user' => 'Pogrešana trenutna lozinka! Molimo Vas da unesete važeću lozinku'], JSON_PRETTY_PRINT);

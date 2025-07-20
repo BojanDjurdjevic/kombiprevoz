@@ -1,4 +1,5 @@
 <script setup>
+import router from '@/router';
 import ProfileEditForm from '../components/ProfileEditForm.vue';
 import { useUserStore } from '@/stores/user';
 import { ref } from 'vue';
@@ -7,7 +8,6 @@ const user = useUserStore()
 
 const newPass = ref({
     updatePass: true,
-    user: true,
     users: {
         id: user.user.id,
         pass: ''
@@ -24,6 +24,20 @@ function fill() {
     user.profile.users.address = user.user.address,
     user.profile.users.phone = user.user.phone
     user.profile.users.city = user.user.city
+}
+
+function submitPass() {
+    if(newPass.value.users.pass && newPass.value.new_pass.password && newPass.value.new_pass.confirmation_pass) {
+        if(user.actions.checkSession()) {
+            user.actions.requestPassReset(newPass.value)
+        }
+    } else {
+        user.errorMsg = "Niste ulogovani, molimo vas da se prvo ulogujete!"
+        return setTimeout(() => {
+            user.errorMsg = false
+            router.push('/login')
+        }, 2000)
+    }
 }
 
 </script>
@@ -92,10 +106,13 @@ function fill() {
         <v-card class="w-75 h-75 pa-12">
             <v-card-title primary-title>
                 <h2 class="text-center">Promena Lozinke</h2>
+                <v-divider></v-divider>
             </v-card-title>
             <v-spacer></v-spacer>
+            <v-form @submit.prevent="submitPass">
             <v-card-text>
-                <div class="w-100 d-flex justify-center">
+                
+                <div class="w-100 d-flex flex-column align-center">
                     <v-text-field
                         v-model="newPass.users.pass"
                         class="w-75 text-center"
@@ -136,10 +153,12 @@ function fill() {
                     height="3rem"
                     min-width="12rem"
                     prepend-icon="mdi-checkbox-marked-circle"
+                    type="submit"
                 >
                 
                 Potvrdi</v-btn>
             </v-card-actions>
+            </v-form>
         </v-card>
     </v-container>
 </template>
