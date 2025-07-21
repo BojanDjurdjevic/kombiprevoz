@@ -10,13 +10,17 @@ const user = useUserStore()
 const dest = useDestStore()
 
 const newUser = ref({
-    initials: '',
-    name: '',
-    email: '',
-    password: '',
-    town: '',
-    address: '',
-    phone: ''
+  users: {
+      name: '',
+      email: '',
+      password: '',
+      city: '',
+      address: '',
+      phone: '',
+      remember: false,
+      signin: true
+  }
+   
 })
 
 const { handleSubmit, handleReset } = useForm({
@@ -24,37 +28,40 @@ const { handleSubmit, handleReset } = useForm({
       name (value) {
         if (value?.length >= 2) return true
 
-        return 'Name needs to be at least 2 characters.'
+        return 'Ime mora imati najmanje 3 slova.'
       },
       phone (value) {
         if (/^[0-9-]{7,}$/.test(value)) return true
 
-        return 'Phone number needs to be at least 7 digits.'
+        return 'Broj telefona mora imati najmanje 7 cifara.'
       },
       email (value) {
-        if (/^[a-z.-]+@[a-z.-]+\.[a-z]+$/i.test(value)) return true
+        if (/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/i.test(value)) return true
 
-        return 'Must be a valid e-mail.'
+        return 'Molimo Vas unesite validan e-mail.'
       },
       password (value) {
         if (/(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9])(?!.*\s).{8,20}/i.test(value)) return true
 
-        return 'Must be a valid password.'
+        return 'Lozinka mora imati minimum 8 karaktera, 1 malo/veliko slovo i jedan specijalni karakter.'
       },
       city (value) {
         if (value) return true
 
-        return 'Select an item.'
+        return 'Upišite Vaš grad.'
       },
       address (value) {
         if (value) return true
 
-        return 'Select an item.'
+        return 'Upišite Vašu adresu.'
       },
       checkbox (value) {
-        if (value === '1') return true
+        if (value === true) return true
 
-        return 'Must be checked.'
+        return 'Mora biti označeno!'
+      },
+      checkbox2 (value) {
+        return true
       },
     },
   })
@@ -65,7 +72,7 @@ const { handleSubmit, handleReset } = useForm({
   const city = useField('city')
   const address = useField('address')
   const checkbox = useField('checkbox')
-  
+  const checkbox2 = useField('checkbox2')
 
   const items = ref([
     'Item 1',
@@ -75,23 +82,8 @@ const { handleSubmit, handleReset } = useForm({
   ])
 
   const submit = handleSubmit(values => {
+
     alert(JSON.stringify(values, null, 2))
-
-    let init = makeInitials(values.name)
-
-    user.user = {
-        initials: init,
-        fullName: values.name,
-        email: values.email,
-        password: values.password,
-        town: values.city,
-        address: values.address,
-        phone: values.phone
-    }
-
-    router.push({
-      path: '/'
-    })
   })
 
   function makeInitials(str) {
@@ -100,15 +92,7 @@ const { handleSubmit, handleReset } = useForm({
     return first
   }
 
-  async function handleAddress(query) {
-    console.log(query)
-    try {
-      let response = await addApi.getAddress(query)
-      console.log(response)
-    } catch (error) {
-      console.log(error)
-    }
-  }
+  
 
 </script>
 
@@ -118,10 +102,10 @@ const { handleSubmit, handleReset } = useForm({
         <v-divider></v-divider>
     </v-container>
     <v-container class="d-flex justify-center align-center" height="95%">
-        <v-card class="pa-6 d-flex justify-center align-center h-100 w-75"
+        <v-card class="pa-3 d-flex justify-center align-center h-100 w-75"
         >
             <v-form @submit.prevent="submit"
-                class="w-75 h-75"
+                class="w-75"
             >
                 <v-text-field
                 v-model="name.value.value"
@@ -153,13 +137,13 @@ const { handleSubmit, handleReset } = useForm({
                 clearable
                 ></v-text-field>
 
-                <v-select
+                <v-combobox
                 v-model="city.value.value"
                 :error-messages="city.errorMessage.value"
                 :items="dest.cities.Srbija"
                 label="Grad"
                 clearable
-                ></v-select>
+                ></v-combobox>
 
                 <v-combobox
                 v-model="address.value.value"
@@ -173,10 +157,13 @@ const { handleSubmit, handleReset } = useForm({
                 <v-checkbox
                 v-model="checkbox.value.value"
                 :error-messages="checkbox.errorMessage.value"
-                label="Option"
+                label="Saglasan sam sa uslovima korišćenja sajta KombiPrevoz."
                 type="checkbox"
-                value="1"
                 ></v-checkbox>
+                <v-checkbox
+                    v-model="newUser.users.remember"
+                    label="Zapamti me"
+                />
                 <div class="d-flex justify-space-between align-center">
                   <div>
                     <v-btn

@@ -110,6 +110,31 @@ export const useUserStore = defineStore('user', () => {
         setUser: (userData) => {
             user.value = userData
         }, 
+        handleSignin: async (users) => {
+            loading.value = true
+            try {
+                const res = await api.logUser(users)
+                if(res.data.success) {
+                    //user.value = res.data.user
+                    actions.value.setUser(res.data.user)
+                    //successMsg.value = res.data.msg 
+                    const redirectPath = route.query.redirect || '/'
+                    router.push(redirectPath)
+                    showSucc(res, 6000)
+                } else {
+                    console.log(res.data)
+                }
+            } catch (error) {
+                console.dir(error, {depth: null})
+                if(error.response.data.error) {
+                    showErr(error, 9000)
+                } else {
+                    console.log('pogrešno dohvatanje')
+                }
+            } finally {
+                loading.value = false
+            }
+        },
         handleLogin: async (users) => {
             loading.value = true
             try {

@@ -92,8 +92,11 @@ class UserController {
                     if(!empty($this->user->name) && !empty($this->user->email) && !empty($this->user->pass) 
                     && !empty($this->user->address) && !empty($this->user->city) && !empty($this->user->phone)) {
                         $this->user->create();
-                    } else
-                    echo json_encode(['error' => 'Nije moguće kreirati korisnika, molimo Vas da unesete sve podatke!']);
+                    } else {
+                        http_response_code(422);
+                        echo json_encode(['error' => 'Nije moguće kreirati korisnika, molimo Vas da unesete sve podatke!']);
+                    }
+                    
                 }
                 if(isset($this->data->byAdmin) && !empty($this->data->byAdmin)) {
                     if(!empty($this->user->name) && !empty($this->user->email) && !empty($this->user->pass) 

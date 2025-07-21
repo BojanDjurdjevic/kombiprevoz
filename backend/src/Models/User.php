@@ -328,13 +328,13 @@ class User {
             $stmt = $this->db->prepare($sql);
 
             $this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
-            $this->name = htmlspecialchars(strip_tags($this->name), ENT_QUOTES);
-            $this->email = htmlspecialchars(strip_tags($this->email), ENT_QUOTES);
+            $this->name = htmlspecialchars(strip_tags(trim($this->name)), ENT_QUOTES);
+            $this->email = htmlspecialchars(strip_tags(trim($this->email)), ENT_QUOTES);
             //$this->pass = htmlspecialchars(strip_tags($this->pass), ENT_QUOTES);
             $this->status = htmlspecialchars(strip_tags($this->status), ENT_QUOTES);
-            $this->city = htmlspecialchars(strip_tags($this->city), ENT_QUOTES);
-            $this->address = htmlspecialchars(strip_tags($this->address), ENT_QUOTES);
-            $this->phone = htmlspecialchars(strip_tags($this->phone), ENT_QUOTES);
+            $this->city = htmlspecialchars(strip_tags(trim($this->city)), ENT_QUOTES);
+            $this->address = htmlspecialchars(strip_tags(trim($this->address)), ENT_QUOTES);
+            $this->phone = htmlspecialchars(strip_tags(trim($this->phone)), ENT_QUOTES);
 
             $hashed = password_hash($this->pass, PASSWORD_DEFAULT);
 
@@ -348,22 +348,82 @@ class User {
             
             try {
                 if($stmt->execute()) {
-                    echo json_encode(['user' => [
-                        'msg' => 'Novi korisnik je uspešno kreiran.',
-                        'user_id' => $this->db->lastInsertId()
-                        ]
-                    ]);
+                    $this->id = $this->db->lastInsertId(); 
+                    $sql = "SELECT * FROM users WHERE id = :id";
+                    $stmt = $this->db->prepare($sql);
+                    $stmt->bindParam(':id', $this->id);
+
+                    try {
+                        if($stmt->execute()) {
+                            $user = $stmt->fetch(PDO::FETCH_OBJ);
+                            if($user) {
+                                session_regenerate_id();
+
+                                $splited = explode(" ", $user->name);
+                                $arr = [];
+                                foreach($splited as $s) {
+                                    array_push($arr, strtoupper($s[0]));
+                                }
+                                $initials = implode("", $arr);
+
+                                $_SESSION['user'] = [
+                                    'id' => $user->id,
+                                    'name' => $user->name,
+                                    'email' => $user->email,
+                                    'status' => $user->status,
+                                    'city' => $user->city,
+                                    'address' => $user->address,
+                                    'phone' => $user->phone,
+                                    'initials' => $initials
+                                ];
+
+                                if($this->remember) {
+                                    setcookie('remember_token', $user->id, [
+                                        'expires' => time() + (86400 * 30),
+                                        'path' => "/",
+                                        'secure' => false,
+                                        'httponly' => true,
+                                        'samesite' => 'Lax'
+                                    ]);
+                                }
+                                $name = $_SESSION['user']['name'];
+                                echo json_encode([
+                                    'success' => true,
+                                    'user' => $_SESSION['user'],
+                                    'msg' => "Dobrodošli $name! Uspešno ste se registrovali." 
+                                ], JSON_PRETTY_PRINT);
+                            } else {
+                                http_response_code(422);
+                                echo json_encode([
+                                    'error' => 'Novi korisnik je uspešno kreiran, ali nije ulogovan. Molimo Vas da se ulogujete!',
+                                    'status' => 422
+                                ]);
+                            }
+                        }
+                    } catch (PDOException $e) {
+                        http_response_code(500);
+                        echo json_encode([
+                            'status' => 500,
+                            "error" => 'Molimo Vas da se ulogujete.',
+                            'msg' => $e->getMessage()
+                        ]); 
+                    }
+
+                    
                 }
             } catch (PDOException $e) {
                 if($e->getCode() == 23000) {
+                    http_response_code(422);
                     echo json_encode([
-                        "user" => 'Email nije dostupan! Molimo Vas da probate sa drugim.'
+                        "error" => 'Email nije dostupan! Molimo Vas da probate sa drugim.'
                     ]);
-                } else 
-                echo json_encode([
-                    'status' => 500,
-                    "user" => 'Nije moguće kreirati novog korisnika.'
-                ]); 
+                } else {
+                    http_response_code(500);
+                    echo json_encode([
+                        'status' => 500,
+                        "error" => 'Nije moguće kreirati novog korisnika.'
+                    ]); 
+                }
             }
             
             
@@ -485,16 +545,6 @@ class User {
                                 'phone' => $user->phone,
                                 'initials' => $initials
                             ];
-                            /*
-                            $logedUser = [
-                                'id' => $user->id,
-                                'name' => $user->name,
-                                'email' => $user->email,
-                                'city' => $user->city,
-                                "address" => $user->address,
-                                'phone' => $user->phone,
-                                'initials' => $initials
-                            ]; */
 
                             if($this->remember) {
                                 setcookie('remember_token', $user->id, [
@@ -614,14 +664,16 @@ class User {
                         ]);
                     }
                 } catch(PDOException $e) {
+                    http_response_code(500);
                     echo json_encode([
-                        'user' => 'Došlo je do greške prilikom ažuriranja. Molimo obratite se našoj podršci!', 
-                        'error' => $e->getMessage()
+                        'error' => 'Došlo je do greške prilikom ažuriranja. Molimo obratite se našoj podršci!', 
+                        'msg' => $e->getMessage()
                     ]);
                 }
                 
             } else {
-                echo json_encode(['user' => 'Nije moguće ažurirati profil. Molimo Vas da pravilno unesete podatke!']);
+                http_response_code(422);
+                echo json_encode(['error' => 'Nije moguće ažurirati profil. Molimo Vas da pravilno unesete podatke!']);
             }
         } else {
             http_response_code(401);
