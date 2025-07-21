@@ -30,12 +30,14 @@ function submitPass() {
     if(newPass.value.users.pass && newPass.value.new_pass.password && newPass.value.new_pass.confirmation_pass) {
         if(user.actions.checkSession()) {
             user.actions.requestPassReset(newPass.value)
+            newPass.value.users.pass = ''
+            newPass.value.new_pass.password = ''
+            newPass.value.new_pass.confirmation_pass = ''
         }
     } else {
-        user.errorMsg = "Niste ulogovani, molimo vas da se prvo ulogujete!"
+        user.errorMsg = "Molimo vas da pravilno popunite podatke!"
         return setTimeout(() => {
             user.errorMsg = false
-            router.push('/login')
         }, 2000)
     }
 }
@@ -48,7 +50,7 @@ function submitPass() {
         <v-divider></v-divider>
     </v-container>
     <v-container class="d-flex justify-center">
-        <v-card class="w-75 h-75">
+        <v-card class="w-75 h-75" z-index="0">
             <v-card-title primary-title>
                 <h2 class="text-center">Lični podaci</h2>
             </v-card-title>

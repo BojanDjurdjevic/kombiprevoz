@@ -15,6 +15,8 @@ const user = useUserStore()
           :text="user.successMsg"
           title="Pozdrav!"
           type="success"
+          class="position-sticky top-0 pa-3"
+          elevation="12"
         ></v-alert>
       </v-fade-transition>
       <v-fade-transition mode="out-in">
@@ -22,6 +24,9 @@ const user = useUserStore()
           :text="user.errorMsg"
           title="Greška!"
           type="error"
+          class="position-sticky top-0 pa-3"
+          elevation="12"
+          z-index="6"
         ></v-alert>
       </v-fade-transition>
       <v-fade-transition mode="out-in">

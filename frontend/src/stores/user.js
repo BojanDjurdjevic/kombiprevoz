@@ -94,7 +94,12 @@ export const useUserStore = defineStore('user', () => {
                 }
             } catch (error) {
                 console.log(error)
-                errorMsg.value = res.data.error
+                if(error.response.data.error) {
+                    successMsg.value = "Dobrodošli na sajt Kombiprevoz!"
+                    setTimeout(() => {
+                        successMsg.value = false
+                    }, 1000)
+                }               
                 return false
                 
             } finally {
@@ -157,6 +162,7 @@ export const useUserStore = defineStore('user', () => {
                 }
             } catch (error) {
                 console.dir(error)
+                showErr(error, 6000)
             } finally {
                 loading.value = false
             }

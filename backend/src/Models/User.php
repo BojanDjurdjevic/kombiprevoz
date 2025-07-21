@@ -663,20 +663,26 @@ class User {
                                 'msg' => $e->getMessage()
                             ], JSON_PRETTY_PRINT);
                         }
-                    } else 
-                    http_response_code(401);
-                    echo json_encode([
-                        'error' => 'Nedovoljno jaka lozinka! Lozinka mora sadržati najmenje: 1 karakter, 1 malo/veliko slovo i 1 broj.'
-                    ], JSON_PRETTY_PRINT);
-                } else
+                    } else {
+                        http_response_code(401);
+                        echo json_encode([
+                            'error' => 'Nedovoljno jaka lozinka! Lozinka mora sadržati najmenje: 1 karakter, 1 malo/veliko slovo i 1 broj.'
+                        ], JSON_PRETTY_PRINT);
+                    }
+                } else {
                     http_response_code(401);
                     echo json_encode([
                         'error' => 'Lozinka i potvrda lozinke se ne poklapaju. Molimo pokušajte ponovo.'
                     ], JSON_PRETTY_PRINT);
-                
-            } else echo json_encode(['user' => 'Pogrešana trenutna lozinka! Molimo Vas da unesete važeću lozinku'], JSON_PRETTY_PRINT);
-        } else echo json_encode(['user' => 'Nije pronađen korisnik, molimo da nas kontaktirate.'], JSON_PRETTY_PRINT);
-        
+                } 
+            } else {
+                http_response_code(401);
+                echo json_encode(['error' => 'Pogrešana trenutna lozinka! Molimo Vas da unesete važeću lozinku'], JSON_PRETTY_PRINT);
+            } 
+        } else {
+            http_response_code(401);
+            echo json_encode(['error' => 'Nije pronađen korisnik, molimo da nas kontaktirate.'], JSON_PRETTY_PRINT);
+        }       
     }
 
     // Reset Password
