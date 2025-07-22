@@ -96,6 +96,7 @@ export const useUserStore = defineStore('user', () => {
                 console.log(error)
                 if(error.response.data.error) {
                     successMsg.value = "Dobrodošli na sajt Kombiprevoz!"
+                    user.value = null
                     setTimeout(() => {
                         successMsg.value = false
                     }, 1000)
@@ -128,6 +129,9 @@ export const useUserStore = defineStore('user', () => {
                 console.dir(error, {depth: null})
                 if(error.response.data.error) {
                     showErr(error, 9000)
+                    if(error.response.data.status === 500) {
+                        router.push('/login')
+                    }
                 } else {
                     console.log('pogrešno dohvatanje')
                 }
@@ -251,4 +255,6 @@ export const useUserStore = defineStore('user', () => {
         address: 'Gavrila Principa 6',
         phone: '062640273'
     }
+
+    KasacPrasac123!
  */

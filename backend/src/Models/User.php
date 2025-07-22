@@ -82,7 +82,7 @@ class User {
             ], JSON_PRETTY_PRINT);
             return true;
         } else {
-            http_response_code(401);
+            http_response_code(422);
             echo json_encode([
                 'error' => 'Korisnik nije prepoznat, molmo Vas da se ulogujete'
             ], JSON_PRETTY_PRINT);
@@ -320,8 +320,8 @@ class User {
     public function create()
     {
         if(Validator::validateString($this->name) && Validator::validatePassword($this->pass)
-            && filter_var($this->email, FILTER_VALIDATE_EMAIL) && Validator::validateString($this->address)
-            && Validator::validateString($this->city) && filter_var($this->phone, FILTER_VALIDATE_INT)) {
+            && filter_var($this->email, FILTER_VALIDATE_EMAIL) /* && Validator::validateString($this->address)
+            && Validator::validateString($this->city) && filter_var($this->phone, FILTER_VALIDATE_INT) */) {
             $sql = "INSERT INTO users SET name = :name, email = :email, pass = :pass, status = :status,
                     city = :city, address = :address, phone = :phone"
             ;
@@ -331,7 +331,7 @@ class User {
             $this->name = htmlspecialchars(strip_tags(trim($this->name)), ENT_QUOTES);
             $this->email = htmlspecialchars(strip_tags(trim($this->email)), ENT_QUOTES);
             //$this->pass = htmlspecialchars(strip_tags($this->pass), ENT_QUOTES);
-            $this->status = htmlspecialchars(strip_tags($this->status), ENT_QUOTES);
+            $this->status = htmlspecialchars(strip_tags('User'), ENT_QUOTES);
             $this->city = htmlspecialchars(strip_tags(trim($this->city)), ENT_QUOTES);
             $this->address = htmlspecialchars(strip_tags(trim($this->address)), ENT_QUOTES);
             $this->phone = htmlspecialchars(strip_tags(trim($this->phone)), ENT_QUOTES);
@@ -341,7 +341,7 @@ class User {
             $stmt->bindParam(':name', $this->name);
             $stmt->bindParam(':email', $this->email);
             $stmt->bindParam(':pass', $hashed);
-            $stmt->bindParam(':status', 'User');
+            $stmt->bindParam(':status', $this->status);
             $stmt->bindParam(':city', $this->city);
             $stmt->bindParam(':address', $this->address);
             $stmt->bindParam(':phone', $this->phone);
@@ -418,9 +418,9 @@ class User {
                         "error" => 'Email nije dostupan! Molimo Vas da probate sa drugim.'
                     ]);
                 } else {
-                    http_response_code(500);
+                    http_response_code(422);
                     echo json_encode([
-                        'status' => 500,
+                        'status' => 422,
                         "error" => 'Nije moguće kreirati novog korisnika.'
                     ]); 
                 }
@@ -430,7 +430,7 @@ class User {
         } else {
             http_response_code(422);
             echo json_encode([
-                'user' => 'Molimo Vas da pravilno unesete sve podatke!'
+                'error' => 'Molimo Vas da pravilno unesete sve podatke!'
             ]);
         }
         

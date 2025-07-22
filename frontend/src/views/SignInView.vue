@@ -13,7 +13,7 @@ const newUser = ref({
   users: {
       name: '',
       email: '',
-      password: '',
+      pass: '',
       city: '',
       address: '',
       phone: '',
@@ -22,6 +22,7 @@ const newUser = ref({
   }
    
 })
+const remember = ref(false)
 
 const { handleSubmit, handleReset } = useForm({
     validationSchema: {
@@ -40,7 +41,7 @@ const { handleSubmit, handleReset } = useForm({
 
         return 'Molimo Vas unesite validan e-mail.'
       },
-      password (value) {
+      pass (value) {
         if (/(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9])(?!.*\s).{8,20}/i.test(value)) return true
 
         return 'Lozinka mora imati minimum 8 karaktera, 1 malo/veliko slovo i jedan specijalni karakter.'
@@ -59,20 +60,20 @@ const { handleSubmit, handleReset } = useForm({
         if (value === true) return true
 
         return 'Mora biti označeno!'
-      },
-      checkbox2 (value) {
-        return true
-      },
+      }, /*
+      remember (value) {
+        return value
+      }, */
     },
   })
   const name = useField('name')
   const phone = useField('phone')
   const email = useField('email')
-  const password = useField('password')
+  const pass = useField('pass')
   const city = useField('city')
   const address = useField('address')
   const checkbox = useField('checkbox')
-  const checkbox2 = useField('checkbox2')
+  //const remember = useField('remember')
 
   const items = ref([
     'Item 1',
@@ -82,8 +83,12 @@ const { handleSubmit, handleReset } = useForm({
   ])
 
   const submit = handleSubmit(values => {
-
-    alert(JSON.stringify(values, null, 2))
+    newUser.value.users = values
+    newUser.value.users.remember = remember.value
+    newUser.value.users.signin = true
+    console.log(newUser.value)
+    //alert(JSON.stringify(values, null, 2))
+    user.actions.handleSignin(newUser.value)
   })
 
   function makeInitials(str) {
@@ -123,8 +128,8 @@ const { handleSubmit, handleReset } = useForm({
                 ></v-text-field>
 
                 <v-text-field
-                v-model="password.value.value"
-                :error-messages="password.errorMessage.value"
+                v-model="pass.value.value"
+                :error-messages="pass.errorMessage.value"
                 label="Lozinka"
                 clearable
                 ></v-text-field>
@@ -161,8 +166,9 @@ const { handleSubmit, handleReset } = useForm({
                 type="checkbox"
                 ></v-checkbox>
                 <v-checkbox
-                    v-model="newUser.users.remember"
+                    v-model="remember"
                     label="Zapamti me"
+                    type="checkbox"
                 />
                 <div class="d-flex justify-space-between align-center">
                   <div>
