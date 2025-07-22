@@ -1,13 +1,17 @@
 <script setup>
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useUserStore } from '@/stores/user';
 import { useDestStore } from '@/stores/destinations';
 import { useField, useForm } from 'vee-validate';
 import router from '@/router';
+import api from '@/api';
+import { useSearchStore } from '@/stores/search';
+
 //import addApi from '../api/address';
 
 const user = useUserStore()
 const dest = useDestStore()
+const search = useSearchStore()
 
 const newUser = ref({
   users: {
@@ -46,10 +50,15 @@ const { handleSubmit, handleReset } = useForm({
 
         return 'Lozinka mora imati minimum 8 karaktera, 1 malo/veliko slovo i jedan specijalni karakter.'
       },
+      country (value) {
+        if (value) return true
+
+        return 'Odaberite Državu.'
+      },
       city (value) {
         if (value) return true
 
-        return 'Upišite Vaš grad.'
+        return 'Odaberite Vaš grad.'
       },
       address (value) {
         if (value) return true
@@ -70,6 +79,7 @@ const { handleSubmit, handleReset } = useForm({
   const phone = useField('phone')
   const email = useField('email')
   const pass = useField('pass')
+  const country = useField('country')
   const city = useField('city')
   const address = useField('address')
   const checkbox = useField('checkbox')
@@ -87,6 +97,7 @@ const { handleSubmit, handleReset } = useForm({
     newUser.value.users.remember = remember.value
     newUser.value.users.signin = true
     console.log(newUser.value)
+    return
     //alert(JSON.stringify(values, null, 2))
     user.actions.handleSignin(newUser.value)
   })
@@ -97,7 +108,49 @@ const { handleSubmit, handleReset } = useForm({
     return first
   }
 
-  
+  const countries = ref([])
+  const cities = ref([])
+
+  async function getMyCountry() {
+    user.loading = true
+    try {
+      const msg = await api.getCountries(search.allCount)
+      let input = Object.values(msg.data.drzave)
+      countries.value = input
+      console.log(countries.value)
+    } catch(error) {
+      console.log(error)
+    } finally {
+      user.loading = false
+    }
+  }
+
+  onMounted(() => {
+    getMyCountry()
+  })
+
+  async function getMyCity(id) {
+    console.log('poslat id: ', id)
+    user.loading = true
+    let dto = {
+      country_id: id
+    }
+    try {
+      const msg = await api.getCities(dto)
+      //cities.value = Object.values(msg.data.cities)
+      cities.value = []
+      city.value.value = ''
+      msg.data.cities.forEach(item => {
+        cities.value.push(item.name)
+      });
+      //cities.value = msg.data.cities.name
+      console.log(cities.value)
+    } catch(error) {
+      console.log(error)
+    } finally {
+      user.loading = false
+    }
+  }
 
 </script>
 
@@ -142,13 +195,25 @@ const { handleSubmit, handleReset } = useForm({
                 clearable
                 ></v-text-field>
 
-                <v-combobox
+                <v-autocomplete
+                v-model="country.value.value"
+                :error-messages="country.errorMessage.value"
+                :items="countries"
+                item-title="name"
+                item-value="id"
+                label="Država"
+                clearable
+                return-object
+                @update:model-value="val => getMyCity(val.id)"
+                ></v-autocomplete>
+
+                <v-autocomplete
                 v-model="city.value.value"
                 :error-messages="city.errorMessage.value"
-                :items="dest.cities.Srbija"
+                :items="cities"
                 label="Grad"
                 clearable
-                ></v-combobox>
+                ></v-autocomplete>
 
                 <v-combobox
                 v-model="address.value.value"
