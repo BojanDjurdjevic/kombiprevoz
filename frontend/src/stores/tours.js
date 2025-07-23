@@ -142,13 +142,29 @@ export const useTourStore = defineStore('tours', () => {
         })
     }
 
+    const myOrder = ref({
+        orders: {
+            create: {
+
+            }
+        }
+    })
+
     function finishBooking() {
+        console.log("Niz: ", bookedTours.value)
         bookedTours.value.forEach(item => {
-            orders.myorders.push(item)
+            console.log("jedan: ", item)
+            myOrder.value.orders.create = item
+            console.log("Item: ", myOrder.value)
+            orders.myorders.push(myOrder.value)
         })
         bookedTours.value = []
         localStorage.removeItem('avTours')
-        localStorage.removeItem('myCart')
+        localStorage.removeItem('myCart') /*
+        console.log(orders.myorders)
+        orders.myorders.forEach(item => {
+            console.log(item)
+        }) */
         router.push({
             name: 'rezervacije'
         })

@@ -97,7 +97,7 @@ const { handleSubmit, handleReset } = useForm({
     newUser.value.users.remember = remember.value
     newUser.value.users.signin = true
     console.log(newUser.value)
-    return
+    
     //alert(JSON.stringify(values, null, 2))
     user.actions.handleSignin(newUser.value)
   })
