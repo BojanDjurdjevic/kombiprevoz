@@ -58,10 +58,12 @@ export const useUserStore = defineStore('user', () => {
         },
         validStr: (value) => {
             if(value.length < 4) return 'Neadekvatna adresa. Mora imati najmanje 4 karaktera (samo slova i broj).'
-            let forbiden = ["=", ")", "(", "+", "-", "*", "/", "|"]
+            let forbiden = ["=", ")", "(", "+", "-", "*", "/", "|", "!", "<", ">"]
+            let sum = 0
             forbiden.forEach(char => {
-                if(value.includes(char)) return 'Nevalidna adresa. Može sadržati samo slova i brojeve!'
+                if(value.includes(char)) sum++
             })
+            if(sum) return 'Nevalidna adresa. Može sadržati samo slova i brojeve!'
         }
     }
 
@@ -249,7 +251,7 @@ export const useUserStore = defineStore('user', () => {
 
     return {
         user, errorMsg, loading, getters, actions, successMsg, rules, profileDialog, profile,
-        logout,
+        logout, showErr, showSucc,
     }
 })
 

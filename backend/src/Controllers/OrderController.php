@@ -21,7 +21,7 @@ class OrderController {
         //isset($this->data->orders->sid) && $this->data->orders->sid == session_id()
     public function handleRequest()
     {
-        if(isset($_SESSION['user_id']) && $this->data->user->id == $_SESSION['user_id'] || Validator::isSuper() || Validator::isAdmin()) {
+        if(isset($_SESSION['user']) && $this->data->orders->id == $_SESSION['user']['id'] || Validator::isSuper() || Validator::isAdmin()) {
             $request = $_SERVER['REQUEST_METHOD'];
 
             switch($request) {
@@ -188,12 +188,13 @@ class OrderController {
                     }
                     break;
             }    
-        } else
-        echo json_encode([
-            'msg' => 'Vaša sesija je istekla.',
-            'user' => 404,
-            'userid' => $_SESSION['user_id']
-        ], JSON_PRETTY_PRINT);
+        } else {
+            http_response_code(422);
+            echo json_encode([
+                'error' => 'Vaša sesija je istekla.'
+            ], JSON_PRETTY_PRINT);
+        }
+        
         
     }
 }

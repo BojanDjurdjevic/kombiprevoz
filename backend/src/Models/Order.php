@@ -817,14 +817,28 @@ class Order {
                 if($stmt->execute()) {
                     // Mail
                     $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $new_code, 'create');
-
-                    echo json_encode(['msg' => "Uspešno ste rezervisali vožnju. Vaš broj rezervacije je: {$new_code}"], JSON_PRETTY_PRINT);
+                    http_response_code(200);
+                    echo json_encode([
+                        'success' => true,
+                        'msg' => "Uspešno ste rezervisali vožnju. Vaš broj rezervacije je: {$new_code}"
+                    ], JSON_PRETTY_PRINT);
                 }
-                else echo json_encode(['msg' => 'Trenutno nije moguće rezervisati ovu vožnju.'], JSON_PRETTY_PRINT);
-            } else echo json_encode(['msg' => 'Trenutno nije moguće rezervisati ovu vožnju. 
+                else {
+                    http_response_code(422);
+                    echo json_encode([
+                        'error' => 'Trenutno nije moguće rezervisati ovu vožnju.'
+                    ], JSON_PRETTY_PRINT);
+                } 
+            } else {
+                http_response_code(422);
+                echo json_encode(['error' => 'Trenutno nije moguće rezervisati ovu vožnju. 
                                     Nolimo Vas da se obratite našem centru za podršku!'], JSON_PRETTY_PRINT);
-        } else
-        echo json_encode(['msg' => 'Žao nam je, ali nema više slobodnih mesta za ovu vožnju.']);
+            } 
+        } else {
+            http_response_code(422);
+            echo json_encode(['msg' => 'Žao nam je, ali nema više slobodnih mesta za ovu vožnju.']);
+        }
+        
     }
 
     //------------------------------- FUNCTIONS OF PUT METHOD --------------------------------// 

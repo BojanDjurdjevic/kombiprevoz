@@ -25,22 +25,22 @@ class Validator {
 
     public static function isSuper()
     {
-        if(isset($_SESSION['user_status']) && $_SESSION['user_status'] == 'Superadmin') return true;
+        if(isset($_SESSION['user']['status']) && $_SESSION['user']['status'] == 'Superadmin') return true;
         else return false;
     }
     public static function isAdmin()
     {
-        if(isset($_SESSION['user_status']) && $_SESSION['user_status'] == 'Admin') return true;
+        if(isset($_SESSION['user']['status']) && $_SESSION['user']['status'] == 'Admin') return true;
         else return false;
     }
     public static function isUser()
     {
-        if(isset($_SESSION['user_status']) && $_SESSION['user_status'] == 'User') return true;
+        if(isset($_SESSION['user']['status']) && $_SESSION['user']['status'] == 'User') return true;
         else return false;
     }
     public static function isDriver()
     {
-        if(isset($_SESSION['user_status']) && $_SESSION['user_status'] == 'Driver') return true;
+        if(isset($_SESSION['user']['status']) && $_SESSION['user']['status'] == 'Driver') return true;
         else return false;
     }
 

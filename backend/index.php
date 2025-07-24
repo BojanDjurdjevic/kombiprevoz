@@ -66,7 +66,7 @@ if(isset($data->country) && !empty($data->country)) {
 if(isset($data->orders) && !empty($data->orders)) {
     if(isset($_SESSION['user'])) $orders->handleRequest();
     else {
-        http_response_code(401);
+        http_response_code(422);
         echo json_encode([
             'user' => 404,
             'error' => 'Vaša sesija je istekla, molimo Vas da se ulogujete ponovo!'

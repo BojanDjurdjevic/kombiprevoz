@@ -23,32 +23,20 @@ onload = () => {
     </v-container>
 
     <v-container v-if="tours.bookedTours.length > 0" class="d-flex justify-center">
-        <v-container min-height="6rem" class="d-flex justify-space-between align-center
-            w-50 flex-wrap" >
-            <v-btn
-                variant="elevated"
-                color="red-darken-4"
-                class="ma-2 pa-2"
-                min-width="9rem"
+        <v-container class="d-flex justify-center flex-wrap w-100" v-if="tours.bookedTours.length > 0">
+            <v-card class="pa-6 ma-3 w-lg-50 text-center"
                 elevation="3"
-                @click="tours.removeAll"
             >
-                Obrišite <span class="d-none d-md-block"> vožnje</span>
-            </v-btn>
-            <v-btn
-                variant="elevated"
-                color="indigo-darken-4"
-                class="ma-2 pa-2"
-                min-width="9rem"
-                elevation="3"
-                @click="tours.finishBooking"
-            >
-                Rezerviši <span class="d-none d-md-block"> vožnje</span>
-            </v-btn>
+                <v-card-title >
+                    Ukupna cena vožnji: <h3> {{ tours.totalPrice }}  </h3> 
+                </v-card-title>
+                
+            </v-card>
         </v-container>
     </v-container>
 
-    <v-container class="d-flex justify-space-evenly flex-wrap w-100">
+    <v-container >
+        <v-form class="d-flex justify-space-evenly flex-wrap w-100" @submit.prevent="tours.finishBooking">
         <v-card 
             v-for="t in tours.bookedTours"
             class="pa-6 ma-3 w-lg-50"
@@ -59,22 +47,22 @@ onload = () => {
             <v-card-title class="d-flex justify-center"> {{ t.price }} EUR</v-card-title>
             <v-divider></v-divider>
             <v-spacer></v-spacer>
-            <v-form class="ma-6">
+            
                 <v-text-field
                     disabled
                 >
                   Ime:  {{ user.user.name }}
                 </v-text-field>
                 <v-label> Adresa Polaska: </v-label>
-                <v-autocomplete 
+                <v-combobox 
                     v-model="t.add_from"
                     :rules="[user.rules.required, user.rules.validStr]"
-                ></v-autocomplete>
+                ></v-combobox>
                 <v-label>Adresa Dolaska:</v-label>
-                <v-autocomplete
+                <v-combobox
                     v-model="t.add_to"
                     :rules="[user.rules.required, user.rules.validStr]"
-                ></v-autocomplete>
+                ></v-combobox>
 
                 <v-label>Broj mesta:</v-label>
                 <v-number-input
@@ -86,7 +74,7 @@ onload = () => {
                 > 
                     
                 </v-number-input>
-            </v-form>
+            
             <v-card-actions class="d-flex justify-center">
                 <v-btn
                     icon="mdi-delete"
@@ -96,6 +84,33 @@ onload = () => {
                 </v-btn>
             </v-card-actions>
         </v-card>
+        <v-container v-if="tours.bookedTours.length > 0" class="d-flex justify-center">
+            <v-container min-height="6rem" class="d-flex justify-space-between align-center
+                w-50 flex-wrap" >
+                <v-btn
+                    variant="elevated"
+                    color="red-darken-4"
+                    class="ma-2 pa-2"
+                    min-width="9rem"
+                    elevation="3"
+                    @click="tours.removeAll"
+                >
+                    Obrišite <span class="d-none d-md-block"> vožnje</span> 
+                </v-btn>
+                <v-btn
+                    variant="elevated"
+                    color="indigo-darken-4"
+                    class="ma-2 pa-2"
+                    min-width="9rem"
+                    elevation="3"
+                    type="submit"
+                    
+                >
+                    Rezerviši  <span class="d-none d-md-block"> vožnje</span> 
+                </v-btn>
+            </v-container>
+        </v-container>
+        </v-form>
     </v-container>
 
     <v-container v-if="tours.bookedTours.length <= 0" >
@@ -132,31 +147,6 @@ onload = () => {
         </v-card>
     </v-container>
 
-    <v-container v-if="tours.bookedTours.length > 0" class="d-flex justify-center">
-        <v-container min-height="6rem" class="d-flex justify-space-between align-center
-            w-50 flex-wrap" >
-            <v-btn
-                variant="elevated"
-                color="red-darken-4"
-                class="ma-2 pa-2"
-                min-width="9rem"
-                elevation="3"
-                @click="tours.removeAll"
-            >
-                Obrišite <span class="d-none d-md-block"> vožnje</span> 
-            </v-btn>
-            <v-btn
-                variant="elevated"
-                color="indigo-darken-4"
-                class="ma-2 pa-2"
-                min-width="9rem"
-                elevation="3"
-                type="submit"
-                @click="tours.finishBooking"
-            >
-                Rezerviši  <span class="d-none d-md-block"> vožnje</span> 
-            </v-btn>
-        </v-container>
-    </v-container>
+    
 
 </template>

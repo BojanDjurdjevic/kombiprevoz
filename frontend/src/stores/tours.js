@@ -146,12 +146,22 @@ export const useTourStore = defineStore('tours', () => {
     }
 
     function finishBooking() {
+        user.loading = true
+        let sum = 0
+        bookedTours.value.forEach(item => {
+            if(item.add_from == "" || item.add_to == "") {
+                sum++
+            }
+        })
+        if(sum) return
         bookedTours.value.forEach(item => {
             let splitedDate = item.date.split(".")
             let splitedDateRev = splitedDate.reverse()
             let newStr = splitedDateRev.join("-")
             item.date = newStr
-            api.makeOrder(item)
+            item.add_from = item.add_from.trim()
+            item.add_to = item.add_to.trim()
+            orders.actions.createOrder(item, user.user.id)
         })
         bookedTours.value = []
         localStorage.removeItem('avTours')
