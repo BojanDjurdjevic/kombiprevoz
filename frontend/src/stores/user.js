@@ -55,6 +55,13 @@ export const useUserStore = defineStore('user', () => {
             const pattern = /(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9])(?!.*\s).{8,20}$/
 
             return pattern.test(value) || 'Neadekvatna Lozinka. '
+        },
+        validStr: (value) => {
+            if(value.length < 4) return 'Neadekvatna adresa. Mora imati najmanje 4 karaktera (samo slova i broj).'
+            let forbiden = ["=", ")", "(", "+", "-", "*", "/", "|"]
+            forbiden.forEach(char => {
+                if(value.includes(char)) return 'Nevalidna adresa. Može sadržati samo slova i brojeve!'
+            })
         }
     }
 

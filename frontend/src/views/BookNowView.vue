@@ -66,13 +66,15 @@ onload = () => {
                   Ime:  {{ user.user.name }}
                 </v-text-field>
                 <v-label> Adresa Polaska: </v-label>
-                <v-combobox 
+                <v-autocomplete 
                     v-model="t.add_from"
-                ></v-combobox>
+                    :rules="[user.rules.required, user.rules.validStr]"
+                ></v-autocomplete>
                 <v-label>Adresa Dolaska:</v-label>
-                <v-combobox
+                <v-autocomplete
                     v-model="t.add_to"
-                ></v-combobox>
+                    :rules="[user.rules.required, user.rules.validStr]"
+                ></v-autocomplete>
 
                 <v-label>Broj mesta:</v-label>
                 <v-number-input
@@ -149,6 +151,7 @@ onload = () => {
                 class="ma-2 pa-2"
                 min-width="9rem"
                 elevation="3"
+                type="submit"
                 @click="tours.finishBooking"
             >
                 Rezerviši  <span class="d-none d-md-block"> vožnje</span> 

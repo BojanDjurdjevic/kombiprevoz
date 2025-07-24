@@ -293,7 +293,7 @@ export const useSearchStore = defineStore('search', () => {
     exCountry, availableCountries, availableCountriesTo, availableCities, availableCitiesTo, rules, violated,
     allowedDays, allowedDaysIn, allCount,
     sendSearch, reverseCountries, cityRules, allCountries, newCountry, changeCountry, dropCountry, getCountryFrom,
-    allCities, dateQuery, isDateAllowed, isDateInAllowed,
+    allCities, dateQuery, isDateAllowed, isDateInAllowed, dateFormat
   }
 
 })

@@ -76,5 +76,16 @@ export default {
     } */
    requestReset(users) {
         return axios.put("", users)
+   },
+
+   //----------------------------------- ORDER --------------------------//
+
+   makeOrder(tour) {
+        let dto = {
+            orders: {
+                create: tour
+            }
+        }
+        console.log("Obj: ", dto)
    }
 }

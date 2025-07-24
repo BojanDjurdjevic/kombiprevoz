@@ -4,10 +4,13 @@ import { useUserStore } from './user'
 import { useMyOrdersStore } from './myorders';
 import router from '@/router';
 import { useRoute } from 'vue-router';
+import api from '@/api';
+import { useSearchStore } from './search';
 
 
 export const useTourStore = defineStore('tours', () => {
     const route = useRoute()
+    const search = useSearchStore()
     const user = useUserStore()
     const orders = useMyOrdersStore()
     const mySearch = ref({})
@@ -142,29 +145,18 @@ export const useTourStore = defineStore('tours', () => {
         })
     }
 
-    const myOrder = ref({
-        orders: {
-            create: {
-
-            }
-        }
-    })
-
     function finishBooking() {
-        console.log("Niz: ", bookedTours.value)
         bookedTours.value.forEach(item => {
-            console.log("jedan: ", item)
-            myOrder.value.orders.create = item
-            console.log("Item: ", myOrder.value)
-            orders.myorders.push(myOrder.value)
+            let splitedDate = item.date.split(".")
+            let splitedDateRev = splitedDate.reverse()
+            let newStr = splitedDateRev.join("-")
+            item.date = newStr
+            api.makeOrder(item)
         })
         bookedTours.value = []
         localStorage.removeItem('avTours')
-        localStorage.removeItem('myCart') /*
-        console.log(orders.myorders)
-        orders.myorders.forEach(item => {
-            console.log(item)
-        }) */
+        localStorage.removeItem('myCart') 
+
         router.push({
             name: 'rezervacije'
         })
