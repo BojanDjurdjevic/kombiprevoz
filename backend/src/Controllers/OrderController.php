@@ -21,7 +21,7 @@ class OrderController {
         //isset($this->data->orders->sid) && $this->data->orders->sid == session_id()
     public function handleRequest()
     {
-        if(isset($_SESSION['user']) && $this->data->orders->id == $_SESSION['user']['id'] || Validator::isSuper() || Validator::isAdmin()) {
+        if(isset($_SESSION['user']) && $this->data->orders->create->user_id == $_SESSION['user']['id'] || Validator::isSuper() || Validator::isAdmin()) {
             $request = $_SERVER['REQUEST_METHOD'];
 
             switch($request) {

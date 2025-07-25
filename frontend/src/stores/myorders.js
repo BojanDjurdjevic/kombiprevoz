@@ -20,9 +20,9 @@ export const useMyOrdersStore = defineStore('myorders', () => {
     }
 
     const actions = ref({
-        createOrder: async (item, id) => {
+        createOrder: async (item) => {
                 try {
-                    const res = await api.makeOrder(item, id)
+                    const res = await api.makeOrder(item)
                     console.log(res)
                     if(res.data.success) {
                         user.showSucc(res, 6000)

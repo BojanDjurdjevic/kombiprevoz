@@ -161,7 +161,7 @@ export const useTourStore = defineStore('tours', () => {
             item.date = newStr
             item.add_from = item.add_from.trim()
             item.add_to = item.add_to.trim()
-            orders.actions.createOrder(item, user.user.id)
+            orders.actions.createOrder(item)
         })
         bookedTours.value = []
         localStorage.removeItem('avTours')
