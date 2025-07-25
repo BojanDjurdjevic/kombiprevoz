@@ -85,6 +85,13 @@ export const useUserStore = defineStore('user', () => {
         }, time)
     }
 
+    function clearMsg(time) {
+        setTimeout(() => {
+            successMsg.value = false
+            errorMsg.value = false
+        }, time)
+    }
+
     const getters = ref({
         isAuthenticated: (value) => !! value || false
     })
@@ -251,7 +258,7 @@ export const useUserStore = defineStore('user', () => {
 
     return {
         user, errorMsg, loading, getters, actions, successMsg, rules, profileDialog, profile,
-        logout, showErr, showSucc,
+        logout, showErr, showSucc, clearMsg,
     }
 })
 

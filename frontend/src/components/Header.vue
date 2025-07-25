@@ -14,6 +14,8 @@ const tours = useTourStore()
 const darkTheme = ref(true)
 const theme = useTheme()
 
+theme.global.name.value = 'dark'
+
 function changeTheme() {
   darkTheme.value = !darkTheme.value
 

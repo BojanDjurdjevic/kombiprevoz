@@ -779,64 +779,74 @@ class Order {
 
     public function create() 
     {
-        if($this->places <= $this->availability($this->date) && $this->isDeparture($this->date) && $this->isUnlocked($this->date)) {
-            $sql = "INSERT INTO orders SET
-                    tour_id = :tour_id, user_id = :user_id, places = :places,
-                    add_from = :add_from, add_to = :add_to, date = :date, total = :price, 
-                    code = :code, file_path = :pdf
-            ";
-            $stmt = $this->db->prepare($sql);
+        if($this->places <= $this->availability($this->date)) {
+            if($this->isDeparture($this->date)) {
+                if($this->isUnlocked($this->date)) {
+                    $sql = "INSERT INTO orders SET
+                            tour_id = :tour_id, user_id = :user_id, places = :places,
+                            add_from = :add_from, add_to = :add_to, date = :date, total = :price, 
+                            code = :code, file_path = :pdf
+                    ";
+                    $stmt = $this->db->prepare($sql);
 
-            $now = time() + $this->user_id;
-            $generated = (string)$now . "KP";
-            $new_code = substr($generated, -9);
+                    $now = time() + $this->user_id;
+                    $generated = (string)$now . "KP";
+                    $new_code = substr($generated, -9);
 
-            $this->tour_id = htmlspecialchars(strip_tags($this->tour_id));
-            $this->user_id = htmlspecialchars(strip_tags($this->user_id));
-            $this->places = htmlspecialchars(strip_tags($this->places));
-            $this->add_from = htmlspecialchars(strip_tags($this->add_from));
-            $this->add_to = htmlspecialchars(strip_tags($this->add_to));
-            $this->date = htmlspecialchars(strip_tags($this->date));
-            $this->price = $this->totalPrice($this->db, $this->tour_id, $this->places);
-            $this->price = htmlspecialchars(strip_tags($this->price));
+                    $this->tour_id = htmlspecialchars(strip_tags($this->tour_id));
+                    $this->user_id = htmlspecialchars(strip_tags($this->user_id));
+                    $this->places = htmlspecialchars(strip_tags($this->places));
+                    $this->add_from = htmlspecialchars(strip_tags($this->add_from));
+                    $this->add_to = htmlspecialchars(strip_tags($this->add_to));
+                    $this->date = htmlspecialchars(strip_tags($this->date));
+                    $this->price = $this->totalPrice($this->db, $this->tour_id, $this->places);
+                    $this->price = htmlspecialchars(strip_tags($this->price));
 
-            if($this->price != null) {
-                $stmt->bindParam(':tour_id', $this->tour_id);
-                $stmt->bindParam(':user_id', $this->user_id);
-                $stmt->bindParam(':places', $this->places);
-                $stmt->bindParam(':add_from', $this->add_from);
-                $stmt->bindParam(':add_to', $this->add_to);
-                $stmt->bindParam(':date', $this->date);
-                $stmt->bindParam(':price', $this->price);
-                $stmt->bindParam(':code', $new_code);
-                // voucher
-                $mydata = $this->generateVoucher($new_code, $this->places, $this->add_from, $this->add_to, $this->date, $this->price);
-                //
-                $stmt->bindParam(':pdf', $mydata['path']);
+                    if($this->price != null) {
+                        $stmt->bindParam(':tour_id', $this->tour_id);
+                        $stmt->bindParam(':user_id', $this->user_id);
+                        $stmt->bindParam(':places', $this->places);
+                        $stmt->bindParam(':add_from', $this->add_from);
+                        $stmt->bindParam(':add_to', $this->add_to);
+                        $stmt->bindParam(':date', $this->date);
+                        $stmt->bindParam(':price', $this->price);
+                        $stmt->bindParam(':code', $new_code);
+                        // voucher
+                        $mydata = $this->generateVoucher($new_code, $this->places, $this->add_from, $this->add_to, $this->date, $this->price);
+                        //
+                        $stmt->bindParam(':pdf', $mydata['path']);
 
-                if($stmt->execute()) {
-                    // Mail
-                    $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $new_code, 'create');
-                    http_response_code(200);
-                    echo json_encode([
-                        'success' => true,
-                        'msg' => "Uspešno ste rezervisali vožnju. Vaš broj rezervacije je: {$new_code}"
-                    ], JSON_PRETTY_PRINT);
-                }
-                else {
+                        if($stmt->execute()) {
+                            // Mail
+                            $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $new_code, 'create');
+                            http_response_code(200);
+                            echo json_encode([
+                                'success' => true,
+                                'msg' => "Uspešno ste rezervisali vožnju. Vaš broj rezervacije je: {$new_code}"
+                            ], JSON_PRETTY_PRINT);
+                        }
+                        else {
+                            http_response_code(422);
+                            echo json_encode([
+                                'error' => 'Trenutno nije moguće rezervisati ovu vožnju.'
+                            ], JSON_PRETTY_PRINT);
+                        } 
+                    } else {
+                        http_response_code(422);
+                        echo json_encode(['error' => 'Trenutno nije moguće rezervisati ovu vožnju. 
+                                            Nolimo Vas da se obratite našem centru za podršku!'], JSON_PRETTY_PRINT);
+                    } 
+                } else {
                     http_response_code(422);
-                    echo json_encode([
-                        'error' => 'Trenutno nije moguće rezervisati ovu vožnju.'
-                    ], JSON_PRETTY_PRINT);
-                } 
+                    echo json_encode(['error' => 'Žao nam je, do vožnje mora biti rezervisna najmanje 25 sati pre polaska.']);
+                }
             } else {
                 http_response_code(422);
-                echo json_encode(['error' => 'Trenutno nije moguće rezervisati ovu vožnju. 
-                                    Nolimo Vas da se obratite našem centru za podršku!'], JSON_PRETTY_PRINT);
-            } 
+                echo json_encode(['error' => 'Žao nam je, ali nemamo polaske na birani datum.']);
+            }
         } else {
             http_response_code(422);
-            echo json_encode(['msg' => 'Žao nam je, ali nema više slobodnih mesta za ovu vožnju.']);
+            echo json_encode(['error' => 'Žao nam je, ali nema više slobodnih mesta za ovu vožnju.']);
         }
         
     }

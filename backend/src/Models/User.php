@@ -229,7 +229,7 @@ class User {
                     "phone" => $row->phone
                 ]);
             }
-            echo json_encode(["user" => $user], JSON_PRETTY_PRINT);
+            //echo json_encode(["user" => $user], JSON_PRETTY_PRINT);
             return $user;
         } else
         echo json_encode(["user" => 'Nema registrovanih korisnika sa poslatim ID-em.'], JSON_PRETTY_PRINT);
