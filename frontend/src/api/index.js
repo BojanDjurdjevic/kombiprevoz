@@ -81,11 +81,7 @@ export default {
    //----------------------------------- ORDER --------------------------//
 
    makeOrder(tour) {
-        let dto = {
-            orders: {
-                create: tour
-            }
-        }
-        return axios.post("", dto)
+    //return console.log(tour)
+        return axios.post("", tour)
    }
 }

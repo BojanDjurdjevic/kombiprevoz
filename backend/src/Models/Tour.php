@@ -175,7 +175,7 @@ class Tour {
     {
         $tour = $this->getIdAndSeats();
         
-        $sql = "SELECT date, SUM(places) as totall FROM orders
+        $sql = "SELECT date, SUM(places) as totall FROM order_items
                 WHERE tour_id = :tour_id AND 
                 date LIKE :format
                 GROUP BY date
@@ -221,7 +221,7 @@ class Tour {
 
         $this->getIdAndSeats();
         
-        $sql = "SELECT date, SUM(places) as totall FROM orders
+        $sql = "SELECT date, SUM(places) as totall FROM order_items
                 WHERE tour_id = :tour_id AND 
                 date LIKE :format
                 GROUP BY date
@@ -301,12 +301,12 @@ class Tour {
                         $checkDeps = $this->isDepartureDay($row->departures, $this->inbound);
                     if($checkDeps) {
                         if($row->from_city == $this->from_city)
-                        $ordSql = "SELECT places from orders WHERE orders.tour_id = '$row->id' 
-                        and orders.date = '$this->date'
+                        $ordSql = "SELECT places from order_items WHERE tour_id = '$row->id' 
+                        and date = '$this->date'
                         ";
                         else
-                        $ordSql = "SELECT places from orders WHERE orders.tour_id = '$row->id' 
-                        and orders.date = '$this->inbound'
+                        $ordSql = "SELECT places from order_items WHERE tour_id = '$row->id' 
+                        and date = '$this->inbound'
                         ";
                         
                         $ordRes = $this->db->query($ordSql);

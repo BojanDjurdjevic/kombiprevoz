@@ -89,6 +89,31 @@ class Validator {
 
         return $html;
     }
+
+    public static function cleanParams(array $params): array
+    {
+        $clean = [];
+
+        foreach($params as $key => $value) {
+            if(is_numeric($value)) {
+                $clean[$key] = $value;
+            } elseif(is_string($value)) {
+                $clean[$key] = htmlspecialchars(strip_tags($value), ENT_QUOTES, 'UTF-8');
+            } elseif(is_array($value)) {
+                $clean[$key] = self::cleanParams($value);
+            } else {
+                $clean[$key] = htmlspecialchars(strip_tags(strval($value)), ENT_QUOTES, 'UTF-8');
+            }
+        }
+
+        return $clean;
+    }
+
+    public static function formatDateForFront($date) {
+        $formated = date_create($date);
+        $d = date("d.m.Y", date_timestamp_get($formated));
+        return $d;
+    }
 }
 
 ?>

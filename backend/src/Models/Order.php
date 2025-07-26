@@ -7,6 +7,7 @@ use PDOException;
 use Rules\Validator;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use Error;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
@@ -31,6 +32,7 @@ class Order {
     public $newPlaces;
     public $driver;
     public $selected;
+    public $items;
 
     private $user;
     private $tour;
@@ -66,16 +68,17 @@ class Order {
 
     // How many places we have available for the requested date:
     public function availability($date) {
-        $sql = "SELECT orders.places, tours.seats from orders 
-                INNER JOIN tours on tours.id = orders.tour_id
-                WHERE orders.date = '$date'
-                and orders.tour_id = '$this->tour_id' and orders.deleted = 0
+        $sql = "SELECT order_items.places, tours.seats from order_items
+                INNER JOIN tours on tours.id = order_items.tour_id
+                INNER JOIN orders on order_items.order_id = orders.id
+                WHERE order_items.date = '$date'
+                and order_items.tour_id = '$this->tour_id' 
         ";
         $res = $this->db->query($sql);
         $num = $res->rowCount();
         $occupated = 0;
         $seats = 0;
-
+        //and orders.deleted = 0
         if($num > 0) {
             
             while($row = $res->fetch(PDO::FETCH_OBJ)) {
@@ -210,50 +213,133 @@ class Order {
 
     //------------------------------- FUNCTIONS AFTER THE ACTION ------------------------------//
 
-    public function generateVoucher($new_code, $places, $add_from, $add_to, $date, $price): array 
+    public function updateTotalPrice() 
+    {
+        $find = "SELECT SUM(price) as total FROM order_items WHERE order_id = :order_id";
+        $this->id = htmlspecialchars($this->id);
+        $stmtF = $this->db->prepare($find);
+        $stmtF->bindParam(':order_id', $this->id);
+        $total = 0;
+        try {
+            $stmtF->execute();
+            $t = $stmtF->fetch(PDO::FETCH_OBJ);
+            if($t) {
+                $total = $t->total;
+            }
+        } catch(PDOException $e) {
+            throw new Error($e->getMessage());
+        }
+        $sql = "UPDATE orders SET total = :total WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        //
+        $params = [
+            ':total' => $total,
+            ':id' => $this->id
+        ];
+
+        try {
+            $stmt->execute(Validator::cleanParams($params));
+            return $total;
+        } catch (PDOException $e) {
+            throw new Error($e->getMessage());
+        }
+    }
+
+    public function generateVoucher( ? int $total): array 
     {
         $this->user->id = $this->user_id;
-        $this->tour->id = $this->tour_id;
+        $this->tour->id = $this->items->create[0]->tour_id;
 
         $owner = $this->user->getByID();
                     
         $tourObj = $this->tour->getByID();
+
+        $sql = "SELECT orders.id, orders.user_id, orders.code, orders.file_path, orders.total, 
+                order_items.* FROM orders
+                INNER JOIN order_items on orders.id = order_items.order_id
+                WHERE orders.id = :id     
+        ";
+
+        $drive = [];
+
+        $stmt = $this->db->prepare($sql);
+        $this->id = htmlspecialchars($this->id);
+        $stmt->bindParam(':id', $this->id);
+
+        try {
+            if($stmt->execute()) {
+                while($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+                    array_push($drive, $row);
+                }
+            }
+        } catch (PDOException $e) {
+            throw new Exception($e->getMessage());
+        }
                     
         $options = new Options();
         $options->setChroot("src/assets/img");
         $pdf = new Dompdf($options);
         $pdf->setPaper("A4", "Portrait");
 
-        $formated = date_create($date);
-        $d = date("d.m.Y", date_timestamp_get($formated));
+        $d = Validator::formatDateForFront($drive[0]->date);
 
         $html = file_get_contents("src/template.html");
-        $html = str_replace("{{ order }}", $new_code, $html);
+        $html = str_replace("{{ order }}", $drive[0]->code, $html);
 
         $html = str_replace("{{ name }}", $owner[0]['name'], $html);
-        $html = str_replace("{{ places }}", $places, $html);
-        $html = str_replace("{{ address }}", $add_from, $html);
+
+        $html = str_replace("{{ places }}", $drive[0]->places, $html);
+        $html = str_replace("{{ address }}", $drive[0]->add_from, $html);
         $html = str_replace("{{ city }}", $tourObj[0]['from_city'], $html);
-        $html = str_replace("{{ address_to }}", $add_to, $html);
+        $html = str_replace("{{ address_to }}", $drive[0]->add_to, $html);
         $html = str_replace("{{ city_to }}", $tourObj[0]['to_city'], $html);
         $html = str_replace("{{ date }}", $d, $html);
         $html = str_replace("{{ time }}", $tourObj[0]['time'], $html);
-        $html = str_replace("{{ price }}", $price, $html);
+        $html = str_replace("{{ price }}", $drive[0]->price, $html);
+
+        if(count($drive) > 1) {
+            $dIn = Validator::formatDateForFront($drive[1]->date);
+
+            $html = str_replace("{{ view }}", "visible", $html);
+            $html = str_replace("{{ places2 }}", $drive[1]->places, $html);
+            $html = str_replace("{{ address2 }}", $drive[1]->add_from, $html);
+            $html = str_replace("{{ city2 }}", $tourObj[0]['to_city'], $html);
+            $html = str_replace("{{ address_to2 }}", $drive[1]->add_to, $html);
+            $html = str_replace("{{ city_to2 }}", $tourObj[0]['from_city'], $html);
+            $html = str_replace("{{ date2 }}", $dIn, $html);
+            $html = str_replace("{{ time2 }}", $tourObj[0]['time'], $html);
+            $html = str_replace("{{ price2 }}", $drive[1]->price, $html);
+            if($total) $html = str_replace("{{ total }}", $total, $html);
+            else $html = str_replace("{{ total }}", 'N/A', $html);
+        } else {
+            $html = str_replace("{{ view }}", "invisible", $html);
+            $html = str_replace("{{ places2 }}", "N/A", $html);
+            $html = str_replace("{{ address2 }}", "N/A", $html);
+            $html = str_replace("{{ city2 }}", "N/A", $html);
+            $html = str_replace("{{ address_to2 }}", "N/A", $html);
+            $html = str_replace("{{ city_to2 }}", "N/A", $html);
+            $html = str_replace("{{ date2 }}", "N/A", $html);
+            $html = str_replace("{{ time2 }}", "N/A", $html);
+            $html = str_replace("{{ price2 }}", "N/A", $html);
+            $html = str_replace("{{ total }}", 'N/A', $html);
+        }
+
         $html = str_replace("{{ year }}", date("Y"), $html);
 
         $pdf->loadHtml($html);
 
         $pdf->render(); // Obavezno!!!
-        $pdf->addInfo("Title", "Kombiprevoz - rezervacija: ". $new_code);
+        $pdf->addInfo("Title", "Kombiprevoz - rezervacija: ". $drive[0]->code);
         //$pdf->stream("Rezervacija.pdf");
-        $file_path = "src/assets/pdfs/". $new_code . ".pdf";
+        $file_path = "src/assets/pdfs/". $drive[0]->code . ".pdf";
                     
         $output = $pdf->output();
         file_put_contents($file_path, $output);
         return [
             'email' => $owner[0]['email'],
             'name' => $owner[0]['name'],
-            'path' => $file_path
+            'path' => $file_path,
+            'code' => $drive[0]->code
         ];
     }
 
@@ -779,74 +865,150 @@ class Order {
 
     public function create() 
     {
-        if($this->places <= $this->availability($this->date)) {
-            if($this->isDeparture($this->date)) {
-                if($this->isUnlocked($this->date)) {
-                    $sql = "INSERT INTO orders SET
-                            tour_id = :tour_id, user_id = :user_id, places = :places,
-                            add_from = :add_from, add_to = :add_to, date = :date, total = :price, 
-                            code = :code, file_path = :pdf
-                    ";
-                    $stmt = $this->db->prepare($sql);
+        $this->db->beginTransaction();
 
-                    $now = time() + $this->user_id;
-                    $generated = (string)$now . "KP";
-                    $new_code = substr($generated, -9);
-
-                    $this->tour_id = htmlspecialchars(strip_tags($this->tour_id));
-                    $this->user_id = htmlspecialchars(strip_tags($this->user_id));
-                    $this->places = htmlspecialchars(strip_tags($this->places));
-                    $this->add_from = htmlspecialchars(strip_tags($this->add_from));
-                    $this->add_to = htmlspecialchars(strip_tags($this->add_to));
-                    $this->date = htmlspecialchars(strip_tags($this->date));
-                    $this->price = $this->totalPrice($this->db, $this->tour_id, $this->places);
-                    $this->price = htmlspecialchars(strip_tags($this->price));
-
-                    if($this->price != null) {
-                        $stmt->bindParam(':tour_id', $this->tour_id);
-                        $stmt->bindParam(':user_id', $this->user_id);
-                        $stmt->bindParam(':places', $this->places);
-                        $stmt->bindParam(':add_from', $this->add_from);
-                        $stmt->bindParam(':add_to', $this->add_to);
-                        $stmt->bindParam(':date', $this->date);
-                        $stmt->bindParam(':price', $this->price);
-                        $stmt->bindParam(':code', $new_code);
-                        // voucher
-                        $mydata = $this->generateVoucher($new_code, $this->places, $this->add_from, $this->add_to, $this->date, $this->price);
-                        //
-                        $stmt->bindParam(':pdf', $mydata['path']);
-
-                        if($stmt->execute()) {
-                            // Mail
-                            $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $new_code, 'create');
-                            http_response_code(200);
-                            echo json_encode([
-                                'success' => true,
-                                'msg' => "Uspešno ste rezervisali vožnju. Vaš broj rezervacije je: {$new_code}"
-                            ], JSON_PRETTY_PRINT);
-                        }
-                        else {
-                            http_response_code(422);
-                            echo json_encode([
-                                'error' => 'Trenutno nije moguće rezervisati ovu vožnju.'
-                            ], JSON_PRETTY_PRINT);
-                        } 
-                    } else {
-                        http_response_code(422);
-                        echo json_encode(['error' => 'Trenutno nije moguće rezervisati ovu vožnju. 
-                                            Nolimo Vas da se obratite našem centru za podršku!'], JSON_PRETTY_PRINT);
-                    } 
-                } else {
-                    http_response_code(422);
-                    echo json_encode(['error' => 'Žao nam je, do vožnje mora biti rezervisna najmanje 25 sati pre polaska.']);
-                }
-            } else {
-                http_response_code(422);
-                echo json_encode(['error' => 'Žao nam je, ali nemamo polaske na birani datum.']);
+        try {
+            $sql = "INSERT INTO orders SET
+                    user_id = :user_id, total = :total, code = :code, file_path = :pdf
+            ";
+            $stmt = $this->db->prepare($sql); 
+            
+            $this->user_id = $this->items->create[0]->user_id;
+            $now = time() + $this->user_id;
+            $generated = (string)$now . "KP";
+            $new_code = substr($generated, -9);
+            $file_path = "src/assets/pdfs/". $new_code . ".pdf";
+            $total = 0; 
+            foreach($this->items->create as $item) {
+                $total = $total + $item->price;
             }
-        } else {
+
+            $params = [
+                ':user_id' => $this->user_id,
+                ':total' => $total,
+                ':code' => $new_code,
+                ':pdf' => $file_path
+            ];
+
+            try {
+                try {
+                    $stmt->execute(Validator::cleanParams($params));
+                } catch (PDOException $e) {
+                    throw new Error($e->getMessage() . " / " . Validator::cleanParams($params));
+                }
+                $this->id = $this->db->lastInsertId();
+                
+                foreach($this->items->create as $item) {
+                    $this->add_from = $item->add_from;
+                    $this->add_to = $item->add_to;
+                    $this->tour_id = $item->tour_id;
+                    $this->date = $item->date;
+                    $this->places = $item->places;
+
+                    if($this->places <= $this->availability($this->date)) {
+                        if($this->isDeparture($this->date)) {
+                            if($this->isUnlocked($this->date)) {
+                                
+                                $sql = "INSERT INTO order_items SET
+                                        order_id = :order_id, tour_id = :tour_id, places = :places,
+                                        add_from = :add_from, add_to = :add_to, date = :date, price = :price
+                                ";
+                                $stmt = $this->db->prepare($sql);
+
+                                $this->tour_id = htmlspecialchars(strip_tags($this->tour_id));
+                                $this->id = htmlspecialchars(strip_tags($this->id));
+                                $this->places = htmlspecialchars(strip_tags($this->places));
+                                $this->add_from = htmlspecialchars(strip_tags($this->add_from));
+                                $this->add_to = htmlspecialchars(strip_tags($this->add_to));
+                                $this->date = htmlspecialchars(strip_tags($this->date));
+                                $this->price = $this->totalPrice($this->db, $this->tour_id, $this->places);
+                                $this->price = htmlspecialchars(strip_tags($this->price));
+
+                                if($this->price != null) {
+                                    $stmt->bindParam(':order_id', $this->id);
+                                    $stmt->bindParam(':tour_id', $this->tour_id);
+                                    //$stmt->bindParam(':user_id', $this->user_id);
+                                    $stmt->bindParam(':places', $this->places);
+                                    $stmt->bindParam(':add_from', $this->add_from);
+                                    $stmt->bindParam(':add_to', $this->add_to);
+                                    $stmt->bindParam(':date', $this->date);
+                                    $stmt->bindParam(':price', $this->price);
+                                    // voucher
+                                    //$mydata = $this->generateVoucher($new_code, $this->places, $this->add_from, $this->add_to, $this->date, $this->price);
+                                    //
+                                    //$stmt->bindParam(':pdf', $mydata['path']);
+
+                                    try {
+                                        /*
+                                        //$this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $new_code, 'create');
+                                        http_response_code(200);
+                                        echo json_encode([
+                                            'success' => true,
+                                            'msg' => "Uspešno ste rezervisali vožnju. Vaš broj rezervacije je: {$new_code}"
+                                        ], JSON_PRETTY_PRINT); */
+                                        $stmt->execute();
+                                        
+                                    }
+                                    catch (PDOException $e) { /*
+                                        http_response_code(422);
+                                        echo json_encode([
+                                            'error' => 'Trenutno nije moguće rezervisati ovu vožnju.'
+                                        ], JSON_PRETTY_PRINT); */
+                                        throw new Exception($e->getMessage());
+                                    } 
+                                } else { /*
+                                    http_response_code(422);
+                                    echo json_encode(['error' => 'Trenutno nije moguće rezervisati ovu vožnju. 
+                                                        Nolimo Vas da se obratite našem centru za podršku!'], JSON_PRETTY_PRINT); */
+                                    throw new Exception('Trenutno nije moguće rezervisati ovu vožnju. 
+                                                        Nolimo Vas da se obratite našem centru za podršku!');
+                                } 
+                            } else { /*
+                                http_response_code(422);
+                                echo json_encode(['error' => 'Žao nam je, do vožnje mora biti rezervisna najmanje 25 sati pre polaska.']); */
+                                throw new Exception('Žao nam je, do vožnje mora biti rezervisna najmanje 25 sati pre polaska.');
+                            }
+                        } else { /*
+                            http_response_code(422);
+                            echo json_encode(['error' => 'Žao nam je, ali nemamo polaske na birani datum.']); */
+                            throw new Exception('Žao nam je, ali nemamo polaske na birani datum.');
+                        }
+                    } else { /*
+                        http_response_code(422);
+                        echo json_encode(['error' => 'Žao nam je, ali nema više slobodnih mesta za ovu vožnju.']); */
+                        throw new Exception('Žao nam je, ali nema više slobodnih mesta za ovu vožnju.');
+                    }
+                }
+
+            } catch(PDOException $e) { /*
+                http_response_code(500);
+                return json_encode([
+                    'error' => 'Došlo je do greške pri konekciji na bazu podataka',
+                    'errMsg' => $e->getMessage() 
+                ], JSON_PRETTY_PRINT); */
+                throw new Exception($e->getMessage());
+            }      
+            
+            $this->db->commit();
+            // Update total price
+            $total = $this->updateTotalPrice();
+            //generate Voucher
+            $mydata = $this->generateVoucher($total);
+            // Email
+            $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $mydata['code'], 'create');
+
+            return json_encode([
+                'success' => true,
+                'msg' => "Uspešno ste rezervisali vožnju. Vaš broj rezervacije je: {$new_code}"
+            ], JSON_PRETTY_PRINT); 
+
+        } catch(Exception $e) {
+            $this->db->rollBack();
             http_response_code(422);
-            echo json_encode(['error' => 'Žao nam je, ali nema više slobodnih mesta za ovu vožnju.']);
+            return json_encode([
+                'success' => false,
+                'error' => 'Nije prošlo sve. '. "/ " . $e->getMessage()
+            ], JSON_PRETTY_PRINT);
         }
         
     }

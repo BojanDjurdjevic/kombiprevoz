@@ -19,10 +19,17 @@ export const useMyOrdersStore = defineStore('myorders', () => {
         
     }
 
+    const addedOrders = ref({
+        orders: {
+            create: [],
+            user_id: user.user.id
+        }
+    })
+
     const actions = ref({
-        createOrder: async (item) => {
+        createOrder: async (tour) => {
                 try {
-                    const res = await api.makeOrder(item)
+                    const res = await api.makeOrder(tour)
                     console.log(res)
                     if(res.data.success) {
                         user.successMsg = res.data.msg
@@ -43,7 +50,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
     })
 
     return {
-        myorders, oneOrder, actions,
+        myorders, oneOrder, actions, addedOrders,
         takeOrder, 
     }
 })

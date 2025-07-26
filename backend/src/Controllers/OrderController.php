@@ -21,7 +21,7 @@ class OrderController {
         //isset($this->data->orders->sid) && $this->data->orders->sid == session_id()
     public function handleRequest()
     {
-        if(isset($_SESSION['user']) && $this->data->orders->create->user_id == $_SESSION['user']['id'] || Validator::isSuper() || Validator::isAdmin()) {
+        if(isset($_SESSION['user']) && $this->data->orders->user_id == $_SESSION['user']['id'] || Validator::isSuper() || Validator::isAdmin()) {
             $request = $_SERVER['REQUEST_METHOD'];
 
             switch($request) {
@@ -82,7 +82,7 @@ class OrderController {
                     ]);
                     break;
                 case 'POST':
-                    if(isset($this->data->orders->create)) {
+                    if(isset($this->data->orders->create) && !empty($this->data->orders->create)) { /*
                         $this->order->tour_id = $this->data->orders->create->tour_id;
                         $this->order->user_id = $this->data->orders->create->user_id;
                         $this->order->places = $this->data->orders->create->places;
@@ -90,7 +90,8 @@ class OrderController {
                         $this->order->add_to = $this->data->orders->create->add_to;
                         $this->order->date = $this->data->orders->create->date;
                         if(isset($this->data->orders->create->price) && !empty($this->data->orders->create->price))
-                        $this->order->price = $this->data->orders->create->price;
+                        $this->order->price = $this->data->orders->create->price; */
+                        $this->order->items = $this->data->orders;
                         $this->order->create();
                     }
                     break;

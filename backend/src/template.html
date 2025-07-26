@@ -35,25 +35,30 @@
             color: brown;
             font-weight: bold;
         }
-        div  {
+        div .visible  {
             width: 96%;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
         }
+
+        div .invisible {
+            display: none;
+        }
     </style>
 </head>
 <body>
     <h1>Kombi Prevoz</h1>
 
-    
-    
-    <div>
-        <h2>Rezervacija <span>{{ order }}</span>  </h2>
+    <h2>Rezervacija <span>{{ order }}</span>  </h2>
+    <p>Ime glavnog putnika: <span>{{ name }}</span> </p>
+    <br>
+    <div class="visible">
+        <h2>Polazak</h2>
         <br>
-        <p>Ime glavnog putnika: <span>{{ name }}</span> </p>
-        <br>
+        
+
         <p>Broj rezervisanih mesta: <span>{{ places }}</span> </p>
         <br>
         <p>Adresa polaska: <span>{{ address }}, {{ city }}</span>  </p>
@@ -66,6 +71,24 @@
         
     </div>
     <br>
+    <div class="{{ view }}">
+        <h2>Povratak</h2>
+        <br>
+        <p>Broj rezervisanih mesta: <span>{{ places2 }}</span> </p>
+        <br>
+        <p>Adresa polaska: <span>{{ address2 }}, {{ city2 }}</span>  </p>
+        <br>
+        <p>Adresa dolaska: <span>{{ address_to2 }}, {{ city_to2 }}</span>  </p>
+        <br>
+        <p>Vreme polaska: <span>{{ date2 }} u {{ time2 }} sati</span> </p>
+        <br>
+        <p>Cena: <span>{{ price2 }} EUR</span> </p>
+        
+    </div>
+
+    <div class="{{ view }}">
+        <p>Ukupna Cena: <span>{{ total }} EUR</span> </p>
+    </div>
 
     <footer>
         <p>&copy; KombiPrevoz {{ year }}</p>

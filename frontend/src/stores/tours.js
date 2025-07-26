@@ -154,7 +154,7 @@ export const useTourStore = defineStore('tours', () => {
             }
         })
         if(sum) return
-        let promise = 0
+
         bookedTours.value.forEach(item => {
             let splitedDate = item.date.split(".")
             let splitedDateRev = splitedDate.reverse()
@@ -162,16 +162,16 @@ export const useTourStore = defineStore('tours', () => {
             item.date = newStr
             item.add_from = item.add_from.trim()
             item.add_to = item.add_to.trim()
-            if(!orders.actions.createOrder(item)) {
-                promise++
-            }
         })
+
+        orders.addedOrders.orders.create = bookedTours.value
+        orders.addedOrders.orders.user_id = user.user.id
         bookedTours.value = []
         
-        if(!promise) {
+        if(orders.actions.createOrder(orders.addedOrders)) {
             localStorage.removeItem('avTours')
             localStorage.removeItem('myCart') 
-            router.push('/rezervacije')
+            //router.push('/rezervacije')
         }
     }
 
