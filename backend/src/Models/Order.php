@@ -11,6 +11,7 @@ use Error;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
+use stdClass;
 use tidy;
 
 class Order {
@@ -694,25 +695,76 @@ class Order {
     public function getByUser() 
     {
         $this->user_id = htmlspecialchars(strip_tags($this->user_id));
-        $sql = "SELECT orders.id, orders.tour_id, orders.user_id, orders.places, tours.from_city, 
-                orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
-                orders.date, tours.time as pickuptime, tours.duration,
-                orders.total as price, orders.code, orders.file_path as voucher, users.name as user, users.email, users.phone
+        $sql = "SELECT orders.id, order_items.id as item_id, 
+                order_items.tour_id, orders.user_id, order_items.places, tours.from_city, 
+                order_items.add_from as pickup, tours.to_city, order_items.add_to as dropoff,
+                order_items.date, order_items.price, tours.time as pickuptime, tours.duration,
+                orders.total, orders.code, orders.file_path as voucher, 
+                users.name as user, users.email, users.phone
                 from orders 
-                INNER JOIN tours on orders.tour_id = tours.id
-                INNER JOIN users on orders.user_id = users.id
-                WHERE orders.user_id = '$this->user_id' AND orders.deleted = 0"
+                JOIN order_items on orders.id = order_items.order_id
+                JOIN tours on order_items.tour_id = tours.id
+                JOIN users on orders.user_id = users.id
+                
+                WHERE orders.user_id = '$this->user_id' AND orders.deleted = 0
+                Order BY order_items.date ASC"
         ;
-        $res = $this->db->query($sql);
-        $num = $res->rowCount();
+        try {
+            $res = $this->db->query($sql);
+            $num = $res->rowCount();
 
-        if($num > 0) {
-            $orders = [];
-            while($row = $res->fetch(PDO::FETCH_OBJ)) {
-                array_push($orders, $row);
-            }
-            echo json_encode(['orders' => $orders]);
-        } else echo json_encode(['order' => 'Nema rezervacija od ovog korisnika.'], JSON_PRETTY_PRINT);
+            if($num > 0) {
+                $rows = $res->fetchAll(PDO::FETCH_OBJ);
+                $orders = [];
+                foreach($rows as $row) {
+                    //var_dump($row->id);
+                    $orderId = $row->id;
+
+                    if(!isset($orders[$orderId])) {
+                        $order = new stdClass();
+                        $order->id = $row->id;
+                        $order->code = $row->code;
+                        $order->duration = $row->duration;
+                        $order->voucher = $row->voucher;
+                        $order->total = $row->total;
+                        $order->items = [];
+                        $orders[$orderId] = $order;
+                    }
+
+                    
+
+
+                    $item = new stdClass();
+                    $item->id = $row->item_id;
+                    $item->tour_id = $row->tour_id;
+                    $item->date = $row->date;
+                    $item->time = $row->pickuptime;
+                    $item->pickup = $row->pickup;
+                    $item->dropoff = $row->dropoff;
+                    $item->places = $row->places;
+                    $item->price = $row->price;
+                    $item->from = $row->from_city;
+                    $item->to = $row->to_city;
+
+                    $orders[$orderId]->items[] = $item;
+                }
+                echo json_encode([
+                    'success' => true,
+                    'orders' => array_values($orders)
+                ], JSON_PRETTY_PRINT);
+            } else {
+                echo json_encode([
+                    'success' => false,
+                    'msg' => 'Nema rezervacija od ovog korisnika.'
+                ], JSON_PRETTY_PRINT);
+            } 
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], JSON_PRETTY_PRINT);
+        }
     }
 
     public function getByCode() {

@@ -80,6 +80,10 @@ export default {
 
    //----------------------------------- ORDER --------------------------//
 
+   getOrder(orders) {
+        return axios.get("", {params: {orders}})
+   },  
+
    makeOrder(tour) {
     //return console.log(tour)
         return axios.post("", tour)

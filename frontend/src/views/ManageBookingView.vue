@@ -12,44 +12,46 @@ const orders = useMyOrdersStore()
                     icon="mdi-keyboard-backspace"
                     to="/rezervacije"
                 ></v-btn>
-                <h1 class="ml-9">Rezervacija broj: 0999</h1>
+                <h1 class="ml-9">Rezervacija broj: {{ orders.oneOrder.code }}</h1>
             </div>
-            <h1> Ukupna Cena: {{ orders.oneOrder.price }} </h1>
+            <h1> Ukupna Cena: {{ orders.oneOrder.total }} </h1>
         </div>
         <v-divider></v-divider>
     </v-container>
 
-    <v-container class="d-flex justify-center">
-        <v-card class="w-75 pa-12 rounded-lg d-flex flex-column justify-space-around " height="660" elevation="3">
-            <v-card-title class="text-center font-weight-bold"> {{ orders.oneOrder.from }} - {{ orders.oneOrder.to }}</v-card-title>
+    <v-container class="d-flex flex-column justify-space-evenly align-center" >
+        <v-card class="w-75 ma-3 pa-12 rounded-lg d-flex flex-column justify-space-around " height="660" elevation="3" v-for="order in orders.oneOrder.items">
+            <v-card-title class="text-center font-weight-bold"> {{ order.from }} - {{ order.to }}</v-card-title>
             <v-divider></v-divider>
-            <v-card-title class="d-flex justify-space-between"><p>Adresa Polaska:</p><p> {{ orders.oneOrder.addressFrom }} <v-btn
+            <v-card-title class="d-flex justify-space-between"><p>Adresa Polaska:</p><p> {{ order.pickup }} <v-btn
                     icon="mdi-pencil-circle"
                     variant="plain"
                 >
             </v-btn></p> </v-card-title>
-            <v-card-title class="d-flex justify-space-between"><p>Adresa Dolaska:</p><p> {{ orders.oneOrder.addressTo }} <v-btn
+            <v-card-title class="d-flex justify-space-between"><p>Adresa Dolaska:</p><p> {{ order.dropoff }} <v-btn
                     icon="mdi-pencil-circle"
                     variant="plain"
                 >
             </v-btn></p> </v-card-title>
-            <v-card-title class="d-flex justify-space-between"><p>Broj Sedišta:</p><p> {{ orders.oneOrder.seats }} <v-btn
+            <v-card-title class="d-flex justify-space-between"><p>Broj Sedišta:</p><p> {{ order.places }} <v-btn
                     icon="mdi-pencil-circle"
                     variant="plain"
                 >
             </v-btn></p> </v-card-title>
-            <v-card-title class="d-flex justify-space-between"><p>Datum Vožnje:</p><p> {{ orders.oneOrder.date }} <v-btn
+            <v-card-title class="d-flex justify-space-between"><p>Datum Vožnje:</p><p> {{ order.date }} <v-btn
                     icon="mdi-pencil-circle"
                     variant="plain"
                 >
             </v-btn></p> </v-card-title>
-            <v-card-title class="d-flex justify-space-between"><p>Vreme Polaska:</p><p> {{ orders.oneOrder.time }}</p> </v-card-title>
+            <v-card-title class="d-flex justify-space-between"><p>Vreme Polaska:</p><p> {{ order.time }}</p> </v-card-title>
+            <v-card-title class="d-flex justify-space-between"><p>Cena:</p><p> {{ order.price }}</p> </v-card-title>
             <v-divider></v-divider>
             <v-card-actions class="d-flex justify-center">
                 <v-btn
                     variant="elevated"
                     color="red-darken-4"
                     width="20%"
+                    @click="console.log(order.id)"
                 >
                     Obriši
                 </v-btn>

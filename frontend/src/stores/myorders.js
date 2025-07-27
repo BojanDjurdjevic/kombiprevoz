@@ -1,4 +1,4 @@
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { defineStore } from "pinia";
 import { useUserStore } from "./user";
 import api from "@/api";
@@ -11,7 +11,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
     const oneOrder = ref({})
 
     function takeOrder(order) {
-        myorders.value.forEach(item => {
+        myorders.value.orders.forEach(item => {
             if(item.id == order.id) {
                 oneOrder.value = order
             }
@@ -26,31 +26,52 @@ export const useMyOrdersStore = defineStore('myorders', () => {
         }
     })
 
+    onMounted(() => {
+        actions.value.getUserOrders(addedOrders.value.orders)
+    })
+
     const actions = ref({
-        createOrder: async (tour) => {
-                try {
-                    const res = await api.makeOrder(tour)
-                    console.log(res)
-                    if(res.data.success) {
-                        user.successMsg = res.data.msg
-                        //router.push('/rezervacije')
-                    }
-                    return true
-                } catch(error) {
-                    console.dir(error, {depth: null})
-                    if(error.response.data.error) {
-                        user.errorMsg = error.response.data.error
-                    }
-                    return false
-                } finally {
-                    user.loading = false
-                    user.clearMsg(4000)
-                }
+        getUserOrders: async (orders) => {
+            user.loading = true
+            console.log("pre :", orders)
+            try {
+                const res = await api.getOrder(orders) 
+                if(res.data.success) myorders.value = res.data
+                else {
+                    user.showSucc(res, 3000)
+                } 
+                console.log(myorders.value)
+                console.log(res.data)
+            } catch (error) {
+                console.dir(error, {depth: null})
+            } finally {
+                user.loading = false
             }
+        },
+        createOrder: async (tour) => {
+            try {
+                const res = await api.makeOrder(tour)
+                console.log(res)
+                if(res.data.success) {
+                    user.successMsg = res.data.msg
+                    //router.push('/rezervacije')
+                }
+                return true
+            } catch(error) {
+                console.dir(error, {depth: null})
+                if(error.response.data.error) {
+                    user.errorMsg = error.response.data.error
+                }
+                return false
+            } finally {
+                user.loading = false
+                user.clearMsg(4000)
+            }
+        }
     })
 
     return {
         myorders, oneOrder, actions, addedOrders,
-        takeOrder, 
+        takeOrder,
     }
 })

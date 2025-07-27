@@ -27,8 +27,8 @@ class OrderController {
             switch($request) {
                 case 'GET':
                     if(isset($this->data->orders) && !empty($this->data->orders)) {
-                        if(isset($this->data->orders->userID) && !empty($this->data->orders->userID)) {
-                            $this->order->user_id = $this->data->orders->userID;
+                        if(isset($this->data->orders->user_id) && !empty($this->data->orders->user_id)) {
+                            $this->order->user_id = $this->data->orders->user_id;
                             $this->order->getByUser();
                         }
                         if(isset($this->data->orders->ord_code) && !empty($this->data->orders->ord_code)) {

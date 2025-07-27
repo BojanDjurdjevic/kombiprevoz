@@ -48,17 +48,17 @@ const orders = useMyOrdersStore()
             <v-card height="21rem" width="21rem" elevation="9"
                 class="d-flex flex-column justify-space-evenly align-center ma-6 rounded-xl"
                 
-                v-for="order in orders.myorders"
+                v-for="order in orders.myorders.orders"
             >
                 <v-card class="w-100 text-center
                 d-flex flex-column justify-space-evenly align-center
                 " height="66%">
-                    <v-card-title> {{ order.from }} - {{ order.to }} </v-card-title>
+                    <v-card-title> {{ order.items[0].from }} - {{ order.items[0].to }} </v-card-title>
                     <v-divider></v-divider>
-                    <v-card-subtitle> {{ order.date }} </v-card-subtitle>
-                    <v-card-subtitle> {{ order.time }} </v-card-subtitle>
+                    <v-card-subtitle>Odlazak: {{ order.items[0].date }} </v-card-subtitle>
+                    <v-card-subtitle v-if="order.items[1]">Dolazak: {{ order.items[1].date }} </v-card-subtitle>
                     <v-divider></v-divider>
-                    <v-card-title> {{ order.price }} EUR</v-card-title>
+                    <v-card-title> {{ order.total }} EUR</v-card-title>
                 </v-card>
                 <v-card-actions class="w-50 ">
                     <v-btn
