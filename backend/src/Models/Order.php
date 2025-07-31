@@ -58,7 +58,7 @@ class Order {
         if($num > 0) {
             $row = $res->fetch(PDO::FETCH_OBJ);
 
-            if($_SESSION['user_id'] == $row->user_id) {
+            if($_SESSION['user']['id'] == $row->user_id) {
                 return true;
             } else {
                 return false;
@@ -103,7 +103,8 @@ class Order {
     // CHECK if the DEADLINE (48H) for changes is NOT passed:
     public function checkDeadline() 
     {
-        $current = "SELECT places, date, total, tour_id, time FROM orders 
+        $current = "SELECT places, date, price, tour_id, time FROM order_items 
+        INNER JOIN orders on order_items.order_id = orders.id
         INNER JOIN tours on orders.tour_id = tours.id
         WHERE orders.id = '$this->id'";
         $res = $this->db->query($current);
@@ -157,7 +158,7 @@ class Order {
     public function isDeparture($d)
     {
         if(!isset($this->tour_id) || empty($this->tour_id)) {
-            $sqlID = "SELECT tour_id from orders WHERE id = '$this->id'";
+            $sqlID = "SELECT tour_id from order_items WHERE order_id = '$this->id'";
             $res = $this->db->query($sqlID);
             $row = $res->fetch(PDO::FETCH_OBJ);
             $this->tour_id = $row->tour_id;
