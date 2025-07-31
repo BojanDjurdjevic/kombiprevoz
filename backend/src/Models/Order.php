@@ -1070,8 +1070,8 @@ class Order {
 
     public function updateAddress()
     {
-        $this->getFromDB($this->id);
-        $sql = "UPDATE orders SET add_from = :add_from, add_to = :add_to
+        //$this->getFromDB($this->id);
+        $sql = "UPDATE order_items SET add_from = :add_from, add_to = :add_to
                 WHERE id = :id"
         ;
         $stmt = $this->db->prepare($sql);
@@ -1084,16 +1084,29 @@ class Order {
         $stmt->bindParam('add_to', $this->new_add_to);
         //$stmt->bindParam('places', $this->places);
         if(!empty($this->new_add_from) && !empty($this->new_add_to)) {
-            if($stmt->execute()) {
-                if(empty($this->newDate) && empty($this->newPlaces)) {
-                    $mydata = $this->generateVoucher($this->code, $this->places, $this->new_add_from, $this->new_add_to, $this->date, $this->price);
-                    $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
-                }
-                echo json_encode(["address" => 'Uspešno ste izmenili adresu/adrese rezervacije!'], JSON_PRETTY_PRINT);
-            } else
-            echo json_encode(["address" => 'Trenutno nije moguće izmeniti ovu rezervaciju!']);
-        } else
-            echo json_encode(["address" => 'Molimo Vas da unesete validne adrese!']);
+            try {
+                if($stmt->execute()) {
+                    if(empty($this->newDate) && empty($this->newPlaces)) {
+                        //$mydata = $this->generateVoucher($this->code);
+                        //$this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
+                    }
+                    echo json_encode([
+                        "success" => true,
+                        "msg" => 'Uspešno ste izmenili adresu/adrese rezervacije!',
+                    ], JSON_PRETTY_PRINT);
+                } 
+            } catch (PDOException $e) {
+                http_response_code(500);
+                echo json_encode([
+                    'error' => 'Došlo je do greške pri konekciji na bazu podataka.',
+                    'db' => $e->getMessage()
+                ], JSON_PRETTY_PRINT);
+            }
+            
+        } else {
+            http_response_code(422);
+            echo json_encode(["error" => 'Molimo Vas da unesete validne adrese!']);
+        }           
     }
 
     // Update ONLY number of places:

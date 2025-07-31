@@ -33,14 +33,14 @@ export const useMyOrdersStore = defineStore('myorders', () => {
 
     const pickup = ref({
         id: '',
-        addFrom: '',
-        addTo: ''
+        add_from: '',
+        add_to: ''
     })
     function clearPickup() {
         pickup.value = {
             id: pickup.value.id,
-            addFrom: '',
-            addTo: ''
+            add_from: '',
+            add_to: ''
         }
     }
 
@@ -52,7 +52,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
         getUserOrders: async (orders) => {
             if(user.user) {
                 addedOrders.value.orders.user_id = user.user.id
-            }
+            } else return
             user.loading = true
             try {
                 const res = await api.getOrder(orders) 
@@ -99,14 +99,25 @@ export const useMyOrdersStore = defineStore('myorders', () => {
                 user.clearMsg(4000)
             }
         },
-        addUpdate: async (order) => {
-            if(!pickup.value.id || !pickup.value.addFrom || !pickup.value.addTo) return
-            console.log(order.id)
-
+        addUpdate: async (order, old) => {
+            if(!pickup.value.id || !pickup.value.add_from || !pickup.value.add_to) return
+            user.loading = true
+            try {
+                const res = await api.orderItemAddress(order)
+                console.log(res.data)
+                if(res.data.success) user.showSucc(res, 3000)
+                actions.value.getUserOrders(addedOrders.value.orders)
+                takeOrder(old)
+            } catch (error) {
+                console.dir(error, {depth: null})
+            } finally {
+                user.loading = false
+                addressDialog.value = false
+                clearPickup()
+                console.log(pickup.value)
+            }
             
             
-            addressDialog.value = false
-            clearPickup()
         }
     })
 

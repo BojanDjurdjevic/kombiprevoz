@@ -53,7 +53,7 @@ const user = useUserStore()
                         </v-btn>
                     </template>
                     <v-card>
-                        <v-form @submit.prevent="orders.actions.addUpdate(orders.pickup)">
+                        <v-form @submit.prevent="orders.actions.addUpdate(orders.pickup, order)">
                             <v-card-title primary-title>
                                 Izmena adrese 
                             </v-card-title>
@@ -62,14 +62,14 @@ const user = useUserStore()
                                     name="Adresa polaska"
                                     label="Adresa polaska"
                                     clearable
-                                    v-model="orders.pickup.addFrom"
+                                    v-model="orders.pickup.add_from"
                                     :rules="[user.rules.required, user.rules.validStr]"
                                 ></v-text-field>
                                 <v-text-field
                                     name="Adresa dolaska"
                                     label="Adresa dolaska"
                                     clearable
-                                    v-model="orders.pickup.addTo"
+                                    v-model="orders.pickup.add_to"
                                     :rules="[user.rules.required, user.rules.validStr]"
                                 ></v-text-field>
                             </v-card-text>

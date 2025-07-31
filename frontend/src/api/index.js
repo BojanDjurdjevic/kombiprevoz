@@ -87,5 +87,17 @@ export default {
    makeOrder(tour) {
     //return console.log(tour)
         return axios.post("", tour)
+   },
+   orderItemAddress(order) {
+        const dto = {
+            orders: {
+                update: { id: order.id },
+                address: {
+                    add_from: order.add_from,
+                    add_to: order.add_to
+                }
+            }
+        }
+        return axios.put("", dto)
    }
 }
