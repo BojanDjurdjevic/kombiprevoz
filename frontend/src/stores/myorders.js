@@ -33,13 +33,20 @@ export const useMyOrdersStore = defineStore('myorders', () => {
     const actions = ref({
         getUserOrders: async (orders) => {
             user.loading = true
-            console.log("pre :", orders)
             try {
                 const res = await api.getOrder(orders) 
                 if(res.data.success) myorders.value = res.data
                 else {
                     user.showSucc(res, 3000)
                 } 
+                myorders.value.orders.forEach(order => {
+                    order.items.forEach(item => {
+                        let splited = item.date.split("-")
+                        let reversed = splited.reverse()
+                        let formated = reversed.join(".")
+                        item.date = formated
+                    })
+                })
                 console.log(myorders.value)
                 console.log(res.data)
             } catch (error) {
