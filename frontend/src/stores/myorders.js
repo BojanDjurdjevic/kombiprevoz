@@ -3,9 +3,11 @@ import { defineStore } from "pinia";
 import { useUserStore } from "./user";
 import api from "@/api";
 import router from "@/router";
+import { useRoute } from 'vue-router';
 
 
 export const useMyOrdersStore = defineStore('myorders', () => {
+    const route = useRoute()
     const user = useUserStore()
     const myorders = ref([])
     const oneOrder = ref({})
@@ -100,16 +102,33 @@ export const useMyOrdersStore = defineStore('myorders', () => {
             }
         },
         addUpdate: async (order, old) => {
+            if(!user.user) {
+                return router.push({
+                    name: "login",
+                    query: {redirect: route.fullPath}
+                })
+            }
             if(!pickup.value.id || !pickup.value.add_from || !pickup.value.add_to) return
             user.loading = true
             try {
-                const res = await api.orderItemAddress(order)
+                const dto = {
+                    orders: {
+                        update: { id: order.id },
+                        address: {
+                            add_from: order.add_from,
+                            add_to: order.add_to
+                        },
+                        user_id: user.user.id
+                    }
+                }
+                const res = await api.orderItemAddress(dto)
                 console.log(res.data)
                 if(res.data.success) user.showSucc(res, 3000)
                 actions.value.getUserOrders(addedOrders.value.orders)
                 takeOrder(old)
             } catch (error) {
                 console.dir(error, {depth: null})
+                user.showErr(error, 3000)
             } finally {
                 user.loading = false
                 addressDialog.value = false

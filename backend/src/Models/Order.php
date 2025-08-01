@@ -51,7 +51,10 @@ class Order {
     // Checking if the USER is OWNER of the order
     public function findUserId() 
     {
-        $select = "SELECT user_id from orders WHERE id = '$this->id'";
+        $select = "SELECT user_id from orders 
+                    INNER JOIN order_items on orders.id = order_items.order_id 
+                    WHERE order_items.id = '$this->id'"
+        ;
         $res = $this->db->query($select);
         $num = $res->rowCount();
 
@@ -103,10 +106,10 @@ class Order {
     // CHECK if the DEADLINE (48H) for changes is NOT passed:
     public function checkDeadline() 
     {
-        $current = "SELECT places, date, price, tour_id, time FROM order_items 
+        $current = "SELECT places, date, order_items.price, tour_id, time FROM order_items 
         INNER JOIN orders on order_items.order_id = orders.id
-        INNER JOIN tours on orders.tour_id = tours.id
-        WHERE orders.id = '$this->id'";
+        INNER JOIN tours on order_items.tour_id = tours.id
+        WHERE order_items.id = '$this->id'";
         $res = $this->db->query($current);
         $num = $res->rowCount();
 
@@ -120,7 +123,7 @@ class Order {
 
             $this->date = date("Y-m-d", date_timestamp_get($departure));
             $this->places = $row->places;
-            $this->price = $row->total;
+            $this->price = $row->price;
             $this->tour_id = $row->tour_id;
 
             if($deadline > $today) {

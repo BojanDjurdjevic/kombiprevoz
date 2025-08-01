@@ -158,7 +158,8 @@ class OrderController {
                                     }
                                 }
                             } else {
-                                echo json_encode(["msg" => "Nije moguće izmeniti rezervaciju, jer je do polaska ostalo manje od 48 sati."], JSON_PRETTY_PRINT);
+                                http_response_code(422);
+                                echo json_encode(["error" => "Nije moguće izmeniti rezervaciju, jer je do polaska ostalo manje od 48 sati."], JSON_PRETTY_PRINT);
                             }
                         } else echo json_encode(["msg" => "Niste autorizovani da izmenite ovu rezervaciju!"], JSON_PRETTY_PRINT);
                     }
