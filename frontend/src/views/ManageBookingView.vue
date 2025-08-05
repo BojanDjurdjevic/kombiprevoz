@@ -47,7 +47,7 @@ const user = useUserStore()
                             width="20%"
                             prepend-icon="mdi-pencil-circle"
                             v-bind="activatorProps"
-                            @click="orders.pickup.id = order.id, console.log(order.pickup)"
+                            @click="orders.populatePickup(order)"
                         >
                             Adrese
                         </v-btn>
@@ -62,16 +62,14 @@ const user = useUserStore()
                                     name="Adresa polaska"
                                     label="Adresa polaska"
                                     clearable
-                                    v-model="order.pickup"
-                                    @update:model-value="orders.pickup.add_from = order.pickup"
+                                    v-model="orders.pickup.add_from"
                                     :rules="[user.rules.required, user.rules.validStr]"
                                 ></v-text-field>
                                 <v-text-field
                                     name="Adresa dolaska"
                                     label="Adresa dolaska"
                                     clearable
-                                    v-model="order.dropoff"
-                                    @update:model-value="orders.pickup.add_to = order.dropoff"
+                                    v-model="orders.pickup.add_to"
                                     :rules="[user.rules.required, user.rules.validStr]"
                                 ></v-text-field>
                             </v-card-text>
@@ -83,7 +81,7 @@ const user = useUserStore()
                                     @click="orders.clearPickup"
                                 >Obriši</v-btn>
                                 <v-btn color="error"
-                                    @click="orders.addressDialog = false, console.log(orders.pickup)"
+                                    @click="orders.addressDialog = false"
                                 >Zatvori</v-btn>
                             </v-card-actions>
                         </v-form>

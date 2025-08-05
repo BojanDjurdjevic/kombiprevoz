@@ -16,9 +16,10 @@ export const useMyOrdersStore = defineStore('myorders', () => {
         if(myorders.value) {
             myorders.value.orders.forEach(item => {
                 if(item.id == order.id) {
-                    oneOrder.value = order
+                    oneOrder.value = item
                 }
             })
+            console.log(oneOrder.value)
         }
     }
 
@@ -44,6 +45,11 @@ export const useMyOrdersStore = defineStore('myorders', () => {
             add_from: '',
             add_to: ''
         }
+    }
+    function populatePickup(order) {
+        pickup.value.id = order.id
+        pickup.value.add_from = order.pickup
+        pickup.value.add_to = order.dropoff
     }
 
     onMounted(() => {
@@ -102,6 +108,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
             }
         },
         addUpdate: async (order, old) => {
+            console.log(old)
             if(!user.user) {
                 return router.push({
                     name: "login",
@@ -124,8 +131,23 @@ export const useMyOrdersStore = defineStore('myorders', () => {
                 const res = await api.orderItemAddress(dto)
                 console.log(res.data)
                 if(res.data.success) user.showSucc(res, 3000)
-                actions.value.getUserOrders(addedOrders.value.orders)
-                takeOrder(old)
+                await actions.value.getUserOrders(addedOrders.value.orders)
+                //await nextTick()
+                
+                router.push({
+                    name: 'rezervacije'
+                })
+                setTimeout(() => {
+                    myorders.value.orders.forEach(item => {
+                        if(item.id == old.id) {
+                            oneOrder.value = item
+                        }
+                    })
+                    console.log(oneOrder.value)
+                    router.push({
+                        name: 'uredi'
+                    })
+                }, 3000)
             } catch (error) {
                 console.dir(error, {depth: null})
                 user.showErr(error, 3000)
@@ -143,6 +165,6 @@ export const useMyOrdersStore = defineStore('myorders', () => {
     return {
         myorders, oneOrder, actions, addedOrders, addressDialog, plsDialog, dateDialog, pickup,
 
-        takeOrder, clearPickup, 
+        takeOrder, clearPickup, populatePickup,
     }
 })
