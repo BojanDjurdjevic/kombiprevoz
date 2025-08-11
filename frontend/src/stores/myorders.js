@@ -33,7 +33,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
             user_id: false
         }
     })
-
+    // ---------------------- UPDATE ADDRESS ------------------------ //
     const pickup = ref({
         id: '',
         add_from: '',
@@ -50,6 +50,17 @@ export const useMyOrdersStore = defineStore('myorders', () => {
         pickup.value.id = order.id
         pickup.value.add_from = order.pickup
         pickup.value.add_to = order.dropoff
+    }
+
+    // ---------------------- UPDATE PLACES ------------------------ //
+    const seatsUp = ref(1)
+    function places(order) {
+        seatsUp.value = order.places
+        console.log(seatsUp.value)
+    }
+    function clsSeats() {
+        seatsUp.value = 1
+        plsDialog.value = false
     }
 
     onMounted(() => {
@@ -163,8 +174,8 @@ export const useMyOrdersStore = defineStore('myorders', () => {
     })
 
     return {
-        myorders, oneOrder, actions, addedOrders, addressDialog, plsDialog, dateDialog, pickup,
+        myorders, oneOrder, actions, addedOrders, addressDialog, plsDialog, dateDialog, pickup, seatsUp,
 
-        takeOrder, clearPickup, populatePickup,
+        takeOrder, clearPickup, populatePickup, places, clsSeats,
     }
 })

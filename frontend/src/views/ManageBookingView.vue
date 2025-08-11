@@ -1,6 +1,7 @@
 <script setup>
 import { useMyOrdersStore } from '@/stores/myorders';
 import { useUserStore } from '@/stores/user';
+import { VNumberInput } from 'vuetify/labs/VNumberInput';
 const orders = useMyOrdersStore()
 const user = useUserStore()
 
@@ -88,15 +89,47 @@ const user = useUserStore()
                     </v-card>
                 </v-dialog>
                 
-                <v-btn
-                    variant="elevated"
-                    color="indigo-darken-4"
-                    width="20%"
-                    prepend-icon="mdi-pencil-circle"
-                    @click="console.log(order.id)"
+                <v-dialog
+                    v-model="orders.plsDialog"
+                    max-width="75%"
+                    transition="dialog-transition"
                 >
-                    Broj mesta
-                </v-btn>
+                    <template v-slot:activator="{props: activatorProps}">
+                        <v-btn
+                            variant="elevated"
+                            color="indigo-darken-4"
+                            width="20%"
+                            prepend-icon="mdi-pencil-circle"
+                            v-bind="activatorProps"
+                            
+                        >
+                            Broj mesta
+                        </v-btn>
+                    </template>
+                    <v-card>
+                        <v-form>
+                            <v-card-title primary-title>
+                                Izaberi broj mesta
+                            </v-card-title>
+                            <v-card-text>
+                                <v-number-input
+                                    
+                                    control-variant="split"
+                                    :max="7"
+                                    :min="1"
+                                    v-model="orders.seatsUp"
+                                ></v-number-input>
+                            </v-card-text>
+                            <v-card-actions>
+                                <v-btn color="success">Potvrdi</v-btn>
+                                <v-btn color="error"
+                                    @click="orders.clsSeats"
+                                >Zatvori</v-btn>
+                            </v-card-actions>
+                        </v-form>
+                    </v-card>
+                </v-dialog>
+
                 <v-btn
                     variant="elevated"
                     color="indigo-darken-4"
