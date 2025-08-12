@@ -25,6 +25,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
 
     const addressDialog = ref(false)
     const plsDialog = ref(false)
+    const plsConfDialog = ref(false)
     const dateDialog = ref(false)
 
     const addedOrders = ref({
@@ -53,14 +54,34 @@ export const useMyOrdersStore = defineStore('myorders', () => {
     }
 
     // ---------------------- UPDATE PLACES ------------------------ //
-    const seatsUp = ref(1)
+    const currentPrice = ref(0)
+    const pricePerUnit = ref(0)
+    const newPrice = ref(0)
+    //const currSeats = ref(0)
+    const seatsUp = ref({
+        id: '',
+        seats: 1
+    })
     function places(order) {
-        seatsUp.value = order.places
-        console.log(seatsUp.value)
+        //currSeats.value = order.places
+        //seatsUp.value.seats = currSeats.value
+        seatsUp.value.id = order.id
+        currentPrice.value = order.price 
+        pricePerUnit.value = order.price / order.places
     }
     function clsSeats() {
-        seatsUp.value = 1
+        seatsUp.value = {
+            id: '',
+            seats: 1
+        }
+        currentPrice.value = 0
+        newPrice.value = 0
         plsDialog.value = false
+        plsConfDialog.value = false
+    }
+
+    function calculateNewPrice() {
+        newPrice.value = pricePerUnit.value * seatsUp.value.seats
     }
 
     onMounted(() => {
@@ -170,12 +191,25 @@ export const useMyOrdersStore = defineStore('myorders', () => {
             }
             
             
+        },
+        changePlaces: () => {
+            const dto = {
+                orders: {
+                    update: {
+                        id: seatsUp.value.id
+                    },
+                    new_places: seatsUp.value.seats
+                }
+            }
+            //plsConfDialog.value = false
+            clsSeats()
+            console.log(dto)
         }
     })
 
     return {
         myorders, oneOrder, actions, addedOrders, addressDialog, plsDialog, dateDialog, pickup, seatsUp,
-
-        takeOrder, clearPickup, populatePickup, places, clsSeats,
+        currentPrice, newPrice, pricePerUnit, plsConfDialog,
+        takeOrder, clearPickup, populatePickup, places, clsSeats, calculateNewPrice,
     }
 })

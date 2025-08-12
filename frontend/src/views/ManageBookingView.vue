@@ -94,14 +94,14 @@ const user = useUserStore()
                     max-width="75%"
                     transition="dialog-transition"
                 >
-                    <template v-slot:activator="{props: activatorProps}">
+                    <template v-slot:activator="{props: activatorPropsS}">
                         <v-btn
                             variant="elevated"
                             color="indigo-darken-4"
                             width="20%"
                             prepend-icon="mdi-pencil-circle"
-                            v-bind="activatorProps"
-                            
+                            v-bind="activatorPropsS"
+                            @click="orders.places(order)"
                         >
                             Broj mesta
                         </v-btn>
@@ -113,15 +113,52 @@ const user = useUserStore()
                             </v-card-title>
                             <v-card-text>
                                 <v-number-input
-                                    
                                     control-variant="split"
                                     :max="7"
                                     :min="1"
-                                    v-model="orders.seatsUp"
+                                    v-model="orders.seatsUp.seats"
+                                    v-on:update:model-value="orders.calculateNewPrice"
                                 ></v-number-input>
+                                <div>
+                                    <p>Trenutna cena: {{ orders.currentPrice }}</p>
+                                    <p v-if="orders.newPrice">Nova cena: {{ orders.newPrice }} </p>
+                                </div>
                             </v-card-text>
                             <v-card-actions>
-                                <v-btn color="success">Potvrdi</v-btn>
+                                <v-dialog
+                                    v-model="orders.plsConfDialog"
+                                    
+                                    max-width="75%"
+                                    transition="dialog-transition"
+                                >
+                                    <template v-slot:activator="{props: activatorPropsC}">
+                                        <v-btn
+                                            color="success"
+                                            v-bind="activatorPropsC"
+                                        >
+                                            Potvrdi
+                                        </v-btn>
+                                    </template>
+                                    <v-card>
+                                        <v-card-title primary-title>
+                                            Da li ste sigurni da želite da promenite broj mesta?
+                                        </v-card-title>
+                                        <v-card-text>
+                                            <p>Novi broj mesta: {{ orders.seatsUp.seats }} </p>
+                                            <p>Nova cena: {{ orders.newPrice }} </p>
+                                        </v-card-text>
+                                        <v-card-actions>
+                                            <v-btn color="success"
+                                                type="submit"
+                                                @click="orders.actions.changePlaces"
+                                            >Prihvati</v-btn>
+                                            <v-btn color="error"
+                                                @click="orders.clsSeats"
+                                            >Odustani</v-btn>
+                                        </v-card-actions>
+                                    </v-card>
+                                </v-dialog>
+                                
                                 <v-btn color="error"
                                     @click="orders.clsSeats"
                                 >Zatvori</v-btn>
