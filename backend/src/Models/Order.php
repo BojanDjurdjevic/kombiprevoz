@@ -16,6 +16,7 @@ use tidy;
 
 class Order {
     public $id;
+    public $order_id;
     public $tour_id;
     public $user_id;
     public $driver_id;
@@ -221,9 +222,9 @@ class Order {
     public function updateTotalPrice() 
     {
         $find = "SELECT SUM(price) as total FROM order_items WHERE order_id = :order_id";
-        $this->id = htmlspecialchars($this->id);
+        $this->order_id = htmlspecialchars($this->order_id);
         $stmtF = $this->db->prepare($find);
-        $stmtF->bindParam(':order_id', $this->id);
+        $stmtF->bindParam(':order_id', $this->order_id);
         $total = 0;
         try {
             $stmtF->execute();
@@ -239,7 +240,7 @@ class Order {
         //
         $params = [
             ':total' => $total,
-            ':id' => $this->id
+            ':id' => $this->order_id
         ];
 
         try {
@@ -810,7 +811,9 @@ class Order {
 
     public function getFromDB($id) 
     {
-        $sql = "SELECT * FROM orders WHERE id = :id";
+        $sql = "SELECT order_items.*, orders.id as order_id, orders.* FROM order_items 
+        INNER JOIN orders on order_items.order_id = orders.id
+        WHERE order_items.id = :id";
         $stmt = $this->db->prepare($sql);
 
         $id = htmlspecialchars(strip_tags($id), ENT_QUOTES);
@@ -830,13 +833,14 @@ class Order {
                     $this->code = $order->code;
                     $this->voucher = $order->file_path;
                     $this->driver_id = $order->driver_id;
+                    $this->order_id = $order->order_id;
                     
                     return $order; 
                 } 
                 else return null;
             }
         } catch (PDOException $e) {
-            echo json_encode(['msg' => $e->getMessage()]);
+            echo json_encode(['error' => $e->getMessage()]);
             return null;
         }
     }
@@ -1117,7 +1121,7 @@ class Order {
     {
         $this->getFromDB($this->id);
         if($this->newPlaces - $this->places <= $this->availability($this->date)) {
-            $sql = "UPDATE orders SET places = :places, total = :total WHERE id = :id";
+            $sql = "UPDATE order_items SET places = :places, price = :total WHERE id = :id";
             $stmt = $this->db->prepare($sql);
 
             $this->id = htmlspecialchars(strip_tags($this->id));
@@ -1136,16 +1140,19 @@ class Order {
                 $mydata = $this->generateVoucher($this->code, $this->newPlaces, $this->add_from, $this->add_to, $this->date, $new_total);
                 $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
                 echo json_encode([
-                    "places" => "Uspešno ste izmenili broj mesta u rezervaciji na {$this->newPlaces}.",
+                    "success" => "Uspešno ste izmenili broj mesta u rezervaciji na {$this->newPlaces}.",
                     "mesta" => $this->places,
                     "NovaMesta" => $this->newPlaces, 
                     "Dostupno" => $this->availability($this->date)
                 ], JSON_PRETTY_PRINT);
-            } else
+            } else {
+                http_response_code(422);
                 echo json_encode(["places" => 'Trenutno nije moguće izmeniti ovu rezervaciju!']);
+            }    
         } else {
+            http_response_code(422);
             echo json_encode([
-                "places" => "Nema dovoljno slobodnih mesta da biste izvršili izmenu!",
+                "error" => "Nema dovoljno slobodnih mesta da biste izvršili izmenu!",
                 "available" => $this->availability($this->date) + $this->places
             ], JSON_PRETTY_PRINT);
         }
@@ -1168,14 +1175,18 @@ class Order {
                     $stmt->bindParam('date', $this->newDate);
 
                     if($stmt->execute()) {
+                        $this->updateTotalPrice();
                         $mydata = $this->generateVoucher($this->code, $this->places, $this->add_from, $this->add_to, $this->newDate, $this->price);
                         $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
-                        echo json_encode(['reschedule' => "Uspešno ste promenili datum vaše vožnje na: $this->newDate"]);
-                    } else
-                        echo json_encode(['reschedule' => "Nije moguće promeniti datum vaše vožnje na: $this->newDate. Molimo kontaktirajte našu podršku!"]);
+                        echo json_encode(['success' => "Uspešno ste promenili datum vaše vožnje na: $this->newDate"]);
+                    } else {
+                        http_response_code(422);
+                        echo json_encode(['error' => "Nije moguće promeniti datum vaše vožnje na: $this->newDate. Molimo kontaktirajte našu podršku!"]);
+                    }    
                 } else {
+                    http_response_code(422);
                     echo json_encode([
-                        'reschedule' => 'Nema dovoljno slobodnih mesta za izabrani datum.',
+                        'error' => 'Nema dovoljno slobodnih mesta za izabrani datum.',
                         'mesta' => $this->places,
                         'dostupno' => $this->availability($this->newDate)
                     ], JSON_PRETTY_PRINT);

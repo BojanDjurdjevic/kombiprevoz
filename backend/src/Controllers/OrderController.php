@@ -142,7 +142,8 @@ class OrderController {
                                             $this->order->updatePlaces();
                                         } else {
                                             $places = $this->order->newPlaces;
-                                            echo json_encode(["places" => "Naveli ste broj mesta koji već imate u rezervaciji: $places"]);
+                                            http_response_code(401);
+                                            echo json_encode(["error" => "Naveli ste broj mesta koji već imate u rezervaciji: $places"]);
                                         } 
                                     }
                                     if(isset($this->data->orders->reschedule) && !empty($this->data->orders->reschedule)) {
