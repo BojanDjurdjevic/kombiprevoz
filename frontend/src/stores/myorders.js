@@ -196,6 +196,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
             user.loading = true
             const dto = {
                 orders: {
+                    user_id: user.user.id,
                     update: {
                         id: seatsUp.value.id
                     },

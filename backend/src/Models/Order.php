@@ -1137,7 +1137,7 @@ class Order {
             $stmt->bindParam(':id', $this->id);
 
             if($stmt->execute()) {
-                $mydata = $this->generateVoucher($this->code, $this->newPlaces, $this->add_from, $this->add_to, $this->date, $new_total);
+                $mydata = $this->generateVoucher((int)$new_total);
                 $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
                 echo json_encode([
                     "success" => "Uspešno ste izmenili broj mesta u rezervaciji na {$this->newPlaces}.",
