@@ -88,7 +88,7 @@ export default {
     //return console.log(tour)
         return axios.post("", tour)
    },
-   orderItemAddress(order) {
+   orderItemUpdate(order) {
         //
         return axios.put("", order)
    }

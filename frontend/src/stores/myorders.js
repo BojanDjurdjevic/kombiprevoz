@@ -160,7 +160,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
                         user_id: user.user.id
                     }
                 }
-                const res = await api.orderItemAddress(dto)
+                const res = await api.orderItemUpdate(dto)
                 console.log(res.data)
                 if(res.data.success) user.showSucc(res, 3000)
                 await actions.value.getUserOrders(addedOrders.value.orders)
@@ -192,7 +192,8 @@ export const useMyOrdersStore = defineStore('myorders', () => {
             
             
         },
-        changePlaces: () => {
+        changePlaces: async () => {
+            user.loading = true
             const dto = {
                 orders: {
                     update: {
@@ -201,9 +202,18 @@ export const useMyOrdersStore = defineStore('myorders', () => {
                     new_places: seatsUp.value.seats
                 }
             }
-            //plsConfDialog.value = false
-            clsSeats()
-            console.log(dto)
+            try {
+                const res = await api.orderItemUpdate(dto)
+                console.log(res.data)
+                if(res.data.success) user.showSucc(res, 3000)
+                await actions.value.getUserOrders(addedOrders.value.orders)
+            } catch (error) {
+                console.dir(error, {depth: null})
+                user.showErr(error, 3000)
+            } finally {
+                user.loading = false
+                clsSeats()
+            }
         }
     })
 
