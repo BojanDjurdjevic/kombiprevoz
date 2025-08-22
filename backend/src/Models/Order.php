@@ -403,10 +403,13 @@ class Order {
         } else
         $html = str_replace("{{ price }}", $this->price, $html);
         $html = str_replace("{{ year }}", date("Y"), $html);
-        if($myOrder != NULL) {
+        if($myOrder != NULL && $myDriver) {
             $html = str_replace("{{ driver }}", $myDriver, $html);
             $html = str_replace("{{ drphone }}", $myOrder->dr_phone, $html);
             $html = str_replace("{{ drmail }}", $myOrder->dr_email, $html);
+            $html = str_replace("{{ view }}", "visible", $html);
+        } else {
+            $html = str_replace("{{ view }}", "invisible", $html);
         }
 
         $pdf->loadHtml($html);
@@ -899,24 +902,25 @@ class Order {
 
     public function getDriverOfTour()
     {
-        $sql = "SELECT orders.id, orders.tour_id, orders.driver_id, orders.places, tours.from_city, 
-                orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
-                orders.date, tours.time as pickuptime, tours.duration,
-                orders.total as price, orders.code, orders.file_path as voucher, 
+        $sql = "SELECT orders.id, order_items.tour_id, orders.driver_id, order_items.places, tours.from_city, 
+                order_items.add_from as pickup, tours.to_city, order_items.add_to as dropoff,
+                order_items.date, tours.time as pickuptime, tours.duration,
+                order_items.price, orders.code, orders.file_path as voucher, 
                 users.name as driver, users.email as dr_email, users.phone as dr_phone
-                from orders 
+                from order_items 
+                INNER JOIN orders on order_items.order_id = orders.id
                 INNER JOIN tours on orders.tour_id = tours.id
                 INNER JOIN users on orders.driver_id = users.id
-                WHERE orders.id = '$this->id' AND orders.deleted = 0"
+                WHERE order_items.id = '$this->id' AND order_items.deleted = 0"
         ;
         $res = $this->db->query($sql);
         $order = $res->fetch(PDO::FETCH_OBJ);
         if($order) {
-            echo json_encode(['msg_drOfT' => $order]);
+            //echo json_encode(['msg_drOfT' => $order]);
             return $order;
         } else {
             $this->getFromDB($this->id);
-            echo json_encode(['msg_drIsNull' => $order]);
+            //echo json_encode(['msg_drIsNull' => $order]);
             return null;
         } 
     }
@@ -1137,7 +1141,7 @@ class Order {
             $stmt->bindParam(':id', $this->id);
 
             if($stmt->execute()) {
-                $mydata = $this->generateVoucher((int)$new_total);
+                $mydata = $this->reGenerateVoucher();
                 $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
                 echo json_encode([
                     "success" => "Uspešno ste izmenili broj mesta u rezervaciji na {$this->newPlaces}.",

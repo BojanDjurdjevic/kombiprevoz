@@ -35,12 +35,15 @@
             color: brown;
             font-weight: bold;
         }
-        div  {
+        div, div .visible  {
             width: 96%;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+        }
+        div .invisible {
+            display: none;
         }
     </style>
 </head>
@@ -64,11 +67,13 @@
         <br>
         <p>Cena: <span>{{ price }} EUR</span> </p>
         <br>
-        <p>Ime Vašeg vozaca: <span>{{ driver }}</span> </p>
-        <br>
-        <p>Telefon Vašeg vozaca: <span>{{ drphone }}</span> </p>
-        <br>
-        <p>Email Vašeg vozaca: <span>{{ drmail }}</span> </p>
+        <div class="{{ view }}">
+            <p>Ime Vašeg vozaca: <span>{{ driver }}</span> </p>
+            <br>
+            <p>Telefon Vašeg vozaca: <span>{{ drphone }}</span> </p>
+            <br>
+            <p>Email Vašeg vozaca: <span>{{ drmail }}</span> </p>
+        </div>
     </div>
     <br>
 
