@@ -909,7 +909,7 @@ class Order {
                 users.name as driver, users.email as dr_email, users.phone as dr_phone
                 from order_items 
                 INNER JOIN orders on order_items.order_id = orders.id
-                INNER JOIN tours on orders.tour_id = tours.id
+                INNER JOIN tours on order_items.tour_id = tours.id
                 INNER JOIN users on orders.driver_id = users.id
                 WHERE order_items.id = '$this->id' AND order_items.deleted = 0"
         ;
