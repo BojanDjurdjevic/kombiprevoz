@@ -25,6 +25,7 @@ class Order {
     public $add_to;
     public $date;
     public $price;
+    public $total;
     public $code;
     public $voucher;
     public $deleted;
@@ -362,65 +363,109 @@ class Order {
         $options->setChroot("src/assets/img");
         $pdf = new Dompdf($options);
         $pdf->setPaper("A4", "Portrait");
-
-        if($myOrder != NULL) {
-            $arr = explode(" ", $myOrder->driver);
+        // Drivers for each item
+        if($myOrder != NULL && $myOrder['items'][0]['driver'] != NULL) {
+            $arr = explode(" ", $myOrder['items'][0]['driver']['name']);
             $myDriver = $arr[0];
-        }
-
+        } else $myDriver = null;
+        if($myOrder != NULL && $myOrder['items'][1]['driver'] != NULL) {
+            $arr = explode(" ", $myOrder['items'][1]['driver']['name']);
+            $myDriver2 = $arr[0];
+        } else $myDriver2 = null;
+        // Dates for each item
         if($myOrder != NULL) {
-           $formated = date_create($myOrder->date); 
+           $formated = date_create($myOrder['items'][0]['order']['date']); 
         } else 
         $formated = date_create($this->date); 
         $d = date("d.m.Y", date_timestamp_get($formated));
         if($myOrder != NULL) {
+           $formated2 = date_create($myOrder['items'][0]['order']['date']); 
+        } else 
+        $formated2 = date_create($this->date); 
+        $d2 = date("d.m.Y", date_timestamp_get($formated2));
+        // In the title
+        if($myOrder != NULL) {
             $html = file_get_contents("src/updated.html");
         } else $html = file_get_contents("src/template.html");
         if($myOrder != NULL) {
-            $html = str_replace("{{ order }}", $myOrder->code, $html);
+            $html = str_replace("{{ order }}", $myOrder['items'][0]['order']['code'], $html);
         } else
         $html = str_replace("{{ order }}", $this->code, $html);
 
         $html = str_replace("{{ name }}", $owner[0]['name'], $html);
+        // First Item
         if($myOrder != NULL) {
-            $html = str_replace("{{ places }}", $myOrder->places, $html);
+            $html = str_replace("{{ places }}", $myOrder['items'][0]['order']['places'], $html);
         } else
         $html = str_replace("{{ places }}", $this->places, $html);
         if($myOrder != NULL) {
-            $html = str_replace("{{ address }}", $myOrder->pickup, $html);
+            $html = str_replace("{{ address }}", $myOrder['items'][0]['order']['pickup'], $html);
         } else
         $html = str_replace("{{ address }}", $this->add_from, $html);
         $html = str_replace("{{ city }}", $tourObj[0]['from_city'], $html);
         if($myOrder != NULL) {
-            $html = str_replace("{{ address_to }}", $myOrder->dropoff, $html);
+            $html = str_replace("{{ address_to }}", $myOrder['items'][0]['order']['dropoff'], $html);
         } else
         $html = str_replace("{{ address_to }}", $this->add_to, $html);
         $html = str_replace("{{ city_to }}", $tourObj[0]['to_city'], $html);
         $html = str_replace("{{ date }}", $d, $html);
         $html = str_replace("{{ time }}", $tourObj[0]['time'], $html);
         if($myOrder != NULL) {
-            $html = str_replace("{{ price }}", $myOrder->price, $html);
+            $html = str_replace("{{ price }}", $myOrder['items'][0]['order']['price'], $html);
         } else
         $html = str_replace("{{ price }}", $this->price, $html);
-        $html = str_replace("{{ year }}", date("Y"), $html);
+
         if($myOrder != NULL && $myDriver) {
             $html = str_replace("{{ driver }}", $myDriver, $html);
-            $html = str_replace("{{ drphone }}", $myOrder->dr_phone, $html);
-            $html = str_replace("{{ drmail }}", $myOrder->dr_email, $html);
-            $html = str_replace("{{ view }}", "visible", $html);
+            $html = str_replace("{{ drphone }}", $myOrder['items'][0]['driver']['dr_phone'], $html);
+            $html = str_replace("{{ drmail }}", $myOrder['items'][0]['driver']['dr_email'], $html);
+            $html = str_replace("{{ driver_view }}", "visible", $html);
         } else {
-            $html = str_replace("{{ view }}", "invisible", $html);
+            $html = str_replace("{{ driver_view }}", "invisible", $html);
         }
 
+        // 2nd Item - Inbound
+        if($myOrder != NULL && $myOrder['items'][1]) {
+            $html = str_replace("{{ view }}", "visible", $html);
+            $html = str_replace("{{ places2 }}", $myOrder['items'][1]['order']['places'], $html);
+        
+            $html = str_replace("{{ address2 }}", $myOrder['items'][1]['order']['pickup'], $html);
+
+            $html = str_replace("{{ address2 }}", $this->add_from, $html);
+            $html = str_replace("{{ city2 }}", $tourObj[0]['to_city'], $html);
+
+            $html = str_replace("{{ address_to2 }}", $myOrder['items'][1]['order']['dropoff'], $html);
+
+            $html = str_replace("{{ address_to2 }}", $this->add_to, $html);
+            $html = str_replace("{{ city_to2 }}", $tourObj[0]['from_city'], $html);
+            $html = str_replace("{{ date2 }}", $d, $html);
+            $html = str_replace("{{ time2 }}", $tourObj[0]['time'], $html);
+            
+            $html = str_replace("{{ price2 }}", $myOrder['items'][1]['order']['price'], $html);
+            
+            $html = str_replace("{{ price2 }}", $this->price, $html);
+            
+            if($myOrder != NULL && $myDriver2) {
+                $html = str_replace("{{ driver2 }}", $myDriver2, $html);
+                $html = str_replace("{{ drphone2 }}", $myOrder['items'][1]['driver']['dr_phone'], $html);
+                $html = str_replace("{{ drmail2 }}", $myOrder['items'][1]['driver']['dr_email'], $html);
+                $html = str_replace("{{ driver_view2 }}", "visible", $html);
+            } else {
+                $html = str_replace("{{ driver_view2 }}", "invisible", $html);
+            }
+        } else $html = str_replace("{{ view }}", "invisible", $html);
+        //In footer
+        $html = str_replace("{{ year }}", date("Y"), $html);
+        // Render voucher and return data
         $pdf->loadHtml($html);
 
         $pdf->render();
         if($myOrder != NULL) {
-            $pdf->addInfo("Title", "Kombiprevoz - rezervacija: ". $myOrder->code);
+            $pdf->addInfo("Title", "Kombiprevoz - rezervacija: ". $myOrder['items'][0]['order']['code']);
         } else
         $pdf->addInfo("Title", "Kombiprevoz - rezervacija: ". $this->code);
         if($myOrder != NULL) {
-            $file_path = $myOrder->voucher;
+            $file_path = $myOrder['items'][0]['order']['voucher'];
         } else
         $file_path = $this->voucher;
                     
@@ -431,7 +476,7 @@ class Order {
                 'email' => $owner[0]['email'],
                 'name' => $owner[0]['name'],
                 'path' => $file_path,
-                'code' => $myOrder->code,
+                'code' => $myOrder['items'][0]['order']['code'],
                 'driver' => $myDriver,
                 'driver_phone' => $myOrder->dr_phone,
                 'driver_email' => $myOrder->dr_email
@@ -832,7 +877,8 @@ class Order {
                     $this->add_from = $order->add_from;
                     $this->add_to = $order->add_to;
                     $this->date = $order->date;
-                    $this->price = $order->total;
+                    $this->total = $order->total;
+                    $this->price = $order->price;
                     $this->code = $order->code;
                     $this->voucher = $order->file_path;
                     $this->driver_id = $order->driver_id;
@@ -902,24 +948,46 @@ class Order {
 
     public function getDriverOfTour()
     {
-        $sql = "SELECT orders.id, order_items.tour_id, orders.driver_id, order_items.places, tours.from_city, 
+        $sql = "SELECT orders.id, order_items.id as item_id, order_items.tour_id, 
+                orders.driver_id, order_items.places, tours.from_city, 
                 order_items.add_from as pickup, tours.to_city, order_items.add_to as dropoff,
                 order_items.date, tours.time as pickuptime, tours.duration,
-                order_items.price, orders.code, orders.file_path as voucher, 
-                users.name as driver, users.email as dr_email, users.phone as dr_phone
+                order_items.price, orders.code, orders.file_path as voucher
+                
                 from order_items 
                 INNER JOIN orders on order_items.order_id = orders.id
                 INNER JOIN tours on order_items.tour_id = tours.id
-                INNER JOIN users on orders.driver_id = users.id
-                WHERE order_items.id = '$this->id' AND order_items.deleted = 0"
+                
+                WHERE orders.id = '$this->order_id' AND order_items.deleted = 0"
         ;
+        /**
+        users.name as driver, users.email as dr_email, users.phone as dr_phone
+        INNER JOIN users on orders.driver_id = users.id
+         */
         $res = $this->db->query($sql);
-        $order = $res->fetch(PDO::FETCH_OBJ);
+        $order = $res->fetch(PDO::FETCH_ASSOC);
+        $items = [];
         if($order) {
-            //echo json_encode(['msg_drOfT' => $order]);
-            return $order;
+            while($order) {
+                $sdr = "SELECT users.name as driver, users.email as dr_email, 
+                        users.phone as dr_phone FROM users
+                        WHERE id = '$order->driver_id'"
+                ;
+                $sdRes = $this->db->query($sdr);
+                $driver = $sdRes->fetch(PDO::FETCH_ASSOC);
+                if($driver) 
+                array_push($items, [
+                    'order' => $order,
+                    'driver' => $driver
+                ]);
+                else array_push($items, ['order' => $order, 'driver' => null]);
+            }
+            
+            return [
+                'items' => $items
+            ];
         } else {
-            $this->getFromDB($this->id);
+            //$this->getFromDB($this->id);
             //echo json_encode(['msg_drIsNull' => $order]);
             return null;
         } 
