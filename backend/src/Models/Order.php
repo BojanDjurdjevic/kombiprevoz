@@ -442,8 +442,7 @@ class Order {
             $html = str_replace("{{ time2 }}", $tourObj[0]['time'], $html);
             
             $html = str_replace("{{ price2 }}", $myOrder['items'][1]['order']['price'], $html);
-            
-            $html = str_replace("{{ price2 }}", $this->price, $html);
+            $html = str_replace("{{ price3 }}", $myOrder['items'][0]['order']['total'], $html);
             
             if($myOrder != NULL && $myDriver2) {
                 $html = str_replace("{{ driver2 }}", $myDriver2, $html);
@@ -471,7 +470,7 @@ class Order {
                     
         $output = $pdf->output();
         file_put_contents($file_path, $output);
-        if($myOrder != NULL) {
+        if($myOrder != NULL && $myDriver or $myDriver2) {
             return [
                 'email' => $owner[0]['email'],
                 'name' => $owner[0]['name'],
@@ -955,7 +954,7 @@ class Order {
                 orders.driver_id, order_items.places, tours.from_city, 
                 order_items.add_from as pickup, tours.to_city, order_items.add_to as dropoff,
                 order_items.date, tours.time as pickuptime, tours.duration,
-                order_items.price, orders.code, orders.file_path as voucher
+                order_items.price, orders.total, orders.code, orders.file_path as voucher
                 
                 from order_items 
                 INNER JOIN orders on order_items.order_id = orders.id
@@ -968,32 +967,36 @@ class Order {
         INNER JOIN users on orders.driver_id = users.id
          */
         $res = $this->db->query($sql);
-        $order = $res->fetch(PDO::FETCH_ASSOC);
+        $orders = $res->fetchAll(PDO::FETCH_ASSOC);
+        
         $items = [];
-        if($order) {
-            while($order) {
-                $sdr = "SELECT users.name as driver, users.email as dr_email, 
-                        users.phone as dr_phone FROM users
-                        WHERE id = '$order->driver_id'"
-                ;
-                $sdRes = $this->db->query($sdr);
-                $driver = $sdRes->fetch(PDO::FETCH_ASSOC);
-                if($driver) 
-                array_push($items, [
-                    'order' => $order,
-                    'driver' => $driver
-                ]);
+        //if($order) {
+            foreach($orders as $order) {
+                if($order['driver_id']) {
+                    $sdr = "SELECT users.name as driver, users.email as dr_email, 
+                            users.phone as dr_phone FROM users
+                            WHERE id = {$order['driver_id']}"
+                    ;
+                    $sdRes = $this->db->query($sdr);
+                    $driver = $sdRes->fetch(PDO::FETCH_ASSOC);
+                    if($driver) 
+                    array_push($items, [
+                        'order' => $order,
+                        'driver' => $driver
+                    ]);
+                    else array_push($items, ['order' => $order, 'driver' => null]);
+                }
                 else array_push($items, ['order' => $order, 'driver' => null]);
             }
             
             return [
                 'items' => $items
             ];
-        } else {
+        //} else {
             //$this->getFromDB($this->id);
             //echo json_encode(['msg_drIsNull' => $order]);
-            return null;
-        } 
+          //  return null;
+        //} 
     }
 
     //------------------------------- FUNCTIONS OF POST METHOD --------------------------------//
@@ -1212,10 +1215,12 @@ class Order {
             $stmt->bindParam(':id', $this->id);
 
             if($stmt->execute()) {
+                $this->updateTotalPrice();
                 $mydata = $this->reGenerateVoucher();
                 $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
                 echo json_encode([
-                    "success" => "Uspešno ste izmenili broj mesta u rezervaciji na {$this->newPlaces}.",
+                    "success" => true,
+                    "msg" => "Uspešno ste izmenili broj mesta u rezervaciji na {$this->newPlaces}.",
                     "mesta" => $this->places,
                     "NovaMesta" => $this->newPlaces, 
                     "Dostupno" => $this->availability($this->date)

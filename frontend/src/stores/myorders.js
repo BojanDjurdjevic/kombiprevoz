@@ -205,10 +205,12 @@ export const useMyOrdersStore = defineStore('myorders', () => {
             }
             try {
                 const res = await api.orderItemUpdate(dto)
+                console.log("prošlo")
                 console.log(res.data)
                 if(res.data.success) user.showSucc(res, 3000)
                 await actions.value.getUserOrders(addedOrders.value.orders)
             } catch (error) {
+                console.log("error1")
                 console.dir(error, {depth: null})
                 user.showErr(error, 3000)
             } finally {
