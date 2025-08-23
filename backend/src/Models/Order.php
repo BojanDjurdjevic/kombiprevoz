@@ -478,8 +478,11 @@ class Order {
                 'path' => $file_path,
                 'code' => $myOrder['items'][0]['order']['code'],
                 'driver' => $myDriver,
-                'driver_phone' => $myOrder->dr_phone,
-                'driver_email' => $myOrder->dr_email
+                'driver_phone' => $myOrder['items'][0]['driver']['dr_phone'],
+                'driver_email' => $myOrder['items'][0]['driver']['dr_phone'],
+                'driver2' => $myDriver2,
+                'driver_phone2' => $myOrder['items'][1]['driver']['dr_phone'],
+                'driver_email2' => $myOrder['items'][1]['driver']['dr_phone']
             ];
         } else
         return [
