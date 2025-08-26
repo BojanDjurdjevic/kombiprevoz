@@ -152,10 +152,14 @@ class OrderController {
                                                 $this->order->reschedule();
                                             } else {
                                                 $d = $this->order->date;
-                                                echo json_encode(["reschedule" => "Naveli ste datum koji već imate u rezervaciji: $d"]);
+                                                http_response_code(422);
+                                                echo json_encode(["error" => "Naveli ste datum koji već imate u rezervaciji: $d"]);
                                             }  
-                                        } else
-                                           echo json_encode(["reschedule" => "Odabrani datum je ili nepostojeći, ili je već prošao. Novi odabrani polazak mora biti najmanje 24 časa od ovog momenta!"]); 
+                                        } else {
+                                            http_response_code(422);
+                                            echo json_encode(["error" => "Odabrani datum je ili nepostojeći, ili je već prošao. Novi odabrani polazak mora biti najmanje 24 časa od ovog momenta!"]); 
+                                        }
+                                           
                                     }
                                 }
                             } else {

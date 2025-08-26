@@ -1256,7 +1256,7 @@ class Order {
 
                     if($stmt->execute()) {
                         $this->updateTotalPrice();
-                        $mydata = $this->generateVoucher($this->code, $this->places, $this->add_from, $this->add_to, $this->newDate, $this->price);
+                        $mydata = $this->reGenerateVoucher();
                         $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
                         echo json_encode(['success' => "Uspešno ste promenili datum vaše vožnje na: $this->newDate"]);
                     } else {
@@ -1307,7 +1307,7 @@ class Order {
                     $d = date("d.m.Y", date_timestamp_get($formated));
 
                     if($stmt->execute()) {
-                        $mydata = $this->generateVoucher($this->code, $this->newPlaces, $this->add_from, $this->add_to, $this->newDate, $new_total);
+                        $mydata = $this->reGenerateVoucher();
                         $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
                         echo json_encode(['reschedule' => "Uspešno ste promenili datum vaše vožnje na: $d, a broj mesta na: $this->newPlaces"]);
                     } else
@@ -1482,7 +1482,7 @@ class Order {
 
         if($order) {
             if($this->places <= $this->availability($this->date) && $this->isUnlocked($this->date)) {
-                $mydata = $this->generateVoucher($this->code, $this->places, $this->add_from, $this->add_to, $this->date, $this->price);
+                $mydata = $this->reGenerateVoucher();
                 $sql = "UPDATE orders SET deleted = 0, file_path = :path WHERE id = :id";
                 $stmt = $this->db->prepare($sql);
                 $this->id = htmlspecialchars(strip_tags($this->id));
