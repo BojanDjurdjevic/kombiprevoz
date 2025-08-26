@@ -27,6 +27,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
     const plsDialog = ref(false)
     const plsConfDialog = ref(false)
     const dateDialog = ref(false)
+    const dateConfDialog = ref(false)
 
     const addedOrders = ref({
         orders: {
@@ -78,6 +79,10 @@ export const useMyOrdersStore = defineStore('myorders', () => {
         newPrice.value = 0
         plsDialog.value = false
         plsConfDialog.value = false
+    }
+
+    function clsReschedule() {
+
     }
 
     function calculateNewPrice() {
@@ -217,12 +222,15 @@ export const useMyOrdersStore = defineStore('myorders', () => {
                 user.loading = false
                 clsSeats()
             }
+        },
+        reschedule: async () => {
+            user.loading = true
         }
     })
 
     return {
         myorders, oneOrder, actions, addedOrders, addressDialog, plsDialog, dateDialog, pickup, seatsUp,
-        currentPrice, newPrice, pricePerUnit, plsConfDialog,
-        takeOrder, clearPickup, populatePickup, places, clsSeats, calculateNewPrice,
+        currentPrice, newPrice, pricePerUnit, plsConfDialog, dateConfDialog,
+        takeOrder, clearPickup, populatePickup, places, clsSeats, calculateNewPrice, clsReschedule,
     }
 })

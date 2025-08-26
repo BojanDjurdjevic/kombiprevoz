@@ -2,6 +2,7 @@
 import { useMyOrdersStore } from '@/stores/myorders';
 import { useUserStore } from '@/stores/user';
 import { VNumberInput } from 'vuetify/labs/VNumberInput';
+import { VDateInput } from 'vuetify/labs/VDateInput';
 const orders = useMyOrdersStore()
 const user = useUserStore()
 
@@ -150,6 +151,95 @@ const user = useUserStore()
                                         <v-card-actions>
                                             <v-btn color="success"
                                                 type="submit"
+                                                @click="orders.actions.reschedule"
+                                            >Prihvati</v-btn>
+                                            <v-btn color="error"
+                                                @click="orders.clsReschedule"
+                                            >Odustani</v-btn>
+                                        </v-card-actions>
+                                    </v-card>
+                                </v-dialog>
+                                
+                                <v-btn color="error"
+                                    @click="orders.clsSeats"
+                                >Zatvori</v-btn>
+                            </v-card-actions>
+                        </v-form>
+                    </v-card>
+                </v-dialog>
+
+                <!--  Start reschedule  -->
+
+                <v-dialog
+                    v-model="orders.dateDialog"
+                    max-width="75%"
+                    transition="dialog-transition"
+                >
+                    <template v-slot:activator="{props: activatorProps}">
+                        <v-btn
+                            variant="elevated"
+                            color="indigo-darken-4"
+                            width="20%"
+                            prepend-icon="mdi-pencil-circle"
+                            v-bind="activatorProps"
+                            @click="console.log(order.id)"
+                        >
+                            Datum
+                        </v-btn>
+                    </template>
+                    <v-card>
+                        <v-form>
+                            <v-card-title primary-title>
+                                Izaberi novi datum
+                            </v-card-title>
+                            <v-card-text>
+                                <v-date-input  
+                                    
+                                    label="Novi Datum" 
+                                    :allowed-dates="search.isDateInAllowed"
+                                >
+                                <template #day="{ date }">
+                                    <div
+                                        :class="[
+                                        'v-btn',
+                                        'v-size-default',
+                                        {
+                                            'bg-red-darken-2 text-white pointer-events-none' : search.allowedDaysIn.fullyBooked.includes(date),
+                                            'opacity-50 pointer-events-none': !search.isDateInAllowed(date)
+                                        }
+                                        ]"
+                                    >
+                                        {{ new Date(date).getDate() }}
+                                    </div>
+                                </template>
+                                </v-date-input>
+                            </v-card-text>
+                            <v-card-actions>
+                                <v-dialog
+                                    v-model="orders.dateConfDialog"
+                                    
+                                    max-width="75%"
+                                    transition="dialog-transition"
+                                >
+                                    <template v-slot:activator="{props: activatorPropsC}">
+                                        <v-btn
+                                            color="success"
+                                            v-bind="activatorPropsC"
+                                        >
+                                            Potvrdi
+                                        </v-btn>
+                                    </template>
+                                    <v-card>
+                                        <v-card-title primary-title>
+                                            Da li ste sigurni da želite da promenite datum?
+                                        </v-card-title>
+                                        <v-card-text>
+                                            <p>Novi datum: {{  }} </p>
+                                            <p>Trenutni datum: {{ order.date }} </p>
+                                        </v-card-text>
+                                        <v-card-actions>
+                                            <v-btn color="success"
+                                                type="submit"
                                                 @click="orders.actions.changePlaces"
                                             >Prihvati</v-btn>
                                             <v-btn color="error"
@@ -167,15 +257,9 @@ const user = useUserStore()
                     </v-card>
                 </v-dialog>
 
-                <v-btn
-                    variant="elevated"
-                    color="indigo-darken-4"
-                    width="20%"
-                    prepend-icon="mdi-pencil-circle"
-                    @click="console.log(order.id)"
-                >
-                    Datum
-                </v-btn>
+                <!--  End reschedule  -->
+
+                
                 <v-btn
                     variant="elevated"
                     color="red-darken-4"
