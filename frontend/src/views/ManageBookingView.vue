@@ -153,10 +153,10 @@ const search = useSearchStore()
                                         <v-card-actions>
                                             <v-btn color="success"
                                                 type="submit"
-                                                @click="orders.actions.reschedule"
+                                                @click="orders.actions.changePlaces"
                                             >Prihvati</v-btn>
                                             <v-btn color="error"
-                                                @click="orders.clsReschedule"
+                                                @click="orders.clsSeats"
                                             >Odustani</v-btn>
                                         </v-card-actions>
                                     </v-card>
@@ -184,7 +184,7 @@ const search = useSearchStore()
                             width="20%"
                             prepend-icon="mdi-pencil-circle"
                             v-bind="activatorProps"
-                            @click="orders.prepareDates(order.from, order.to)"
+                            @click="orders.prepareDates(order.from, order.to, order.date)"
                         >
                             Datum
                         </v-btn>
@@ -196,7 +196,8 @@ const search = useSearchStore()
                             </v-card-title>
                             <v-card-text>
                                 <v-date-input  
-                                    
+                                    :rules="[search.rules.required]"
+                                    @update:model-value="orders.onRequestDate"
                                     label="Novi Datum" 
                                     :allowed-dates="search.isDateAllowed"
                                 >
@@ -236,23 +237,23 @@ const search = useSearchStore()
                                             Da li ste sigurni da želite da promenite datum?
                                         </v-card-title>
                                         <v-card-text>
-                                            <p>Novi datum: {{  }} </p>
-                                            <p>Trenutni datum: {{ order.date }} </p>
+                                            <p>Novi datum: {{ orders.requestDate }} </p>
+                                            <p>Trenutni datum: {{ orders.currentDate }} </p>
                                         </v-card-text>
                                         <v-card-actions>
                                             <v-btn color="success"
                                                 type="submit"
-                                                @click="orders.actions.changePlaces"
+                                                @click="orders.actions.reschedule"
                                             >Prihvati</v-btn>
                                             <v-btn color="error"
-                                                @click="orders.clsSeats"
+                                                @click="orders.clsReschedule"
                                             >Odustani</v-btn>
                                         </v-card-actions>
                                     </v-card>
                                 </v-dialog>
                                 
                                 <v-btn color="error"
-                                    @click="orders.clsSeats"
+                                    @click="orders.clsReschedule"
                                 >Zatvori</v-btn>
                             </v-card-actions>
                         </v-form>

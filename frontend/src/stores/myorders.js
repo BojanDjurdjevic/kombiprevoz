@@ -8,6 +8,17 @@ import { useRoute } from 'vue-router';
 
 
 export const useMyOrdersStore = defineStore('myorders', () => {
+    function dateFormat(date) {
+        let d = new Date(date)
+        let year = String(d.getFullYear()) 
+        let months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+        let m = d.getMonth()
+        let month = months[m]
+        let dates = String(d.getDate())
+        let formated = dates + "." + month + "." + year 
+
+        return formated
+    }
     const route = useRoute()
     const user = useUserStore()
     const search = useSearchStore()
@@ -24,6 +35,10 @@ export const useMyOrdersStore = defineStore('myorders', () => {
             console.log(oneOrder.value)
         }
     }
+
+    onMounted(() => {
+        actions.value.getUserOrders(addedOrders.value.orders)
+    })
 
     const addressDialog = ref(false)
     const plsDialog = ref(false)
@@ -83,24 +98,29 @@ export const useMyOrdersStore = defineStore('myorders', () => {
         plsConfDialog.value = false
     }
 
-    function prepareDates(cityFrom, cityTo) {
-        console.log(cityFrom + "\n" + cityTo)
-        search.cityFrom = {name: cityFrom}
-        search.cityTo = {name: cityTo}
-        search.dateQuery()
-    }
-
-    function clsReschedule() {
-
-    }
-
     function calculateNewPrice() {
         newPrice.value = pricePerUnit.value * seatsUp.value.seats
     }
 
-    onMounted(() => {
-        actions.value.getUserOrders(addedOrders.value.orders)
-    })
+    //--------------------- RESCHEDULE -----------------------//
+    const currentDate = ref('')
+    const requestDate = ref('')
+    function onRequestDate(value) {
+        requestDate.value = dateFormat(value)
+    }
+    function prepareDates(cityFrom, cityTo, date) {
+        search.cityFrom = {name: cityFrom}
+        search.cityTo = {name: cityTo}
+        currentDate.value = date
+        search.dateQuery()
+    }
+
+    function clsReschedule() {
+        dateConfDialog.value = false
+        dateDialog.value = false
+    }
+
+    
 
     const actions = ref({
         getUserOrders: async (orders) => {
@@ -239,8 +259,9 @@ export const useMyOrdersStore = defineStore('myorders', () => {
 
     return {
         myorders, oneOrder, actions, addedOrders, addressDialog, plsDialog, dateDialog, pickup, seatsUp,
-        currentPrice, newPrice, pricePerUnit, plsConfDialog, dateConfDialog,
+        currentPrice, newPrice, pricePerUnit, plsConfDialog, dateConfDialog, currentDate,
+        requestDate,
         takeOrder, clearPickup, populatePickup, places, clsSeats, calculateNewPrice, clsReschedule,
-        prepareDates, 
+        prepareDates, onRequestDate, dateFormat,
     }
 })
