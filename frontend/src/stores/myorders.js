@@ -1,6 +1,7 @@
 import { ref, onMounted } from "vue";
 import { defineStore } from "pinia";
 import { useUserStore } from "./user";
+import { useSearchStore } from "./search";
 import api from "@/api";
 import router from "@/router";
 import { useRoute } from 'vue-router';
@@ -9,6 +10,7 @@ import { useRoute } from 'vue-router';
 export const useMyOrdersStore = defineStore('myorders', () => {
     const route = useRoute()
     const user = useUserStore()
+    const search = useSearchStore()
     const myorders = ref([])
     const oneOrder = ref({})
 
@@ -79,6 +81,13 @@ export const useMyOrdersStore = defineStore('myorders', () => {
         newPrice.value = 0
         plsDialog.value = false
         plsConfDialog.value = false
+    }
+
+    function prepareDates(cityFrom, cityTo) {
+        console.log(cityFrom + "\n" + cityTo)
+        search.cityFrom = {name: cityFrom}
+        search.cityTo = {name: cityTo}
+        search.dateQuery()
     }
 
     function clsReschedule() {
@@ -232,5 +241,6 @@ export const useMyOrdersStore = defineStore('myorders', () => {
         myorders, oneOrder, actions, addedOrders, addressDialog, plsDialog, dateDialog, pickup, seatsUp,
         currentPrice, newPrice, pricePerUnit, plsConfDialog, dateConfDialog,
         takeOrder, clearPickup, populatePickup, places, clsSeats, calculateNewPrice, clsReschedule,
+        prepareDates, 
     }
 })

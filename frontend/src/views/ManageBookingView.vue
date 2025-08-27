@@ -1,10 +1,12 @@
 <script setup>
 import { useMyOrdersStore } from '@/stores/myorders';
+import { useSearchStore } from '@/stores/search';
 import { useUserStore } from '@/stores/user';
 import { VNumberInput } from 'vuetify/labs/VNumberInput';
 import { VDateInput } from 'vuetify/labs/VDateInput';
 const orders = useMyOrdersStore()
 const user = useUserStore()
+const search = useSearchStore()
 
 </script>
 
@@ -182,7 +184,7 @@ const user = useUserStore()
                             width="20%"
                             prepend-icon="mdi-pencil-circle"
                             v-bind="activatorProps"
-                            @click="console.log(order.id)"
+                            @click="orders.prepareDates(order.from, order.to)"
                         >
                             Datum
                         </v-btn>
@@ -196,7 +198,7 @@ const user = useUserStore()
                                 <v-date-input  
                                     
                                     label="Novi Datum" 
-                                    :allowed-dates="search.isDateInAllowed"
+                                    :allowed-dates="search.isDateAllowed"
                                 >
                                 <template #day="{ date }">
                                     <div
@@ -204,8 +206,8 @@ const user = useUserStore()
                                         'v-btn',
                                         'v-size-default',
                                         {
-                                            'bg-red-darken-2 text-white pointer-events-none' : search.allowedDaysIn.fullyBooked.includes(date),
-                                            'opacity-50 pointer-events-none': !search.isDateInAllowed(date)
+                                            'bg-red-darken-2 text-white pointer-events-none' : search.allowedDays.fullyBooked.includes(date),
+                                            'opacity-50 pointer-events-none': !search.isDateAllowed(date)
                                         }
                                         ]"
                                     >

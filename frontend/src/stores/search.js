@@ -175,6 +175,7 @@ export const useSearchStore = defineStore('search', () => {
         format: formD
       }
     }
+    console.log(dto)
     try {
       const msg = await api.checkAvailableDates(dto)
       allowedDays.value.fullyBooked = msg.data.fullyBooked
