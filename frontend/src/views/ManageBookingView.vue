@@ -198,7 +198,7 @@ const search = useSearchStore()
                                 <v-date-input  
                                     :rules="[search.rules.required]"
                                     @update:model-value="orders.onRequestDate"
-                                    label="Novi Datum" 
+                                    label="Novi Datum Polaska" 
                                     :allowed-dates="search.isDateAllowed"
                                 >
                                 <template #day="{ date }">
@@ -209,6 +209,27 @@ const search = useSearchStore()
                                         {
                                             'bg-red-darken-2 text-white pointer-events-none' : search.allowedDays.fullyBooked.includes(date),
                                             'opacity-50 pointer-events-none': !search.isDateAllowed(date)
+                                        }
+                                        ]"
+                                    >
+                                        {{ new Date(date).getDate() }}
+                                    </div>
+                                </template>
+                                </v-date-input>
+                                <v-date-input  
+                                    :rules="[search.rules.required]"
+                                    @update:model-value="orders.onRequestDateIn"
+                                    label="Novi Datum Povratka" 
+                                    :allowed-dates="search.isDateInAllowed"
+                                >
+                                <template #day="{ date }">
+                                    <div
+                                        :class="[
+                                        'v-btn',
+                                        'v-size-default',
+                                        {
+                                            'bg-red-darken-2 text-white pointer-events-none' : search.allowedDaysIn.fullyBooked.includes(date),
+                                            'opacity-50 pointer-events-none': !search.isDateInAllowed(date)
                                         }
                                         ]"
                                     >
@@ -236,9 +257,17 @@ const search = useSearchStore()
                                         <v-card-title primary-title>
                                             Da li ste sigurni da želite da promenite datum?
                                         </v-card-title>
-                                        <v-card-text>
-                                            <p>Novi datum: {{ orders.requestDate }} </p>
-                                            <p>Trenutni datum: {{ orders.currentDate }} </p>
+                                        <v-card-text class="w-75 d-flex justify-space-evenly">
+                                            <div class="pa-3">
+                                                <p class="align-self-center">Polazak</p>
+                                                <p class="ma-3"><span color="green-darken-4">Novi datum:</span>  {{ orders.requestDate }} </p>
+                                                <p class="ma-3">Trenutni datum: {{ orders.currentDate }} </p>
+                                            </div>
+                                            <div class="pa-3">
+                                                <p class="justify-self-center">Povratak</p>
+                                                <p class="ma-3">Novi datum: {{ orders.requestDateIn }} </p>
+                                                <p class="ma-3">Trenutni datum: {{ orders.currentDateIn }} </p>
+                                            </div>
                                         </v-card-text>
                                         <v-card-actions>
                                             <v-btn color="success"

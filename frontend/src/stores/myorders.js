@@ -104,14 +104,20 @@ export const useMyOrdersStore = defineStore('myorders', () => {
 
     //--------------------- RESCHEDULE -----------------------//
     const currentDate = ref('')
+    const currentDateIn = ref('')
     const requestDate = ref('')
+    const requestDateIn = ref('')
     function onRequestDate(value) {
         requestDate.value = dateFormat(value)
+    }
+    function onRequestDateIn(value) {
+        requestDateIn.value = dateFormat(value)
     }
     function prepareDates(cityFrom, cityTo, date) {
         search.cityFrom = {name: cityFrom}
         search.cityTo = {name: cityTo}
-        currentDate.value = date
+        currentDate.value = oneOrder.value.items[0].date
+        currentDateIn.value = oneOrder.value.items[1].date
         search.dateQuery()
     }
 
@@ -259,9 +265,9 @@ export const useMyOrdersStore = defineStore('myorders', () => {
 
     return {
         myorders, oneOrder, actions, addedOrders, addressDialog, plsDialog, dateDialog, pickup, seatsUp,
-        currentPrice, newPrice, pricePerUnit, plsConfDialog, dateConfDialog, currentDate,
-        requestDate,
+        currentPrice, newPrice, pricePerUnit, plsConfDialog, dateConfDialog, currentDate, currentDateIn,
+        requestDate, requestDateIn,
         takeOrder, clearPickup, populatePickup, places, clsSeats, calculateNewPrice, clsReschedule,
-        prepareDates, onRequestDate, dateFormat,
+        prepareDates, onRequestDate, onRequestDateIn, dateFormat,
     }
 })
