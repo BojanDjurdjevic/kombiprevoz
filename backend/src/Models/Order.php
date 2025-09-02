@@ -859,9 +859,36 @@ class Order {
                         koji sadrži 7 brojeva i 2 velika slova: xxxxxxxKP'], JSON_PRETTY_PRINT);
     }
 
+    public function getItems($order_id) 
+    {
+        $sql = "SELECT order_items.*, orders.user_id, orders.code, orders.file_path as voucher, 
+                orders.total, orders.dep_id, orders.driver_id
+                FROM order_items 
+                INNER JOIN orders on order_items.order_id = orders.id
+                WHERE orders.id = :id"
+        ; 
+        $stmt = $this->db->prepare($sql);
+        $order_id = htmlspecialchars(strip_tags($order_id), ENT_QUOTES);
+        $stmt->bindParam(':id', $order_id);
+
+        try {
+            if($stmt->execute()) {
+                $order = new stdClass();
+                while($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+                    $order->items[] = $row;
+                }
+                $this->items = $order;
+            }
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode(['error' => $e->getMessage()]);
+            return null;
+        }
+    }
+
     public function getFromDB($id) 
     {
-        $sql = "SELECT order_items.*, orders.id as order_id, orders.* FROM order_items 
+        $sql = "SELECT order_items.*, orders.* FROM order_items 
         INNER JOIN orders on order_items.order_id = orders.id
         WHERE order_items.id = :id";
         $stmt = $this->db->prepare($sql);
@@ -885,6 +912,8 @@ class Order {
                     $this->voucher = $order->file_path;
                     $this->driver_id = $order->driver_id;
                     $this->order_id = $order->order_id;
+
+                    $this->getItems($this->order_id);
                     
                     return $order; 
                 } 
