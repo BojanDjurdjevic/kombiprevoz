@@ -32,6 +32,7 @@ class Order {
     public $new_add_from;
     public $new_add_to;
     public $newDate;
+    public $newDateIn;
     public $newPlaces;
     public $driver;
     public $selected;
@@ -1271,7 +1272,7 @@ class Order {
     public function reschedule() 
     {
         $this->getFromDB($this->id);
-        if(isset($this->newDate) && !empty($this->newDate)) {
+        if(isset($this->newDate) && !empty($this->newDate) && isset($this->newDateIn) && !empty($this->newDateIn)) {
             if($this->isDeparture($this->newDate)) {
                 if($this->places <= $this->availability($this->newDate)) {
                     $sql = "UPDATE orders SET date = :date WHERE id = :id";
@@ -1305,6 +1306,10 @@ class Order {
                     'reschedule' => 'Nemamo polaske za odabrani datum.'
                 ], JSON_PRETTY_PRINT);
             }   
+        } elseif(isset($this->newDate) && !empty($this->newDate) && empty($this->newDateIn)) {
+
+        } elseif(isset($this->newDateIn) && !empty($this->newDateIn) && empty($this->newDate)) {
+            
         }
         
     }

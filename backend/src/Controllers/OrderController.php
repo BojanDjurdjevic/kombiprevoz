@@ -116,7 +116,12 @@ class OrderController {
                             $this->order->newPlaces = $this->data->orders->new_places;
                         }
                         if(isset($this->data->orders->reschedule) && !empty($this->data->orders->reschedule)) {
-                            $this->order->newDate = $this->data->orders->reschedule;
+                            if(isset($this->data->orders->reschedule->outDate) && !empty($this->data->orders->reschedule->outDate))
+                            $this->order->newDate = $this->data->orders->reschedule->outDate;
+                            else $this->order->newDate = null;
+                            if(isset($this->data->orders->reschedule->inDate) && !empty($this->data->orders->reschedule->inDate))
+                            $this->order->newDateIn = $this->data->orders->reschedule->inDate;
+                            else $this->order->newDateIn = null;
                         } /*
                         if(isset($this->data->orders->update->total) && !empty($this->data->orders->update->total)) {
                             $this->order->price = $this->data->orders->update->total;
@@ -148,12 +153,15 @@ class OrderController {
                                     }
                                     if(isset($this->data->orders->reschedule) && !empty($this->data->orders->reschedule)) {
                                         if($this->order->isUnlocked($this->data->orders->reschedule)) {
-                                            if($this->order->newDate != $this->order->date) {
+                                            if($this->order->newDate != $this->order->date && $this->order->items->items[1]->date != 
+                                                $this->order->newDateIn) {
                                                 $this->order->reschedule();
                                             } else {
                                                 $d = $this->order->date;
+                                                $dIn = $this->order->items->items[1]->date;
                                                 http_response_code(422);
-                                                echo json_encode(["error" => "Naveli ste datum koji već imate u rezervaciji: $d"]);
+                                                echo json_encode(["error" => "Naveli ste datume koje već imate u rezervaciji: 
+                                                                   Polazak - $d, Povratak - $dIn"]);
                                             }  
                                         } else {
                                             http_response_code(422);
