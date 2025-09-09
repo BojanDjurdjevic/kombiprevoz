@@ -152,7 +152,8 @@ class OrderController {
                                         } 
                                     }
                                     if(isset($this->data->orders->reschedule) && !empty($this->data->orders->reschedule)) {
-                                        if($this->order->isUnlocked($this->data->orders->reschedule)) {
+                                        if($this->order->isUnlocked($this->data->orders->reschedule->outDate) ||
+                                            $this->order->isUnlocked($this->data->orders->reschedule->inDate)) {
                                             if($this->order->newDate != $this->order->date && $this->order->items->items[1]->date != 
                                                 $this->order->newDateIn) {
                                                 $this->order->reschedule();

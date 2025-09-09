@@ -142,6 +142,7 @@ class Order {
     // CHECK if the new date isn't within 24H
 
     public function isUnlocked($d) {
+        if($d == null) return false;
         $valid = explode('-', $d);
         if(!checkdate($valid[1], $valid[2], $valid[0])) {
             return false;
@@ -1273,35 +1274,41 @@ class Order {
     public function outbound($voucher) 
     {
         if($this->isDeparture($this->newDate)) {
-            if($this->items->items[0]->places <= $this->availability($this->newDate)) {
-                $sql = "UPDATE order_items SET date = :date WHERE id = :id";
-                $stmt = $this->db->prepare($sql);
-                
-                $this->id = htmlspecialchars(strip_tags($this->items->items[0]->id));
-                $this->newDate = htmlspecialchars(strip_tags($this->newDate));
+            if($this->isUnlocked($this->newDate)) {
+                if($this->items->items[0]->places <= $this->availability($this->newDate)) {
+                    $sql = "UPDATE order_items SET date = :date WHERE id = :id";
+                    $stmt = $this->db->prepare($sql);
+                    
+                    $this->id = htmlspecialchars(strip_tags($this->items->items[0]->id));
+                    $this->newDate = htmlspecialchars(strip_tags($this->newDate));
 
-                $stmt->bindParam(':id', $this->items->items[0]->id);
-                $stmt->bindParam('date', $this->newDate);
+                    $stmt->bindParam(':id', $this->items->items[0]->id);
+                    $stmt->bindParam('date', $this->newDate);
 
-                if($stmt->execute()) {
-                    $this->updateTotalPrice();
-                    if($voucher) {
-                        $mydata = $this->reGenerateVoucher();
-                        $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
-                        echo json_encode(['success' => "Uspešno ste promenili datum vaše vožnje na: $this->newDate"]);
-                    }   
+                    if($stmt->execute()) {
+                        $this->updateTotalPrice();
+                        if($voucher) {
+                            $mydata = $this->reGenerateVoucher();
+                            $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
+                            echo json_encode(['success' => "Uspešno ste promenili datum vaše vožnje na: $this->newDate"]);
+                        }   
+                    } else {
+                        http_response_code(422);
+                        echo json_encode(['error' => "Nije moguće promeniti datum vaše vožnje na: $this->newDate. Molimo kontaktirajte našu podršku!"]);
+                        exit();
+                    }    
                 } else {
                     http_response_code(422);
-                    echo json_encode(['error' => "Nije moguće promeniti datum vaše vožnje na: $this->newDate. Molimo kontaktirajte našu podršku!"]);
+                    echo json_encode([
+                        'error' => 'Nema dovoljno slobodnih mesta za izabrani datum.'
+                    ], JSON_PRETTY_PRINT);
                     exit();
-                }    
+                }  
             } else {
                 http_response_code(422);
-                echo json_encode([
-                    'error' => 'Nema dovoljno slobodnih mesta za izabrani datum.'
-                ], JSON_PRETTY_PRINT);
-                exit();
-            }  
+                echo json_encode(["error" => "Odabrani datum je ili nepostojeći, ili je već prošao. Novi odabrani polazak mora biti najmanje 24 časa od ovog momenta!"]);
+                exit(); 
+            }
         } else {
             echo json_encode([
                 'reschedule' => 'Nemamo polaske za odabrani datum.'
@@ -1315,38 +1322,45 @@ class Order {
     public function inbound($voucher)
     {
         if($this->isDeparture($this->newDateIn)) {
-            if($this->items->items[1]->places <= $this->availability($this->newDateIn)) {
-                $sql = "UPDATE order_items SET date = :date WHERE id = :id";
-                $stmt = $this->db->prepare($sql);
-                
-                $this->id = htmlspecialchars(strip_tags($this->items->items[1]->id));
-                $this->newDate = htmlspecialchars(strip_tags($this->newDateIn));
+            if($this->isUnlocked($this->newDateIn)) {
+                if($this->items->items[1]->places <= $this->availability($this->newDateIn)) {
+                    $sql = "UPDATE order_items SET date = :date WHERE id = :id";
+                    $stmt = $this->db->prepare($sql);
+                    
+                    $this->id = htmlspecialchars(strip_tags($this->items->items[1]->id));
+                    $this->newDate = htmlspecialchars(strip_tags($this->newDateIn));
 
-                $stmt->bindParam(':id', $this->items->items[1]->id);
-                $stmt->bindParam('date', $this->newDateIn);
+                    $stmt->bindParam(':id', $this->items->items[1]->id);
+                    $stmt->bindParam('date', $this->newDateIn);
 
-                if($stmt->execute()) {
-                    $this->updateTotalPrice();
-                    if($voucher) {
-                        $mydata = $this->reGenerateVoucher();
-                        $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
-                        echo json_encode(['success' => "Uspešno ste promenili datum vaše vožnje na: $this->newDateIn"]);
-                    }   
+                    if($stmt->execute()) {
+                        $this->updateTotalPrice();
+                        if($voucher) {
+                            $mydata = $this->reGenerateVoucher();
+                            $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
+                            echo json_encode(['success' => "Uspešno ste promenili datum vaše vožnje na: $this->newDateIn"]);
+                        }   
+                    } else {
+                        http_response_code(422);
+                        echo json_encode(['error' => "Nije moguće promeniti datum vaše vožnje na: $this->newDateIn. Molimo kontaktirajte našu podršku!"]);
+                        exit();
+                    }    
                 } else {
                     http_response_code(422);
-                    echo json_encode(['error' => "Nije moguće promeniti datum vaše vožnje na: $this->newDateIn. Molimo kontaktirajte našu podršku!"]);
+                    echo json_encode([
+                        'error' => 'Nema dovoljno slobodnih mesta za izabrani datum.'
+                    ], JSON_PRETTY_PRINT);
                     exit();
-                }    
+                }  
             } else {
                 http_response_code(422);
-                echo json_encode([
-                    'error' => 'Nema dovoljno slobodnih mesta za izabrani datum.'
-                ], JSON_PRETTY_PRINT);
+                echo json_encode(["error" => "Odabrani datum je ili nepostojeći, ili je već prošao. Novi odabrani polazak mora biti najmanje 24 časa od ovog momenta!"]); 
                 exit();
-            }  
+            }
         } else {
+            http_response_code(422);
             echo json_encode([
-                'reschedule' => 'Nemamo polaske za odabrani datum.'
+                'error' => 'Nemamo polaske za odabrani datum.'
             ], JSON_PRETTY_PRINT);
             exit();
         } 

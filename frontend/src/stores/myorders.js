@@ -105,8 +105,8 @@ export const useMyOrdersStore = defineStore('myorders', () => {
     //--------------------- RESCHEDULE -----------------------//
     const currentDate = ref('')
     const currentDateIn = ref('')
-    const requestDate = ref('')
-    const requestDateIn = ref('')
+    const requestDate = ref(null)
+    const requestDateIn = ref(null)
     function onRequestDate(value) {
         requestDate.value = dateFormat(value)
     }
@@ -124,6 +124,8 @@ export const useMyOrdersStore = defineStore('myorders', () => {
     function clsReschedule() {
         dateConfDialog.value = false
         dateDialog.value = false
+        requestDate.value = null
+        requestDateIn.value = null
     }
 
     
@@ -245,12 +247,10 @@ export const useMyOrdersStore = defineStore('myorders', () => {
             }
             try {
                 const res = await api.orderItemUpdate(dto)
-                console.log("prošlo")
                 console.log(res.data)
                 if(res.data.success) user.showSucc(res, 3000)
                 await actions.value.getUserOrders(addedOrders.value.orders)
             } catch (error) {
-                console.log("error1")
                 console.dir(error, {depth: null})
                 user.showErr(error, 3000)
             } finally {
@@ -260,6 +260,27 @@ export const useMyOrdersStore = defineStore('myorders', () => {
         },
         reschedule: async () => {
             user.loading = true
+            const dto = {
+                orders: {
+                    user_id: user.user.id,
+                    reschedule: {
+                        outDate: requestDate.value,
+                        inDate: requestDateIn.value
+                    }
+                }
+            }
+            try {
+                const res = await api.orderItemUpdate(dto)
+                console.log(res.data)
+                if(res.data.success) user.showSucc(res, 3000)
+                await actions.value.getUserOrders(addedOrders.value.orders)
+            } catch (error) {
+                console.dir(error, {depth: null})
+                user.showErr(error, 3000)
+            } finally {
+                clsReschedule()
+                user.loading = false
+            }
         }
     })
 
