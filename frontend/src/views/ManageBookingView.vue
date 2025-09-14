@@ -184,7 +184,7 @@ const search = useSearchStore()
                             width="20%"
                             prepend-icon="mdi-pencil-circle"
                             v-bind="activatorProps"
-                            @click="orders.prepareDates(order.from, order.to, order.date)"
+                            @click="orders.prepareDates(order.from, order.to, order.id)"
                         >
                             Datum
                         </v-btn>
@@ -249,6 +249,7 @@ const search = useSearchStore()
                                         <v-btn
                                             color="success"
                                             v-bind="activatorPropsC"
+                                            type="submit"
                                         >
                                             Potvrdi
                                         </v-btn>
@@ -260,12 +261,12 @@ const search = useSearchStore()
                                         <v-card-text class="w-75 d-flex justify-space-evenly">
                                             <div class="pa-3">
                                                 <p class="align-self-center">Polazak</p>
-                                                <p class="ma-3"><span color="green-darken-4">Novi datum:</span>  {{ orders.requestDate }} </p>
+                                                <p class="ma-3"><span color="green-darken-4">Novi datum:</span>  {{ orders.requestDateView }} </p>
                                                 <p class="ma-3">Trenutni datum: {{ orders.currentDate }} </p>
                                             </div>
                                             <div class="pa-3">
                                                 <p class="justify-self-center">Povratak</p>
-                                                <p class="ma-3">Novi datum: {{ orders.requestDateIn }} </p>
+                                                <p class="ma-3">Novi datum: {{ orders.requestDateInView }} </p>
                                                 <p class="ma-3">Trenutni datum: {{ orders.currentDateIn }} </p>
                                             </div>
                                         </v-card-text>

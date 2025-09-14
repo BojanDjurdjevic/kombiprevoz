@@ -8,14 +8,16 @@ import { useRoute } from 'vue-router';
 
 
 export const useMyOrdersStore = defineStore('myorders', () => {
-    function dateFormat(date) {
+    function dateFormat(date, view) {
         let d = new Date(date)
         let year = String(d.getFullYear()) 
         let months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
         let m = d.getMonth()
         let month = months[m]
         let dates = String(d.getDate())
-        let formated = dates + "." + month + "." + year 
+        let formated
+        if(view) formated = dates + "." + month + "." + year 
+        else formated = year  + "-" + month + "-" + dates
 
         return formated
     }
@@ -103,21 +105,27 @@ export const useMyOrdersStore = defineStore('myorders', () => {
     }
 
     //--------------------- RESCHEDULE -----------------------//
+    const itemID = ref(null)
     const currentDate = ref('')
     const currentDateIn = ref('')
     const requestDate = ref(null)
+    const requestDateView = ref(null)
     const requestDateIn = ref(null)
+    const requestDateInView = ref(null)
     function onRequestDate(value) {
-        requestDate.value = dateFormat(value)
+        requestDate.value = dateFormat(value, false)
+        requestDateView.value = dateFormat(value, true)
     }
     function onRequestDateIn(value) {
-        requestDateIn.value = dateFormat(value)
+        requestDateIn.value = dateFormat(value, false)
+        requestDateInView.value = dateFormat(value, true)
     }
-    function prepareDates(cityFrom, cityTo, date) {
+    function prepareDates(cityFrom, cityTo, id) {
         search.cityFrom = {name: cityFrom}
         search.cityTo = {name: cityTo}
         currentDate.value = oneOrder.value.items[0].date
         currentDateIn.value = oneOrder.value.items[1].date
+        itemID.value = id
         search.dateQuery()
     }
 
@@ -126,6 +134,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
         dateDialog.value = false
         requestDate.value = null
         requestDateIn.value = null
+        itemID.value = null
     }
 
     
@@ -263,6 +272,9 @@ export const useMyOrdersStore = defineStore('myorders', () => {
             const dto = {
                 orders: {
                     user_id: user.user.id,
+                    update: {
+                        id: itemID.value
+                    },
                     reschedule: {
                         outDate: requestDate.value,
                         inDate: requestDateIn.value
@@ -274,6 +286,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
                 console.log(res.data)
                 if(res.data.success) user.showSucc(res, 3000)
                 await actions.value.getUserOrders(addedOrders.value.orders)
+                router.push('/rezervacije')
             } catch (error) {
                 console.dir(error, {depth: null})
                 user.showErr(error, 3000)
@@ -287,7 +300,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
     return {
         myorders, oneOrder, actions, addedOrders, addressDialog, plsDialog, dateDialog, pickup, seatsUp,
         currentPrice, newPrice, pricePerUnit, plsConfDialog, dateConfDialog, currentDate, currentDateIn,
-        requestDate, requestDateIn,
+        requestDate, requestDateIn, requestDateView, requestDateInView,
         takeOrder, clearPickup, populatePickup, places, clsSeats, calculateNewPrice, clsReschedule,
         prepareDates, onRequestDate, onRequestDateIn, dateFormat,
     }

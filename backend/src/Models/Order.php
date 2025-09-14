@@ -1290,7 +1290,6 @@ class Order {
                         if($voucher) {
                             $mydata = $this->reGenerateVoucher();
                             $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
-                            echo json_encode(['success' => "Uspešno ste promenili datum vaše vožnje na: $this->newDate"]);
                         }   
                     } else {
                         http_response_code(422);
@@ -1338,7 +1337,6 @@ class Order {
                         if($voucher) {
                             $mydata = $this->reGenerateVoucher();
                             $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
-                            echo json_encode(['success' => "Uspešno ste promenili datum vaše vožnje na: $this->newDateIn"]);
                         }   
                     } else {
                         http_response_code(422);
@@ -1369,17 +1367,35 @@ class Order {
     // RESCHEDULE date all bounds
     public function reschedule() 
     {
-        $this->getFromDB($this->id);
+        //$this->getFromDB($this->id);
         try {
             if(isset($this->newDate) && !empty($this->newDate) && isset($this->newDateIn) && !empty($this->newDateIn)) {
                 $this->db->beginTransaction();
                 $this->outbound(false);
-                $this->inbound(true);
+                $this->inbound(false);
                 $this->db->commit();
+                echo json_encode([
+                    'success' => true,
+                    'msg' => 'Uspešno ste izmenili datume vaših vožnji'
+                ], JSON_PRETTY_PRINT);
+                exit();
             } elseif(isset($this->newDate) && !empty($this->newDate) && empty($this->newDateIn)) {
-                $this->outbound(true);
+                $this->outbound(false);
+                echo json_encode([
+                    'success' => true,
+                    'msg' => "Uspešno ste promenili datum vaše vožnje na: $this->newDate"
+                ], JSON_PRETTY_PRINT);
+                exit();
             } elseif(isset($this->newDateIn) && !empty($this->newDateIn) && empty($this->newDate)) {
-                $this->inbound(true);
+                $this->inbound(false);
+                echo json_encode([
+                    'success' => true,
+                    'msg' => "Uspešno ste promenili datum vaše vožnje na: $this->newDateIn"
+                ], JSON_PRETTY_PRINT);
+                exit();
+            } else {
+                http_response_code(422);
+                echo json_encode(['error' => 'Unesite bar jedan datum'], JSON_PRETTY_PRINT);
             }
         } catch (Exception $e) {
             if($this->db->inTransaction()) {

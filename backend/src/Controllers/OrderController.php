@@ -99,6 +99,7 @@ class OrderController {
                     if(isset($this->data->orders->update)) {
                         if(isset($this->data->orders->update->id) && !empty($this->data->orders->update->id)) {
                             $this->order->id = $this->data->orders->update->id;
+                            $this->order->getFromDB($this->order->id);
                         } /*
                         if(isset($this->data->orders->update->tour_id) && !empty($this->data->orders->update->tour_id)) {
                             $this->order->tour_id = $this->data->orders->update->tour_id;
