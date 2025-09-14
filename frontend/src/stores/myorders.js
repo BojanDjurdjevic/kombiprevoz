@@ -134,9 +134,16 @@ export const useMyOrdersStore = defineStore('myorders', () => {
         dateDialog.value = false
         requestDate.value = null
         requestDateIn.value = null
+        requestDateView.value = null
+        requestDateInView.value = null
         itemID.value = null
     }
 
+    function checkDates() {
+        if(!requestDate.value && !requestDateIn.value) {
+            dateConfDialog.value = false
+        } else dateConfDialog.value = true
+    }
     
 
     const actions = ref({
@@ -259,6 +266,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
                 console.log(res.data)
                 if(res.data.success) user.showSucc(res, 3000)
                 await actions.value.getUserOrders(addedOrders.value.orders)
+                router.push('/rezervacije')
             } catch (error) {
                 console.dir(error, {depth: null})
                 user.showErr(error, 3000)
@@ -302,6 +310,6 @@ export const useMyOrdersStore = defineStore('myorders', () => {
         currentPrice, newPrice, pricePerUnit, plsConfDialog, dateConfDialog, currentDate, currentDateIn,
         requestDate, requestDateIn, requestDateView, requestDateInView,
         takeOrder, clearPickup, populatePickup, places, clsSeats, calculateNewPrice, clsReschedule,
-        prepareDates, onRequestDate, onRequestDateIn, dateFormat,
+        prepareDates, onRequestDate, onRequestDateIn, dateFormat, checkDates,
     }
 })

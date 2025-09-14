@@ -249,7 +249,8 @@ const search = useSearchStore()
                                         <v-btn
                                             color="success"
                                             v-bind="activatorPropsC"
-                                            type="submit"
+                                            
+                                            @click="orders.checkDates"
                                         >
                                             Potvrdi
                                         </v-btn>
@@ -261,13 +262,13 @@ const search = useSearchStore()
                                         <v-card-text class="w-75 d-flex justify-space-evenly">
                                             <div class="pa-3">
                                                 <p class="align-self-center">Polazak</p>
-                                                <p class="ma-3"><span color="green-darken-4">Novi datum:</span>  {{ orders.requestDateView }} </p>
-                                                <p class="ma-3">Trenutni datum: {{ orders.currentDate }} </p>
+                                                <p class="ma-3"><span class="text--success--darken-4">Novi datum:</span>  {{ orders.requestDateView }} </p>
+                                                <p class="ma-3"><span class="text--error--darken-4">Trenutni datum:</span> {{ orders.currentDate }} </p>
                                             </div>
                                             <div class="pa-3">
                                                 <p class="justify-self-center">Povratak</p>
-                                                <p class="ma-3">Novi datum: {{ orders.requestDateInView }} </p>
-                                                <p class="ma-3">Trenutni datum: {{ orders.currentDateIn }} </p>
+                                                <p class="ma-3"><span class="text--success">Novi datum:</span> {{ orders.requestDateInView }} </p>
+                                                <p class="ma-3"><span class="text--error">Trenutni datum:</span> {{ orders.currentDateIn }} </p>
                                             </div>
                                         </v-card-text>
                                         <v-card-actions>
