@@ -256,19 +256,19 @@ const search = useSearchStore()
                                         </v-btn>
                                     </template>
                                     <v-card>
-                                        <v-card-title primary-title>
-                                            Da li ste sigurni da želite da promenite datum?
+                                        <v-card-title primary-title class="text-center">
+                                            <p style="color: #D50000;">Da li ste sigurni da želite da promenite datum?</p>
                                         </v-card-title>
                                         <v-card-text class="w-75 d-flex justify-space-evenly">
                                             <div class="pa-3">
-                                                <p class="align-self-center">Polazak</p>
-                                                <p class="ma-3"><span style="color: darkgreen;">Novi datum:</span>  {{ orders.requestDateView }} </p>
-                                                <p class="ma-3"><span class="text--error--darken-4">Trenutni datum:</span> {{ orders.currentDate }} </p>
+                                                <p class="align-self-center text-center" >Polazak</p>
+                                                <p class="ma-3" >Novi datum: <span style="color: #00C853;">{{ orders.requestDateView }}</span> </p>
+                                                <p class="ma-3" >Trenutni datum: <span style="color: #D81B60;">{{ orders.currentDate }} </span></p>
                                             </div>
                                             <div class="pa-3">
-                                                <p class="justify-self-center">Povratak</p>
-                                                <p class="ma-3"><span class="text--success">Novi datum:</span> {{ orders.requestDateInView }} </p>
-                                                <p class="ma-3"><span class="text--error">Trenutni datum:</span> {{ orders.currentDateIn }} </p>
+                                                <p class="justify-self-center text-center" >Povratak</p>
+                                                <p class="ma-3" >Novi datum: <span style="color: #00C853;">{{ orders.requestDateInView }}</span> </p>
+                                                <p class="ma-3" >Trenutni datum: <span style="color: #EC407A;">{{ orders.currentDateIn }}</span> </p>
                                             </div>
                                         </v-card-text>
                                         <v-card-actions>
