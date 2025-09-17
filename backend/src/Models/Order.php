@@ -1577,14 +1577,14 @@ class Order {
         $stmt = $this->db->prepare($sql);
         $this->id = htmlspecialchars(strip_tags($this->id));
         $stmt->bindParam(":id", $this->id);
-        $id_sql = "SELECT dep_id FROM orders WHERE id = {$this->id}";
+        $id_sql = "SELECT dep_id FROM order_items WHERE id = {$this->id}";
         if($stmt->execute()) {
             $res = $this->db->query($id_sql);
             $row = $res->fetch(PDO::FETCH_OBJ);
             $d_id = $row->dep_id;
             if($d_id != NULL) {
                 $sum = 0;
-                $dep_sql = "SELECT deleted FROM orders WHERE dep_id = {$d_id}";
+                $dep_sql = "SELECT deleted FROM order_items WHERE dep_id = {$d_id}";
                 $dels = $this->db->query($dep_sql);
                 if($dels->rowCount() > 0) {
                     while($row = $dels->fetch(PDO::FETCH_OBJ)) {
@@ -1600,11 +1600,24 @@ class Order {
                     }
                 }
             } 
+            // Check if the order has at leas one active item:
             
+            $ordSql = "UPDATE orders SET deleted = 1 WHERE id = :order_id
+                        AND NOT EXISTS ( SELECT 1 FROM order_items 
+                        WHERE order_id = orders.id AND deleted = 0)
+            ";
+            $stmt = $this->db->prepare($ordSql);
+            $stmt->bindParam(':order_id', $this->order_id);
+            $stmt->execute();
 
-            echo json_encode(["msg" => 'Uspešno ste obrisali rezervaciju!'], JSON_PRETTY_PRINT);
-        } else
-        echo json_encode(["msg" => 'Trenutno nije moguće obrisati ovu rezervaciju!']);
+            echo json_encode([
+                "success" => true,
+                "msg" => 'Uspešno ste obrisali vožnju!'
+            ], JSON_PRETTY_PRINT);
+        } else {
+            http_response_code(422);
+            echo json_encode(["msg" => 'Trenutno nije moguće obrisati ovu rezervaciju!']);
+        }
     }
 
     // RESTORE order - only Admin
