@@ -1572,7 +1572,8 @@ class Order {
     // DELETE order
     public function delete()
     {
-        $sql = "UPDATE orders SET deleted = 1, file_path = NULL WHERE id = :id";
+        $this->getFromDB($this->id);
+        $sql = "UPDATE order_items SET deleted = 1 WHERE id = :id";
         $stmt = $this->db->prepare($sql);
         $this->id = htmlspecialchars(strip_tags($this->id));
         $stmt->bindParam(":id", $this->id);

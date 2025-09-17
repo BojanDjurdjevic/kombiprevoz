@@ -188,14 +188,19 @@ class OrderController {
                     break;
                 case 'DELETE':
                     if(isset($this->data->orders->delete) && !empty($this->data->orders->delete)) {
-                        $this->order->id = $this->data->orders->delete->order_id;
+                        $this->order->id = $this->data->orders->delete->item_id;
                         //$this->order->user_id = $this->data->orders->delete->user_id;
                         if($this->order->findUserId() || Validator::isAdmin() || Validator::isSuper()) {
                             if($this->order->checkDeadline()) {
                                 $this->order->delete();
-                            } else
-                                echo json_encode(["msg" => "Nije moguće izmeniti rezervaciju, jer je do polaska ostalo manje od 48 sati."], JSON_PRETTY_PRINT);
-                        } else echo json_encode(["msg" => "Niste autorizovani da izmenite ovu rezervaciju!"], JSON_PRETTY_PRINT);
+                            } else {
+                                http_response_code(422);
+                                echo json_encode(["error" => "Nije moguće izmeniti rezervaciju, jer je do polaska ostalo manje od 48 sati."], JSON_PRETTY_PRINT);
+                            }
+                        } else {
+                            http_response_code(422);
+                            echo json_encode(["error" => "Niste autorizovani da izmenite ovu rezervaciju!"], JSON_PRETTY_PRINT);
+                        } 
                     }
                     if(isset($this->data->orders->restore) && !empty($this->data->orders->restore)) {
                         $this->order->id = $this->data->orders->restore->order_id;

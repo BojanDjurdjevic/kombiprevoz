@@ -293,15 +293,36 @@ const search = useSearchStore()
 
                 <!--  End reschedule  -->
 
-                
-                <v-btn
-                    variant="elevated"
-                    color="red-darken-4"
-                    width="20%"
-                    @click="console.log(order.id)"
+                <v-dialog
+                    v-model="orders.dateDialog"
+                    max-width="75%"
+                    transition="dialog-transition"
                 >
-                    Obriši
-                </v-btn>
+                    <template v-slot:activator="{props: activatorPropsD}">
+                        <v-btn
+                            variant="elevated"
+                            color="red-darken-4"
+                            width="20%"
+                            v-bind="activatorPropsD"
+                            @click="console.log(order.id)"
+                        >
+                            Obriši
+                        </v-btn>
+                    </template>
+                    <v-card>
+                        <v-card-title primary-title>
+                            <p style="color: #D50000;">Da li ste sigurni da želite da obrišete ovu vožnju?</p>
+                        </v-card-title>
+                        <v-card-actions>
+                            <v-btn color="success"
+                                
+                            >Potvrdi</v-btn>
+                            <v-btn color="error"
+                                
+                            >Odustani</v-btn>
+                        </v-card-actions>
+                    </v-card>
+                </v-dialog>
             </v-card-actions>
         </v-card>
     </v-container>
