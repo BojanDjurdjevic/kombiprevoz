@@ -1628,26 +1628,40 @@ class Order {
 
         if($order) {
             if($this->places <= $this->availability($this->date) && $this->isUnlocked($this->date)) {
-                $mydata = $this->reGenerateVoucher();
-                $sql = "UPDATE orders SET deleted = 0, file_path = :path WHERE id = :id";
+                $sql = "UPDATE orders SET deleted = 0, WHERE id = :id";
                 $stmt = $this->db->prepare($sql);
                 $this->id = htmlspecialchars(strip_tags($this->id));
 
-                $stmt->bindParam(":path", $mydata['path']);
+                //$stmt->bindParam(":path", $mydata['path']);
                 $stmt->bindParam(":id", $this->id);
                 
                 if($stmt->execute()) {
+                    $ordSql = "UPDATE orders SET deleted = 0 WHERE id = :order_id
+                        AND EXISTS ( SELECT 1 FROM order_items 
+                        WHERE order_id = orders.id AND deleted = 0)
+                    ";
+                    $stmt = $this->db->prepare($ordSql);
+                    $stmt->bindParam(':order_id', $this->order_id);
+                    $stmt->execute();
+
+                    $mydata = $this->reGenerateVoucher();
                     $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
-                    echo json_encode(["msg" => 'Uspešno ste aktivirali rezervaciju!'], JSON_PRETTY_PRINT);
-                } else
-                echo json_encode(["msg" => 'Trenutno nije moguće aktivirati ovu rezervaciju!']);
-            } else
-                echo json_encode(["msg" => 'Nema više slobodnih mesta za datum ove rezervacije, te je ne možemo aktivirati.',
-                    'mesta' => $this->places,
-                    'dostupno' => $this->availability($this->date),
-                    'datum' => $this->date,
-                    'otključan' => $this->isUnlocked($this->date)
+
+                    echo json_encode([
+                        'success' => true,
+                        "msg" => 'Uspešno ste aktivirali rezervaciju!'
+                    ], JSON_PRETTY_PRINT);
+                } else {
+                    http_response_code(422);
+                    echo json_encode(["error" => 'Trenutno nije moguće aktivirati ovu rezervaciju!']);
+                } 
+            } else {
+                http_response_code(422);
+                echo json_encode([
+                    'success' => false,
+                    "error" => 'Nema više slobodnih mesta za datum ove rezervacije, te je ne možemo aktivirati.'
                 ]);
+            }
         } else
             echo json_encode(["msg" => 'Ova rezervacija je izbrisana iz naše baze, pokušajte da kreirate novu.']);
     }

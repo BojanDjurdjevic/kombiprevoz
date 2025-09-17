@@ -203,10 +203,13 @@ class OrderController {
                         } 
                     }
                     if(isset($this->data->orders->restore) && !empty($this->data->orders->restore)) {
-                        $this->order->id = $this->data->orders->restore->order_id;
+                        $this->order->id = $this->data->orders->restore->item_id;
                         if(Validator::isAdmin() || Validator::isSuper()) {
                             $this->order->restore();
-                        } else echo json_encode(["msg" => "Niste autorizovani da aktivirate ovu rezervaciju!"], JSON_PRETTY_PRINT);
+                        } else {
+                            http_response_code(422);
+                            echo json_encode(["error" => "Niste autorizovani da aktivirate ovu rezervaciju!"], JSON_PRETTY_PRINT);
+                        }
                     }
                     break;
             }    
