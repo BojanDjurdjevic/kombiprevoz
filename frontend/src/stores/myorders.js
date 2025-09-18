@@ -47,6 +47,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
     const plsConfDialog = ref(false)
     const dateDialog = ref(false)
     const dateConfDialog = ref(false)
+    const delDialog = ref(false)
 
     const addedOrders = ref({
         orders: {
@@ -144,8 +145,22 @@ export const useMyOrdersStore = defineStore('myorders', () => {
             dateConfDialog.value = false
         } else dateConfDialog.value = true
     }
-    
 
+    // --------------------------- DELETE ----------------------- //
+    const item_id = ref(null)
+
+    function deleteRequest(id) {
+        delDialog.value = true
+        item_id.value = id
+    }
+
+    function deleteDeny() {
+        delDialog.value = false
+        item_id.value = null
+    }
+
+    
+    // ------------------- ALL ACTON METHODS -------------------- //
     const actions = ref({
         getUserOrders: async (orders) => {
             if(user.user) {
@@ -302,14 +317,36 @@ export const useMyOrdersStore = defineStore('myorders', () => {
                 clsReschedule()
                 user.loading = false
             }
+        }, 
+        cancel: async () => {
+            user.loading = true
+            const dto = {
+                user_id: user.user.id,
+                delete: {
+                    item_id: item_id.value
+                }
+            }
+            try {
+                const res = await api.orderItemDelete(dto)
+                console.log(res.data)
+                if(res.data.success) user.showSucc(res, 3000)
+                await actions.value.getUserOrders(addedOrders.value.orders)
+                router.push('/rezervacije')
+            } catch (error) {
+                console.dir(error, {depth: null})
+                user.showErr(error, 3000)
+            } finally {
+                deleteDeny()
+                user.loading = false
+            }
         }
     })
 
     return {
         myorders, oneOrder, actions, addedOrders, addressDialog, plsDialog, dateDialog, pickup, seatsUp,
         currentPrice, newPrice, pricePerUnit, plsConfDialog, dateConfDialog, currentDate, currentDateIn,
-        requestDate, requestDateIn, requestDateView, requestDateInView,
+        requestDate, requestDateIn, requestDateView, requestDateInView, delDialog,
         takeOrder, clearPickup, populatePickup, places, clsSeats, calculateNewPrice, clsReschedule,
-        prepareDates, onRequestDate, onRequestDateIn, dateFormat, checkDates,
+        prepareDates, onRequestDate, onRequestDateIn, dateFormat, checkDates, deleteRequest, deleteDeny,
     }
 })

@@ -294,7 +294,7 @@ const search = useSearchStore()
                 <!--  End reschedule  -->
 
                 <v-dialog
-                    v-model="orders.dateDialog"
+                    v-model="orders.delDialog"
                     max-width="75%"
                     transition="dialog-transition"
                 >
@@ -304,7 +304,7 @@ const search = useSearchStore()
                             color="red-darken-4"
                             width="20%"
                             v-bind="activatorPropsD"
-                            @click="console.log(order.id)"
+                            @click="orders.deleteRequest(order.id)"
                         >
                             Obriši
                         </v-btn>
@@ -315,10 +315,10 @@ const search = useSearchStore()
                         </v-card-title>
                         <v-card-actions>
                             <v-btn color="success"
-                                
+                                @click="orders.actions.cancel"
                             >Potvrdi</v-btn>
                             <v-btn color="error"
-                                
+                                @click="orders.deleteDeny"
                             >Odustani</v-btn>
                         </v-card-actions>
                     </v-card>

@@ -91,5 +91,12 @@ export default {
    orderItemUpdate(order) {
         //
         return axios.put("", order)
+   },
+   orderItemDelete(orders) {
+        return axios.delete("", {data: orders}, {
+            headers: {
+                "Content-type": "json/application"
+            }
+        })
    }
 }
