@@ -55,8 +55,8 @@ const orders = useMyOrdersStore()
                 " height="66%">
                     <v-card-title> {{ order.items[0].from }} - {{ order.items[0].to }} </v-card-title>
                     <v-divider></v-divider>
-                    <v-card-subtitle>Odlazak: {{ order.items[0].date }} </v-card-subtitle>
-                    <v-card-subtitle v-if="order.items[1]">Dolazak: {{ order.items[1].date }} </v-card-subtitle>
+                    <v-card-subtitle v-if="order.items[0] && order.items[0].deleted == 0">Odlazak: {{ order.items[0].date }} </v-card-subtitle>
+                    <v-card-subtitle v-if="order.items[1] && order.items[1].deleted == 0">Dolazak: {{ order.items[1].date }} </v-card-subtitle>
                     <v-divider></v-divider>
                     <v-card-title> {{ order.total }} EUR</v-card-title>
                 </v-card>

@@ -35,6 +35,7 @@ class Order {
     public $newDateIn;
     public $newPlaces;
     public $driver;
+    public $dep_id;
     public $selected;
     public $items;
 
@@ -755,7 +756,8 @@ class Order {
         $sql = "SELECT orders.id, order_items.id as item_id, 
                 order_items.tour_id, orders.user_id, order_items.places, tours.from_city, 
                 order_items.add_from as pickup, tours.to_city, order_items.add_to as dropoff,
-                order_items.date, order_items.price, tours.time as pickuptime, tours.duration,
+                order_items.date, order_items.price, order_items.deleted,
+                tours.time as pickuptime, tours.duration,
                 orders.total, orders.code, orders.file_path as voucher, 
                 users.name as user, users.email, users.phone
                 from orders 
@@ -764,6 +766,7 @@ class Order {
                 JOIN users on orders.user_id = users.id
                 
                 WHERE orders.user_id = '$this->user_id' AND orders.deleted = 0
+
                 Order BY order_items.date ASC"
         ;
         try {
@@ -802,6 +805,7 @@ class Order {
                     $item->price = $row->price;
                     $item->from = $row->from_city;
                     $item->to = $row->to_city;
+                    $item->deleted = $row->deleted;
 
                     $orders[$orderId]->items[] = $item;
                 }
@@ -863,8 +867,8 @@ class Order {
 
     public function getItems($order_id) 
     {
-        $sql = "SELECT order_items.*, orders.user_id, orders.code, orders.file_path as voucher, 
-                orders.total, orders.dep_id, orders.driver_id
+        $sql = "SELECT order_items.*, orders.user_id, orders.code, 
+                orders.file_path as voucher, orders.total
                 FROM order_items 
                 INNER JOIN orders on order_items.order_id = orders.id
                 WHERE orders.id = :id"
@@ -913,6 +917,7 @@ class Order {
                     $this->code = $order->code;
                     $this->voucher = $order->file_path;
                     $this->driver_id = $order->driver_id;
+                    $this->dep_id = $order->dep_id;
                     $this->order_id = $order->order_id;
 
                     $this->getItems($this->order_id);
@@ -1577,8 +1582,8 @@ class Order {
         $stmt = $this->db->prepare($sql);
         $this->id = htmlspecialchars(strip_tags($this->id));
         $stmt->bindParam(":id", $this->id);
-        $id_sql = "SELECT dep_id FROM order_items WHERE id = {$this->id}";
-        if($stmt->execute()) {
+        //$id_sql = "SELECT dep_id FROM order_items WHERE id = {$this->id}";
+        if($stmt->execute()) { /*
             $res = $this->db->query($id_sql);
             $row = $res->fetch(PDO::FETCH_OBJ);
             $d_id = $row->dep_id;
@@ -1599,7 +1604,17 @@ class Order {
                         $stmt->execute();
                     }
                 }
-            } 
+            } */
+            // Check if the departure has at leas one active item:
+
+            $depSql = "UPDATE departures SET deleted = 1 WHERE id = :dep_id
+                        AND NOT EXISTS ( SELECT 1 FROM order_items 
+                        WHERE dep_id = departures.id AND deleted = 0)
+            ";
+            $stmt = $this->db->prepare($depSql);
+            $stmt->bindParam(':dep_id', $this->dep_id);
+            $stmt->execute();
+
             // Check if the order has at leas one active item:
             
             $ordSql = "UPDATE orders SET deleted = 1 WHERE id = :order_id

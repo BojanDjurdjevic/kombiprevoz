@@ -321,9 +321,11 @@ export const useMyOrdersStore = defineStore('myorders', () => {
         cancel: async () => {
             user.loading = true
             const dto = {
-                user_id: user.user.id,
-                delete: {
-                    item_id: item_id.value
+                orders: {
+                    user_id: user.user.id,
+                    delete: {
+                        item_id: item_id.value
+                    }
                 }
             }
             try {

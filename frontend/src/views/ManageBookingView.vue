@@ -25,9 +25,10 @@ const search = useSearchStore()
         <v-divider></v-divider>
     </v-container>
 
-    <v-container class="d-flex flex-column justify-space-evenly align-center" >
+    <v-container class="d-flex flex-column justify-space-evenly align-center" v-for="order in orders.oneOrder.items" >
+        
         <v-card class="w-75 ma-3 pa-12 rounded-lg d-flex flex-column justify-space-around " height="660" elevation="3" 
-        v-for="order in orders.oneOrder.items"
+            v-if="order.deleted == 0 || order.deleted == 1"
         >
             <v-card-title class="text-center font-weight-bold"> {{ order.from }} - {{ order.to }}</v-card-title>
             <v-divider></v-divider>
@@ -38,7 +39,7 @@ const search = useSearchStore()
             <v-card-title class="d-flex justify-space-between"><p>Vreme Polaska:</p><p> {{ order.time }}</p> </v-card-title>
             <v-card-title class="d-flex justify-space-between"><p>Cena:</p><p> {{ order.price }}</p> </v-card-title>
             <v-divider></v-divider>
-            <v-card-actions class="d-flex justify-center">
+            <v-card-actions class="d-flex justify-center" v-if="order.deleted == 0">
                 <v-dialog
                     v-model="orders.addressDialog"
                     max-width="75%"
@@ -324,6 +325,16 @@ const search = useSearchStore()
                     </v-card>
                 </v-dialog>
             </v-card-actions>
-        </v-card>
+            <v-card-actions v-if="order.deleted == 1"
+                class="d-flex justify-center align-center"
+            >
+                <v-btn 
+                    variant="elevated"
+                    color="red-darken-4"
+                    width="30%"
+                >Obrisano</v-btn>
+            </v-card-actions>
+        </v-card>    
+        
     </v-container>
 </template>
