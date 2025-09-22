@@ -14,6 +14,7 @@ import ResetPassView from '@/views/ResetPassView.vue'
 import { useUserStore } from '@/stores/user'
 import RequestPassResetView from '@/views/RequestPassResetView.vue'
 import MyProfileView from '@/views/MyProfileView.vue'
+import AdminDashView from '@/views/AdminDashView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -104,6 +105,14 @@ const router = createRouter({
       meta: {
         requireAuth: true
       }
+    },
+    {
+      path: '/admin',
+      name: 'admin',
+      component: AdminDashView, /*
+      meta: {
+        requireAuth: true
+      } */
     },
   ],
 })
