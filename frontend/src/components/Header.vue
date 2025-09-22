@@ -83,6 +83,9 @@ if(localStorage.getItem('myCart')) {
           </template>
           <Search />
         </v-dialog>
+
+        <v-btn variant="plain" to="/admin" v-if="user.admin == false" @click="user.admin = true">Admin</v-btn>
+        <v-btn variant="plain" to="/" v-if="user.admin == true" @click="user.admin = false">User</v-btn>
         
         <v-row class="d-none d-md-block">
           <v-btn variant="plain" to="/">Početna</v-btn>

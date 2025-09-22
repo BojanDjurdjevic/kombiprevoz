@@ -71,6 +71,7 @@ export const useUserStore = defineStore('user', () => {
     const successMsg = ref(false)
     const loading = ref(false)
     const profileDialog = ref(false)
+    const admin = ref(false)
 
     function showErr(error, time) {
         errorMsg.value = error.response.data.error
@@ -257,7 +258,7 @@ export const useUserStore = defineStore('user', () => {
     }
 
     return {
-        user, errorMsg, loading, getters, actions, successMsg, rules, profileDialog, profile,
+        user, errorMsg, loading, getters, actions, successMsg, rules, profileDialog, profile, admin,
         logout, showErr, showSucc, clearMsg,
     }
 })
