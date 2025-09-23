@@ -64,6 +64,7 @@ if(localStorage.getItem('myCart')) {
         <v-spacer></v-spacer>
         <v-dialog
           v-model="search.dialog"
+          v-if="user.admin == false"
         >
           <template v-slot:activator="{ props: activatorProps }" >
             <v-btn 
@@ -83,18 +84,25 @@ if(localStorage.getItem('myCart')) {
           </template>
           <Search />
         </v-dialog>
-
-        <v-btn variant="plain" to="/admin" v-if="user.admin == false" @click="user.admin = true">Admin</v-btn>
-        <v-btn variant="plain" to="/" v-if="user.admin == true" @click="user.admin = false">User</v-btn>
         
-        <v-row class="d-none d-md-block">
-          <v-btn variant="plain" to="/">Početna</v-btn>
+        <v-row class="d-none d-md-block" v-if="user.admin == false">
+          <v-btn variant="plain" to="/" >Početna</v-btn>
           <v-btn variant="plain" to="/rezervacije">Moje Rezervacije</v-btn>
           <v-btn variant="plain" to="/destinacije">Destinacije</v-btn>
           <v-btn variant="plain" to="/kontakt">Kontakt</v-btn>
         </v-row>
 
+        <v-row class="d-none d-md-block" v-else>
+          <v-btn variant="plain" to="/admin" >Rezervacije</v-btn>
+          <v-btn variant="plain" to="/users">Korisnici</v-btn>
+          <v-btn variant="plain" to="/tours">Vožnje</v-btn>
+          <v-btn variant="plain" to="/drivers">Vozači</v-btn>
+        </v-row>
+
         <v-spacer></v-spacer>
+
+        <v-btn variant="outlined" to="/admin" v-if="user.admin == false" @click="user.admin = true">Admin</v-btn>
+        <v-btn variant="outlined" to="/" v-if="user.admin == true" @click="user.admin = false">User</v-btn>
 
         <v-btn
           @click="changeTheme"
