@@ -93,10 +93,8 @@ if(localStorage.getItem('myCart')) {
         </v-row>
 
         <v-row class="d-none d-md-block" v-else>
-          <v-btn variant="plain" to="/admin" >Rezervacije</v-btn>
-          <v-btn variant="plain" to="/users">Korisnici</v-btn>
-          <v-btn variant="plain" to="/tours">Vožnje</v-btn>
-          <v-btn variant="plain" to="/drivers">Vozači</v-btn>
+          <v-btn variant="plain" to="/admin" >Admin Dashboard || Administrator Panel</v-btn>
+          
         </v-row>
 
         <v-spacer></v-spacer>
