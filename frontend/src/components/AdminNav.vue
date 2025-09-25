@@ -1,9 +1,12 @@
 <script setup>
     import { ref } from 'vue'
+    import { VDateInput } from 'vuetify/labs/VDateInput'
+    import { VNumberInput } from 'vuetify/labs/VNumberInput'
     import { useUserStore } from '@/stores/user';
+import { useAdminStore } from '@/stores/admin';
     const user = useUserStore()
+    const admin = useAdminStore()
 
-    const adminView = ref('bookings')
 
 </script>
 
@@ -35,25 +38,25 @@
               prepend-icon="mdi-book-open-variant"
               title="Rezervacije"
               value="Rezervacije"
-              @click="adminView = 'bookings'"
+              @click="admin.adminView = 'Bookings'"
             ></v-list-item>
             <v-list-item
               prepend-icon="mdi-account-multiple"
               title="Korisnici"
               value="Korisnici"
-              @click="adminView = 'users'"
+              @click="admin.adminView = 'Users'"
             ></v-list-item>
             <v-list-item
               prepend-icon="mdi-car"
               title="Vožnje"
               value="Vožnje"
-              @click="adminView = 'tours'"
+              @click="admin.adminView = 'Tours'"
             ></v-list-item>
             <v-list-item
               prepend-icon="mdi-star"
               title="Vozači"
               value="Vozači"
-              @click="adminView = 'drivers'"
+              @click="admin.adminView = 'Drivers'"
             ></v-list-item>
           </v-list>
         </v-navigation-drawer>
@@ -64,7 +67,7 @@
         
         <v-container class="h-100 w-75 pa-3 d-flex flex-column justify-space-between align-center">
             <div class="w-100 text-center">
-                <h1 class="mt-3"> {{ adminView }} </h1>
+                <h1 class="mt-3"> {{ admin.adminView }} </h1>
                 <v-divider class="w-100"></v-divider>
             </div>
             
@@ -74,6 +77,13 @@
             <div class="w-100 text-center">
                 <h1 class="mt-3"> Filters </h1>
                 <v-divider class="w-100"></v-divider>
+            </div>
+            <div class="w-100 d-flex flex-column align-center">
+              <v-date-input
+
+              >
+
+              </v-date-input>
             </div>
         </v-container>
         
