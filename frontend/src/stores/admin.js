@@ -16,10 +16,23 @@ export const useAdminStore = defineStore('admin', () => {
     })
     const tourID = ref(null)
     const bCode = ref(null)
+    const driverID = ref(null)
+
+    const actions = ref({
+        searchByFilter: () => {
+            const dto = {
+                departure: depDay.value,
+                tour_id: tourID.value,
+                code: bCode.value,
+                driver_id: driverID.value
+            }
+            console.log(dto)
+        }
+    })
 
 
     return {
-        adminView, depDay, tourID, bCode,
+        adminView, depDay, tourID, bCode, driverID,
     }
 
 })

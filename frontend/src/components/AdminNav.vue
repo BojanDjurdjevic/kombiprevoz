@@ -78,12 +78,15 @@ import { useAdminStore } from '@/stores/admin';
                 <h1 class="mt-3"> Filters </h1>
                 <v-divider class="w-100"></v-divider>
             </div>
-            <div class="w-100 d-flex flex-column align-center">
-              <v-date-input
+            <div class="pa-6 w-100 h-100 d-flex flex-column ">
+              <div>
+                <v-date-input
+                  v-model="admin.depDay.date"
+                  label="Datum vožnje"
+                >
 
-              >
-
-              </v-date-input>
+                </v-date-input>
+              </div>
             </div>
         </v-container>
         
