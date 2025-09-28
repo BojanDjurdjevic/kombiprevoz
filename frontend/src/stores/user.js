@@ -3,10 +3,12 @@ import router from "@/router";
 import { defineStore } from "pinia";
 import { useRoute } from "vue-router";
 import { ref } from 'vue'
+import { useMyOrdersStore } from "./myorders";
 
 
 export const useUserStore = defineStore('user', () => {
     const route = useRoute()
+    const orders = useMyOrdersStore()
     const isLoggedUser = ref({
         user: true
     })
@@ -167,6 +169,7 @@ export const useUserStore = defineStore('user', () => {
                     const redirectPath = route.query.redirect || '/'
                     router.push(redirectPath)
                     showSucc(res, 6000)
+                    orders.actions.getUserOrders(orders.addedOrders.orders)
                 } else {
                     console.log(res.data)
                 }
