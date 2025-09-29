@@ -1,13 +1,14 @@
 <script setup>
-    import { ref } from 'vue'
-    import { VDateInput } from 'vuetify/labs/VDateInput'
-    import { VNumberInput } from 'vuetify/labs/VNumberInput'
-    import { useUserStore } from '@/stores/user';
-import { useAdminStore } from '@/stores/admin';
-import { useTourStore } from '@/stores/tours';
-    const user = useUserStore()
-    const admin = useAdminStore()
-    const tours = useTourStore()
+  import { ref, computed } from 'vue'
+  import { VDateInput } from 'vuetify/labs/VDateInput'
+  import { VNumberInput } from 'vuetify/labs/VNumberInput'
+  import { useUserStore } from '@/stores/user';
+  import { useAdminStore } from '@/stores/admin';
+  import { useTourStore } from '@/stores/tours';
+  import europeCities from '@/data/country-city.json'
+  const user = useUserStore()
+  const admin = useAdminStore()
+  const tours = useTourStore()
 
 
 </script>
@@ -71,16 +72,24 @@ import { useTourStore } from '@/stores/tours';
                   <h1 class="mt-3"> {{ admin.adminView }} </h1>
                   <v-divider class="w-100"></v-divider>
               </div>
+              <!--   TOURS   -->
               <div class="main mt-6 pa-3 w-100 d-flex flex-column align-center" 
                 v-if="admin.adminView == 'Tours'" >
                 <h3>Dodaj novu destinaciju</h3>
-                <div class="d-flex flex-wrap w-100 justify-space-evenly">
+                <div class="d-flex w-100 justify-space-around">
                   <div class="w-25 d-flex flex-column align-center">
                     <v-autocomplete
                       class="w-100 mt-5"
                       prepend-icon="mdi-receipt-text-edit-outline"
+                      disabled
+                      label="Kontinent: Evropa"
+                    ></v-autocomplete>
+                    <v-autocomplete
+                      v-model="admin.toAddCountry"
+                      class="w-100 "
+                      prepend-icon="mdi-receipt-text-edit-outline"
                       clearable
-                      :items="admin.tours"
+                      :items="europeCities.map(c => c.country)"
                       label="Dodaj novu državu"
                     ></v-autocomplete>
                     <v-file-input clearable label="Dodaj zastavu" class="w-100"></v-file-input>
@@ -90,11 +99,21 @@ import { useTourStore } from '@/stores/tours';
                     >Dodaj Državu</v-btn>
                   </div>
                   <div class="w-25 d-flex flex-column align-center">
-                  <v-autocomplete
+                    <v-autocomplete
+                      v-model="admin.selectedCountry"
                       class="w-100 mt-5"
                       prepend-icon="mdi-city-variant"
                       clearable
-                      :items="admin.tours"
+                      :items="europeCities.map(c => c.country)"
+                      label="Država kojoj grad pripada"
+                    ></v-autocomplete>
+                    <v-autocomplete
+                      v-model="admin.selectedCity"
+                      class="w-100 "
+                      prepend-icon="mdi-city-variant"
+                      clearable
+                      :items="admin.cityOptions"
+                      :disabled="!admin.selectedCountry"
                       label="Dodaj novi grad"
                     ></v-autocomplete>
                     <v-file-input clearable label="Dodaj slike" class="w-100" multiple chips></v-file-input>
@@ -106,6 +125,20 @@ import { useTourStore } from '@/stores/tours';
                 </div>  
                 <h3 class="mt-9">Dodaj novu rutu</h3>
                 <div class="w-100 pa-3 d-flex flex-wrap">
+                  <v-autocomplete
+                    class="w-50 mt-5"
+                    prepend-icon="mdi-receipt-text-edit-outline"
+                    clearable
+                    :items="admin.tours"
+                    label="Država polaska"
+                  ></v-autocomplete>
+                  <v-autocomplete
+                    class="w-50 mt-5"
+                    prepend-icon="mdi-country"
+                    clearable
+                    :items="admin.tours"
+                    label="Država dolaska"
+                  ></v-autocomplete>
                   <v-autocomplete
                     class="w-50 mt-5"
                     prepend-icon="mdi-city-variant"
@@ -162,6 +195,9 @@ import { useTourStore } from '@/stores/tours';
               </div> 
           </v-container>
           <v-divider vertical></v-divider>
+
+          <!--   FILTERS   -->
+
           <v-container class="w-25 pa-3 d-flex flex-column justify-space-between align-center">
               <div class="w-100 text-center">
                   <h1 class="mt-3"> Filters </h1>
@@ -256,7 +292,7 @@ import { useTourStore } from '@/stores/tours';
               <v-container class="w-100 h-100 d-flex flex-column justify-space-between align-center"
                 v-if="admin.adminView == 'Tours'"
               >
-                <div class="pa-6 w-100 h-100 d-flex flex-column ">
+                <div class="pa-6 w-100 h-25 d-flex flex-column ">
                   <div class="ma-4">
                     <v-select
                       prepend-icon="mdi-highway"
@@ -270,14 +306,14 @@ import { useTourStore } from '@/stores/tours';
                     ></v-select>
                   </div>
                 </div>
-                <div class="w-100 h-25 d-flex flex-column align-center justify-space-evenly">
+                <div class="w-100 h-75 d-flex flex-column align-center justify-center">
                   <v-btn 
-                    class="w-75"
+                    class="w-75 ma-3"
                     prepend-icon="mdi-magnify"
                     color="green-darken-3"
                   >Traži</v-btn>
                   <v-btn 
-                    class="w-75"
+                    class="w-75 ma-3"
                     prepend-icon="mdi-close-circle-multiple"
                     color="red-darken-3"
                   >Obriši sve</v-btn>

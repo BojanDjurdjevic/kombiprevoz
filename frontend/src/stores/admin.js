@@ -1,10 +1,11 @@
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { defineStore } from "pinia";
 import { useUserStore } from "./user";
 import { useSearchStore } from "./search";
 import api from "@/api";
 import router from "@/router";
 import { useRoute } from 'vue-router';
+import europeCities from '@/data/country-city.json'
 
 
 export const useAdminStore = defineStore('admin', () => {
@@ -32,6 +33,15 @@ export const useAdminStore = defineStore('admin', () => {
     const tourName = ref(null)
     const toursFrom = ref(null)
     const toursTo = ref(null)
+
+    const toAddCountry = ref(null)
+    const selectedCountry = ref(null)
+    const selectedCity = ref(null)
+    const cityOptions = computed(() => {
+        if(!selectedCountry.value) return []
+        const countryData = europeCities.find(c => c.country === selectedCountry.value)
+        return countryData ? countryData.cities : []
+    })
 
     const actions = ref({
         searchBooking: () => {
@@ -62,6 +72,7 @@ export const useAdminStore = defineStore('admin', () => {
 
     return {
         adminView, depDay, tourID, bCode, driverID, tours, usrEmail, tourName, toursFrom, toursTo,
+        selectedCity, selectedCountry, cityOptions, toAddCountry,
         
     }
 
