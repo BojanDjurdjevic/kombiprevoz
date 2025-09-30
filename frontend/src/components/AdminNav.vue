@@ -75,54 +75,65 @@
               <!--   TOURS   -->
               <div class="main mt-6 pa-3 w-100 d-flex flex-column align-center" 
                 v-if="admin.adminView == 'Tours'" >
-                <h3>Dodaj novu destinaciju</h3>
-                <div class="d-flex w-100 justify-space-around">
-                  <div class="w-25 d-flex flex-column align-center">
-                    <v-autocomplete
-                      class="w-100 mt-5"
-                      prepend-icon="mdi-receipt-text-edit-outline"
-                      disabled
-                      label="Kontinent: Evropa"
-                    ></v-autocomplete>
-                    <v-autocomplete
-                      v-model="admin.toAddCountry"
-                      class="w-100 "
-                      prepend-icon="mdi-receipt-text-edit-outline"
-                      clearable
-                      :items="europeCities.map(c => c.country)"
-                      label="Dodaj novu državu"
-                    ></v-autocomplete>
-                    <v-file-input clearable label="Dodaj zastavu" class="w-100"></v-file-input>
-                    <v-btn 
-                      color="green-darken-3"
-                      class="mb-3"
-                    >Dodaj Državu</v-btn>
-                  </div>
-                  <div class="w-25 d-flex flex-column align-center">
-                    <v-autocomplete
-                      v-model="admin.selectedCountry"
-                      class="w-100 mt-5"
-                      prepend-icon="mdi-city-variant"
-                      clearable
-                      :items="europeCities.map(c => c.country)"
-                      label="Država kojoj grad pripada"
-                    ></v-autocomplete>
-                    <v-autocomplete
-                      v-model="admin.selectedCity"
-                      class="w-100 "
-                      prepend-icon="mdi-city-variant"
-                      clearable
-                      :items="admin.cityOptions"
-                      :disabled="!admin.selectedCountry"
-                      label="Dodaj novi grad"
-                    ></v-autocomplete>
-                    <v-file-input clearable label="Dodaj slike" class="w-100" multiple chips></v-file-input>
-                    <v-btn 
-                      color="green-darken-3"
-                      class="mb-3"
-                    >Dodaj Grad</v-btn>
-                  </div>
-                </div>  
+                <v-expansion-panels>
+                  <v-expansion-panel expand focusable>
+                    <v-expansion-panel-title>Dodaj destinaciju</v-expansion-panel-title>
+                      <v-expansion-panel-text>
+                        <h3>Dodaj novu destinaciju</h3>
+                        <div class="d-flex w-100 justify-space-around">
+                          <div class="w-25 d-flex flex-column align-center">
+                            <v-autocomplete
+                              class="w-100 mt-5"
+                              prepend-icon="mdi-receipt-text-edit-outline"
+                              disabled
+                              label="Kontinent: Evropa"
+                            ></v-autocomplete>
+                            <v-autocomplete
+                              v-model="admin.toAddCountry"
+                              class="w-100 "
+                              prepend-icon="mdi-receipt-text-edit-outline"
+                              clearable
+                              :items="europeCities.map(c => c.country)"
+                              label="Dodaj novu državu"
+                            ></v-autocomplete>
+                            <v-file-input clearable label="Dodaj zastavu" class="w-100"></v-file-input>
+                            <v-btn 
+                              color="green-darken-3"
+                              class="mb-3"
+                            >Dodaj Državu</v-btn>
+                          </div>
+                          <div class="w-25 d-flex flex-column align-center">
+                            <v-autocomplete
+                              v-model="admin.selectedCountry"
+                              class="w-100 mt-5"
+                              prepend-icon="mdi-city-variant"
+                              clearable
+                              :items="europeCities.map(c => c.country)"
+                              label="Država kojoj grad pripada"
+                            ></v-autocomplete>
+                            <v-autocomplete
+                              v-model="admin.selectedCity"
+                              class="w-100 "
+                              prepend-icon="mdi-city-variant"
+                              clearable
+                              :items="admin.cityOptions"
+                              :disabled="!admin.selectedCountry"
+                              label="Dodaj novi grad"
+                            ></v-autocomplete>
+                            <v-file-input clearable label="Dodaj slike" class="w-100" multiple chips></v-file-input>
+                            <v-btn 
+                              color="green-darken-3"
+                              class="mb-3"
+                            >Dodaj Grad</v-btn>
+                          </div>
+                        </div>  
+                      </v-expansion-panel-text>
+                  </v-expansion-panel>
+                </v-expansion-panels>
+                <v-expansion-panels mb-3>
+                  <v-expansion-panel expand focusable>
+                    <v-expansion-panel-title>Dodaj rutu</v-expansion-panel-title>
+                      <v-expansion-panel-text >
                 <h3 class="mt-9">Dodaj novu rutu</h3>
                 <div class="w-100 pa-3 d-flex flex-wrap">
                   <v-autocomplete
@@ -190,9 +201,14 @@
                       :min="30"
                     ></v-number-input>
                   </div>
-                  </div>
-                <v-btn color="green-darken-3">Dodaj Rutu</v-btn>
+                  
+                </div>
+                <v-btn color="green-darken-3" class="">Dodaj Rutu</v-btn>
+                </v-expansion-panel-text>
+                  </v-expansion-panel>
+                </v-expansion-panels>
               </div> 
+              
           </v-container>
           <v-divider vertical></v-divider>
 
