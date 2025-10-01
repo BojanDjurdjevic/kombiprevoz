@@ -15,11 +15,16 @@ const tab = ref(null);
 const items = [
   "Postojeće rute",
   "Dodaj novu rutu",
-  "Dostupne Države",
-  "Dostupni Gradovi",
+  "Države i Gradovi"
 ];
-const text =
-  "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.";
+
+const tab_bookings = ref(null);
+
+const items_bookings = [
+  "Pretraga",
+  "U narednih 24h",
+  "U narednih 48h"
+];
 </script>
 
 <template>
@@ -74,6 +79,60 @@ const text =
             <h1 class="mt-3">{{ admin.adminView }}</h1>
             <v-divider class="w-100"></v-divider>
           </div>
+          <!--  BOOKINGS  -->
+
+          <div 
+            class="mt-6 pa-3 w-100 d-flex flex-column align-center"
+            v-if="admin.adminView == 'Bookings'"
+          >
+            <v-card class="w-100">
+              <v-toolbar 
+              >
+                <template v-slot>
+                  <v-tabs v-model="tab_bookings" align-tabs="title" >
+                    <v-tab
+                      v-for="item in items_bookings"
+                      :key="item"
+                      :text="item"
+                      :value="item"
+                    ></v-tab>
+                  </v-tabs>
+                </template>
+              </v-toolbar>
+
+              <v-tabs-window v-model="tab_bookings">
+                <v-tabs-window-item
+                  v-for="item in items_bookings"
+                  :key="item"
+                  :value="item"
+                >
+                  <v-card flat>
+                    <v-card-text>
+                      <div class="w-100" v-if="tab_bookings == 'Pretraga'">
+                        Pretraga
+                      </div>
+                      <div class="w-100" v-if="tab_bookings == 'U narednih 24h'">
+                        24 H
+                      </div>
+                      <div class="w-100" v-if="tab_bookings == 'U narednih 48h'">
+                        48 H
+                      </div>
+                    </v-card-text>
+                  </v-card>
+                </v-tabs-window-item>
+              </v-tabs-window>
+            </v-card>
+          </div>
+
+          <!--  USERS  -->
+
+          <div
+            class="mt-6 pa-3 w-100 d-flex flex-column align-center"
+            v-if="admin.adminView == 'Users'"
+          >
+            Users
+          </div>
+
           <!--   TOURS   -->
           <div
             class="mt-6 pa-3 w-100 d-flex flex-column align-center"
@@ -83,7 +142,7 @@ const text =
               <v-toolbar 
               >
                 <template v-slot>
-                  <v-tabs v-model="tab" align-tabs="title">
+                  <v-tabs v-model="tab" align-tabs="title" >
                     <v-tab
                       v-for="item in items"
                       :key="item"
@@ -272,6 +331,15 @@ const text =
                 </v-tabs-window-item>
               </v-tabs-window>
             </v-card>
+          </div>
+
+          <!--  DRIVERS  -->
+
+          <div
+            class="mt-6 pa-3 w-100 d-flex flex-column align-center"
+            v-if="admin.adminView == 'Drivers'"
+          >
+            Drivers
           </div>
         </v-container>
         <v-divider vertical></v-divider>
