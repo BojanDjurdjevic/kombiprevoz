@@ -77,9 +77,13 @@ class OrderController {
                         //} else echo json_encode(['orders' => 'Niste autorizovani da vidite tuđe rezervacije!']);
                     } else
                     echo json_encode([
-                        'status' => 401,
-                        'msg' => 'Proverite podatke. Nisu pronađene rezervacije.'
+                        http_response_code(401),
+                        'error' => 'Proverite podatke. Nisu pronađene rezervacije.'
                     ]);
+
+                    if(isset($this->data->adminOrders) && !empty($this->data->adminOrders)) {
+                        
+                    }
                     break;
                 case 'POST':
                     if(isset($this->data->orders->create) && !empty($this->data->orders->create)) { /*

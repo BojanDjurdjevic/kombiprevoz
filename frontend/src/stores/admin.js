@@ -26,6 +26,8 @@ export const useAdminStore = defineStore('admin', () => {
         {id: 2, name: 'Rijeka - Novi Sad'}
     ])
 
+    
+
     // USERS
     const usrEmail = ref(null)
 
@@ -53,6 +55,16 @@ export const useAdminStore = defineStore('admin', () => {
             }
             console.log(dto)
         },
+        fetchBookings: (tab) => {
+            if(tab == 'U narednih 24h') {
+                console.log("U narednih 24h")
+            } else if(tab == 'U narednih 48h') {
+                console.log('U narednih 48h')
+            } else {
+                return
+            }
+            
+        },
         searchUser: () => {
             const dto = {
                 email: usrEmail.value
@@ -71,6 +83,7 @@ export const useAdminStore = defineStore('admin', () => {
 
 
     return {
+        actions,
         adminView, depDay, tourID, bCode, driverID, tours, usrEmail, tourName, toursFrom, toursTo,
         selectedCity, selectedCountry, cityOptions, toAddCountry,
         

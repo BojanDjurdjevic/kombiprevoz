@@ -27,6 +27,7 @@ const items_bookings = [
               :key="item"
               :text="item"
               :value="item"
+              @click="admin.actions.fetchBookings(item)"
             ></v-tab>
           </v-tabs>
         </template>

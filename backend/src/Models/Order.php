@@ -647,14 +647,16 @@ class Order {
 
     public function getAll() 
     {
-        $sql = "SELECT orders.id, orders.tour_id, orders.user_id, orders.places, tours.from_city, 
-                orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
-                orders.date, tours.time as pickuptime, tours.duration,
+        $sql = "SELECT order_items.id, order_items.tour_id, orders.user_id, order_items.places, tours.from_city, 
+                order_items.add_from as pickup, tours.to_city, order_items.add_to as dropoff,
+                order_items.date, tours.time as pickuptime, tours.duration,
                 orders.total as price, orders.code, orders.file_path as voucher, users.name as user, users.email, users.phone
                 from orders 
-                INNER JOIN tours on orders.tour_id = tours.id
+                INNER JOIN order_items on order_items.order_id = orders.id
+                INNER JOIN tours on order_items.tour_id = tours.id
                 INNER JOIN users on orders.user_id = users.id
-                WHERE orders.deleted = 0 order by orders.date"
+                WHERE orders.deleted = 0 and order_items.deleted = 0
+                and order_items.date > :tomorrow"
         ;
         $res = $this->db->query($sql);
         $num = $res->rowCount();
