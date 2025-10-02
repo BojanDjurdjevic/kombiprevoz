@@ -26,7 +26,8 @@ export const useAdminStore = defineStore('admin', () => {
         {id: 2, name: 'Rijeka - Novi Sad'}
     ])
 
-    
+    const lastFetch = ref(null)   
+    const lastFetch48 = ref(null) 
 
     // USERS
     const usrEmail = ref(null)
@@ -57,9 +58,15 @@ export const useAdminStore = defineStore('admin', () => {
         },
         fetchBookings: (tab) => {
             if(tab == 'U narednih 24h') {
-                console.log("U narednih 24h")
+                const now = Date.now()
+                if(lastFetch.value && lastFetch.value >= now - 6 * 60 * 1000) return
+                console.log("U narednih 24h" + "\n" + "last fetch: " + lastFetch.value + "\n" + "now: " + now)
+                lastFetch.value = now
             } else if(tab == 'U narednih 48h') {
+                const now = Date.now()
+                if(lastFetch48.value && lastFetch48.value >= now - 6 * 60 * 1000) return
                 console.log('U narednih 48h')
+                lastFetch48.value = now
             } else {
                 return
             }

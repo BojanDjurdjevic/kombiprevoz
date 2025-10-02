@@ -656,21 +656,36 @@ class Order {
                 INNER JOIN tours on order_items.tour_id = tours.id
                 INNER JOIN users on orders.user_id = users.id
                 WHERE orders.deleted = 0 and order_items.deleted = 0
-                and order_items.date > :tomorrow"
+                and order_items.date = :tomorrow"
         ;
-        $res = $this->db->query($sql);
-        $num = $res->rowCount();
+        $stmt = $this->db->prepare($sql);
+        $test = date_create();
+        $now = date("Y-m-d H:i:s", date_timestamp_get($test));
+        $tomorrow = date("Y-m-d", strtotime("+24 hours", date_timestamp_get($test)));
 
-        if($num > 0) {
-            $orders = [];
-            while($row = $res->fetch(PDO::FETCH_OBJ)) {
-                array_push($orders, $row);
+        $stmt->bindParam(':tomorrow', $tomorrow);
+
+        try {
+            if($stmt->execute()) {
+                if($stmt->rowCount() > 0) {
+                    $orders = [];
+                    while($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+                        array_push($orders, $row);
+                    }
+                    echo json_encode(['orders' => $orders]);
+                } else {
+                    echo json_encode(['msg' => 'Nema rezervisanih vožnji']);
+                    exit();
+                }
             }
-            echo json_encode(['orders' => $orders]);
-        } else {
-            echo json_encode(['msg' => 'Nema rezervisanih vožnji']);
-            exit();
+        } catch(PDOException $e) {
+            http_response_code(500);
+            echo json_encode([
+                'error' => 'Došlo je do greške pri učitavanju iz baze',
+                'msg' => $e->getMessage() 
+            ]);
         }
+        
     }
 
     public function getAllByDate() 

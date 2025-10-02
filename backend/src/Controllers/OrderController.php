@@ -38,7 +38,12 @@ class OrderController {
                         //if(Validator::isAdmin() || Validator::isSuper() || Validator::isDriver()) {
                             if(isset($this->data->orders->all) && !empty($this->data->orders->all)) {
                                 if(Validator::isAdmin() || Validator::isSuper() || Validator::isDriver()) $this->order->getAll();
-                                else echo json_encode(['orders' => 'Niste autorizovani da vidite tuđe rezervacije!']);
+                                else {
+                                    http_response_code(402);
+                                    echo json_encode([
+                                        'error' => 'Niste autorizovani da vidite sve rezervacije!'
+                                    ]);
+                                } 
                             }
                             if(isset($this->data->orders->date) && !empty($this->data->orders->date) 
                             && !isset($this->data->orders->tour_id) && !empty($this->data->orders->tour_id)) {
@@ -80,10 +85,10 @@ class OrderController {
                         http_response_code(401),
                         'error' => 'Proverite podatke. Nisu pronađene rezervacije.'
                     ]);
-
+                    /*
                     if(isset($this->data->adminOrders) && !empty($this->data->adminOrders)) {
-                        
-                    }
+
+                    } */
                     break;
                 case 'POST':
                     if(isset($this->data->orders->create) && !empty($this->data->orders->create)) { /*
