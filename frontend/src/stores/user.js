@@ -106,6 +106,7 @@ export const useUserStore = defineStore('user', () => {
                 const res = await api.isLogged(isLoggedUser.value)
                 if(res.data.user) {
                     user.value = res.data.user
+                    orders.actions.getUserOrders(orders.addedOrders.orders)
                     return true
                 } else {
                     user.value = null
