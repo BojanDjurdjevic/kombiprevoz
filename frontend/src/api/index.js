@@ -81,7 +81,13 @@ export default {
    //----------------------------------- ORDER --------------------------//
 
    getOrder(orders) {
+        //return orders
         return axios.get("", {params: {orders}})
+   },  
+
+   getAdminOrder(adminOrders) {
+        //return orders
+        return axios.get("", {params: {adminOrders}})
    },  
 
    makeOrder(tour) {

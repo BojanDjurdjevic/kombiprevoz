@@ -63,7 +63,7 @@ if(isset($data->country) && !empty($data->country)) {
 } elseif(isset($data->tours) && !empty($data->tours)) {
     $tours->handleRequest();
 } 
-if(isset($data->orders) && !empty($data->orders)) {
+if(isset($data->orders) && !empty($data->orders) /* || (isset($data->adminOrders) && !empty($data->adminOrders)) */) {
     if(isset($_SESSION['user'])) $orders->handleRequest();
     else {
         http_response_code(422);

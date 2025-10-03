@@ -27,7 +27,7 @@ class OrderController {
             switch($request) {
                 case 'GET':
                     if(isset($this->data->orders) && !empty($this->data->orders)) {
-                        if(isset($this->data->orders->user_id) && !empty($this->data->orders->user_id)) {
+                        if(isset($this->data->orders->user_id) && !empty($this->data->orders->user_id) && !isset($this->data->orders->adminOrders)) {
                             $this->order->user_id = $this->data->orders->user_id;
                             $this->order->getByUser();
                         }
@@ -36,8 +36,9 @@ class OrderController {
                             $this->order->getByCode();
                         }
                         //if(Validator::isAdmin() || Validator::isSuper() || Validator::isDriver()) {
-                            if(isset($this->data->orders->all) && !empty($this->data->orders->all)) {
-                                if(Validator::isAdmin() || Validator::isSuper() || Validator::isDriver()) $this->order->getAll();
+                            if(isset($this->data->orders->adminOrders->all) && !empty($this->data->orders->adminOrders->all)) {
+                                if(Validator::isAdmin() || Validator::isSuper() || Validator::isDriver()) 
+                                $this->order->getAll($this->data->orders->adminOrders->in24, $this->data->orders->adminOrders->in48);
                                 else {
                                     http_response_code(402);
                                     echo json_encode([

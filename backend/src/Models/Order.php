@@ -645,8 +645,16 @@ class Order {
 
     //------------------------------- FUNCTIONS OF GET METHOD --------------------------------//
 
-    public function getAll() 
+    public function getAll($in24, $in48) 
     {
+        if($in24 && !empty($in48)) {
+            $tomorrow = date("Y-m-d", strtotime("+1 day"));
+        } elseif($in48 && !empty($in24)) {
+            $tomorrow = date("Y-m-d", strtotime("+2 days"));
+        } else {
+            echo json_encode(['error' => 'Odaberite 24h ili 48h']);
+            exit();
+        } 
         $sql = "SELECT order_items.id, order_items.tour_id, orders.user_id, order_items.places, tours.from_city, 
                 order_items.add_from as pickup, tours.to_city, order_items.add_to as dropoff,
                 order_items.date, tours.time as pickuptime, tours.duration,
@@ -659,24 +667,30 @@ class Order {
                 and order_items.date = :tomorrow"
         ;
         $stmt = $this->db->prepare($sql);
+        
+        /*
         $test = date_create();
         $now = date("Y-m-d H:i:s", date_timestamp_get($test));
-        $tomorrow = date("Y-m-d", strtotime("+24 hours", date_timestamp_get($test)));
+        $tomorrow = date("Y-m-d", strtotime("+24 hours", date_timestamp_get($test))); */
 
         $stmt->bindParam(':tomorrow', $tomorrow);
 
         try {
             if($stmt->execute()) {
-                if($stmt->rowCount() > 0) {
+                $orders = $stmt->fetchAll(PDO::FETCH_OBJ);
+                /*if($orders) { 
+                
                     $orders = [];
                     while($row = $stmt->fetch(PDO::FETCH_OBJ)) {
                         array_push($orders, $row);
                     }
-                    echo json_encode(['orders' => $orders]);
-                } else {
-                    echo json_encode(['msg' => 'Nema rezervisanih vožnji']);
+                    echo json_encode(['orders' => $orders, 'has_orders' => !empty($orders)]); */
+                    
+                    echo json_encode(['orders' => $orders, 'has_orders' => !empty($orders)]);
+                /*} else {
+                    echo json_encode(['msg' => "Nema rezervisanih vožnji za $tomorrow"]);
                     exit();
-                }
+                } */
             }
         } catch(PDOException $e) {
             http_response_code(500);

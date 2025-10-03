@@ -9,10 +9,20 @@ import europeCities from '@/data/country-city.json'
 
 
 export const useAdminStore = defineStore('admin', () => {
+    const user = useUserStore()
 
     const adminView = ref('Bookings')
+    const loading = ref(false)
 
     // BOOKINGS
+    const tab_bookings = ref(null);
+
+    const items_bookings = [
+        "Pretraga",
+        "U narednih 24h",
+        "U narednih 48h"
+    ];
+
     const depDay = ref({
         date: null,
         range: null
@@ -28,6 +38,9 @@ export const useAdminStore = defineStore('admin', () => {
 
     const lastFetch = ref(null)   
     const lastFetch48 = ref(null) 
+
+    const in24 = ref(null)
+    const in48 = ref(null)
 
     // USERS
     const usrEmail = ref(null)
@@ -56,17 +69,51 @@ export const useAdminStore = defineStore('admin', () => {
             }
             console.log(dto)
         },
-        fetchBookings: (tab) => {
+        fetchBookings: async (tab) => {
             if(tab == 'U narednih 24h') {
+                loading.value = true
                 const now = Date.now()
                 if(lastFetch.value && lastFetch.value >= now - 6 * 60 * 1000) return
-                console.log("U narednih 24h" + "\n" + "last fetch: " + lastFetch.value + "\n" + "now: " + now)
-                lastFetch.value = now
+                const dto = {
+                    user_id: user.user.id,
+                    adminOrders: {
+                        all: true,
+                        in24: true,
+                        in48: false
+                    }
+                }
+                try {
+                    const res = await api.getOrder(dto)
+                    in24.value = res.data
+                    console.log(in24.value)
+                    lastFetch.value = now
+                } catch (error) {
+                    console.log(error)
+                } finally {
+                    loading.value = false
+                }
             } else if(tab == 'U narednih 48h') {
+                loading.value = true
                 const now = Date.now()
                 if(lastFetch48.value && lastFetch48.value >= now - 6 * 60 * 1000) return
-                console.log('U narednih 48h')
-                lastFetch48.value = now
+                const dto = {
+                    user_id: user.user.id,
+                    adminOrders: {
+                        all: true,
+                        in24: null,
+                        in48: true
+                    }
+                }
+                try {
+                    const res = await api.getOrder(dto)
+                    in48.value = res.data 
+                    console.log(in48.value)
+                    lastFetch48.value = now
+                } catch (error) {
+                    console.log(error)
+                } finally {
+                    loading.value = false
+                }
             } else {
                 return
             }
@@ -92,7 +139,7 @@ export const useAdminStore = defineStore('admin', () => {
     return {
         actions,
         adminView, depDay, tourID, bCode, driverID, tours, usrEmail, tourName, toursFrom, toursTo,
-        selectedCity, selectedCountry, cityOptions, toAddCountry,
+        selectedCity, selectedCountry, cityOptions, toAddCountry, tab_bookings, items_bookings,
         
     }
 
