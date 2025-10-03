@@ -79,7 +79,7 @@ export const useAdminStore = defineStore('admin', () => {
                     adminOrders: {
                         all: true,
                         in24: true,
-                        in48: false
+                        in48: ""
                     }
                 }
                 try {
@@ -100,8 +100,8 @@ export const useAdminStore = defineStore('admin', () => {
                     user_id: user.user.id,
                     adminOrders: {
                         all: true,
-                        in24: null,
-                        in48: true
+                        in48: true,
+                        in24: ""
                     }
                 }
                 try {

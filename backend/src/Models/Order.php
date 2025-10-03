@@ -647,9 +647,9 @@ class Order {
 
     public function getAll($in24, $in48) 
     {
-        if($in24 && !empty($in48)) {
+        if($in24 && empty($in48)) {
             $tomorrow = date("Y-m-d", strtotime("+1 day"));
-        } elseif($in48 && !empty($in24)) {
+        } elseif($in48 && empty($in24)) {
             $tomorrow = date("Y-m-d", strtotime("+2 days"));
         } else {
             echo json_encode(['error' => 'Odaberite 24h ili 48h']);
