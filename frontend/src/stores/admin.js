@@ -35,9 +35,8 @@ export const useAdminStore = defineStore('admin', () => {
         {key: 'from_city', title: 'Grad polaska'},
         {key: 'to_city', title: 'Grad dolaska'},
         {key: 'pickuptime', title: 'Vreme polaska'},
-        {key: 'date', title: 'Datum'},
-        {key: 'rides', title: 'Broj rezervacija'},
-        
+        {key: 'total_places', title: 'Broj putnika'},
+        {key: 'actions', title: 'Uredi'}
     ]
 
     const depDay = ref({

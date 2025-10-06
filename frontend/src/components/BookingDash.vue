@@ -7,24 +7,32 @@ const admin = useAdminStore();
 const bookings24 = computed(() => admin.in24 || []);
 const bookings48 = computed(() => admin.in48 || []);
 */
-const bookings24 = computed(() => Object.values(admin.in24?.orders || {}) )
-const bookings48 = computed(() => Object.values(admin.in48?.orders || {}) )
+const bookings24 = computed(() => Object.values(admin.in24?.orders || {}));
+const bookings48 = computed(() => Object.values(admin.in48?.orders || {}));
 
-const table_24 = computed(() => bookings24.value.map(o => ({
-    from_city: o.from_city,
-    to_city: o.to_city,
-    pickuptime: o.pickuptime,
-    date: o.date,
-    rides: o.rides?.length || 0
-})))
+const table_24 = computed(() => {
+  return Object.values(bookings24.value).map((tour) => ({
+    tour_id: tour.tour_id,
+    from_city: tour.from_city,
+    to_city: tour.to_city,
+    pickuptime: tour.pickuptime,
+    duration: tour.duration,
+    rides_count: tour.rides.length,
+    total_places: tour.rides.reduce((sum, r) => sum + r.places, 0),
+  }));
+});
 
-const table_48 = computed(() => bookings48.value.map(o => ({
-    from_city: o.from_city,
-    to_city: o.to_city,
-    pickuptime: o.pickuptime,
-    date: o.rides?.date,
-    rides: o.rides?.length || 0
-})))
+const table_48 = computed(() => {
+  return Object.values(bookings48.value).map((tour) => ({
+    tour_id: tour.tour_id,
+    from_city: tour.from_city,
+    to_city: tour.to_city,
+    pickuptime: tour.pickuptime,
+    duration: tour.duration,
+    rides_count: tour.rides.length,
+    total_places: tour.rides.reduce((sum, r) => sum + r.places, 0),
+  }));
+});
 </script>
 
 <template>
@@ -75,7 +83,9 @@ const table_48 = computed(() => bookings48.value.map(o => ({
                     :headers="admin.headers"
                     :items="table_24"
                     :search="admin.in24Search"
-                  ></v-data-table>
+                  >
+                  
+                  </v-data-table>
                 </v-card>
               </div>
               <div class="w-100" v-if="admin.tab_bookings == 'U narednih 48h'">
