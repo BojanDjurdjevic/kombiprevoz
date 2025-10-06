@@ -3,22 +3,28 @@ import { useAdminStore } from "@/stores/admin";
 import { ref, computed } from "vue";
 
 const admin = useAdminStore();
-
+/*
 const bookings24 = computed(() => admin.in24 || []);
 const bookings48 = computed(() => admin.in48 || []);
+*/
+const bookings24 = computed(() => Object.values(admin.in24?.orders || {}) )
+const bookings48 = computed(() => Object.values(admin.in48?.orders || {}) )
 
-const table_24 = computed(() => Object.values(admin.in24?.orders || {}) )
-const table_48 = computed(() => Object.values(admin.in48?.orders || {}) )
+const table_24 = computed(() => bookings24.value.map(o => ({
+    from_city: o.from_city,
+    to_city: o.to_city,
+    pickuptime: o.pickuptime,
+    date: o.date,
+    rides: o.rides?.length || 0
+})))
 
-/*
-[
-  { 
-    from_city: bookings24.value.orders.from_city,
-    to_city: bookings24.value.orders.to_city,
-    pickuptime: bookings24.value.orders.pickuptime,
-    rides: bookings24.value.orders.rides.length, 
-  }
-]*/
+const table_48 = computed(() => bookings48.value.map(o => ({
+    from_city: o.from_city,
+    to_city: o.to_city,
+    pickuptime: o.pickuptime,
+    date: o.rides?.date,
+    rides: o.rides?.length || 0
+})))
 </script>
 
 <template>
