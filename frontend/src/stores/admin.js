@@ -30,6 +30,7 @@ export const useAdminStore = defineStore('admin', () => {
     const in48 = ref(null)
 
     const in24Search = ref('')
+    const in48Search = ref('')
     const headers = [
         {key: 'from_city', title: 'Grad polaska'},
         {key: 'to_city', title: 'Grad dolaska'},
@@ -118,6 +119,7 @@ export const useAdminStore = defineStore('admin', () => {
                     const res = await api.getOrder(dto)
                     in48.value = res.data 
                     console.log(in48.value)
+                    console.log("tip: ", typeof(in48.value.orders))
                     lastFetch48.value = now
                 } catch (error) {
                     console.log(error)
@@ -150,7 +152,7 @@ export const useAdminStore = defineStore('admin', () => {
         actions,
         adminView, depDay, tourID, bCode, driverID, tours, usrEmail, tourName, toursFrom, toursTo,
         selectedCity, selectedCountry, cityOptions, toAddCountry, tab_bookings, items_bookings,
-        in24Search, headers,
+        in24Search, headers, in48Search, in24, in48,
         
     }
 
