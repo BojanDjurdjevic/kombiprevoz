@@ -1,13 +1,20 @@
 <script setup>
-import { useAdminStore } from '@/stores/admin';
-import { ref, computed } from 'vue';
-    
+import { useAdminStore } from "@/stores/admin";
+import { ref, computed } from "vue";
 
-const admin = useAdminStore()
+const admin = useAdminStore();
 
-const bookings24 = computed(() => admin.in24 || [])
-const bookings48 = computed(() => admin.in48 || [])
+const bookings24 = computed(() => admin.in24 || []);
+const bookings48 = computed(() => admin.in48 || []);
 
+const table_24 = [
+  { /*
+    from_city: bookings24.value.orders.from_city,
+    to_city: bookings24.value.orders.to_city,
+    pickuptime: bookings24.value.orders.pickuptime,
+    rides: bookings24.value.orders.rides.length, */
+  }
+]
 </script>
 
 <template>
@@ -42,7 +49,24 @@ const bookings48 = computed(() => admin.in48 || [])
                 Pretraga
               </div>
               <div class="w-100" v-if="admin.tab_bookings == 'U narednih 24h'">
-                24 H
+                <v-card title="Rezervacije u narednih 24h" flat>
+                  <template v-slot:text>
+                    <v-text-field
+                      v-model="admin.in24Search"
+                      label="Pretraga"
+                      prepend-inner-icon="mdi-magnify"
+                      variant="outlined"
+                      hide-details
+                      single-line
+                    ></v-text-field>
+                  </template>
+
+                  <v-data-table
+                    :headers="admin.headers"
+                    :items="table_24"
+                    :search="admin.in24Search"
+                  ></v-data-table>
+                </v-card>
               </div>
               <div class="w-100" v-if="admin.tab_bookings == 'U narednih 48h'">
                 48 H

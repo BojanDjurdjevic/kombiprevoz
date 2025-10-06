@@ -23,6 +23,22 @@ export const useAdminStore = defineStore('admin', () => {
         "U narednih 48h"
     ];
 
+    const lastFetch = ref(null)   
+    const lastFetch48 = ref(null) 
+
+    const in24 = ref(null)
+    const in48 = ref(null)
+
+    const in24Search = ref('')
+    const headers = [
+        {key: 'from_city', title: 'Grad polaska'},
+        {key: 'to_city', title: 'Grad dolaska'},
+        {key: 'pickuptime', title: 'Vreme polaska'},
+        {key: 'date', title: 'Datum'},
+        {key: 'rides', title: 'Broj rezervacija'},
+        
+    ]
+
     const depDay = ref({
         date: null,
         range: null
@@ -35,12 +51,6 @@ export const useAdminStore = defineStore('admin', () => {
         {id: 1, name: 'Novi Sad - Rijeka'},
         {id: 2, name: 'Rijeka - Novi Sad'}
     ])
-
-    const lastFetch = ref(null)   
-    const lastFetch48 = ref(null) 
-
-    const in24 = ref(null)
-    const in48 = ref(null)
 
     // USERS
     const usrEmail = ref(null)
@@ -140,6 +150,7 @@ export const useAdminStore = defineStore('admin', () => {
         actions,
         adminView, depDay, tourID, bCode, driverID, tours, usrEmail, tourName, toursFrom, toursTo,
         selectedCity, selectedCountry, cityOptions, toAddCountry, tab_bookings, items_bookings,
+        in24Search, headers,
         
     }
 

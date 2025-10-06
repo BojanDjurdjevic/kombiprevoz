@@ -655,16 +655,17 @@ class Order {
             echo json_encode(['error' => 'Odaberite 24h ili 48h']);
             exit();
         } 
-        $sql = "SELECT order_items.id, order_items.tour_id, orders.user_id, order_items.places, tours.from_city, 
+        $sql = "SELECT order_items.id as order_item_id, tours.id as tour_id, orders.user_id as user_id, order_items.places, tours.from_city, 
                 order_items.add_from as pickup, tours.to_city, order_items.add_to as dropoff,
                 order_items.date, tours.time as pickuptime, tours.duration,
-                orders.total as price, orders.code, orders.file_path as voucher, users.name as user, users.email, users.phone
+                orders.total as price, orders.code, orders.file_path as voucher, users.name as user_name, users.email as email, users.phone as phone
                 from orders 
                 INNER JOIN order_items on order_items.order_id = orders.id
                 INNER JOIN tours on order_items.tour_id = tours.id
                 INNER JOIN users on orders.user_id = users.id
                 WHERE orders.deleted = 0 and order_items.deleted = 0
-                and order_items.date = :tomorrow"
+                and order_items.date = :tomorrow
+                ORDER BY tours.id, order_items.date, pickuptime"
         ;
         $stmt = $this->db->prepare($sql);
         
@@ -677,20 +678,40 @@ class Order {
 
         try {
             if($stmt->execute()) {
-                $orders = $stmt->fetchAll(PDO::FETCH_OBJ);
-                /*if($orders) { 
-                
-                    $orders = [];
-                    while($row = $stmt->fetch(PDO::FETCH_OBJ)) {
-                        array_push($orders, $row);
+                $rows = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+                $orders = [];
+                foreach($rows as $row) {
+                    $tId = $row->tour_id;
+                    if(!isset($orders[$tId])) {
+                        $orders[$tId] = [
+                            'tour_id' => $row->tour_id,
+                            'from_city' => $row->from_city,
+                            'to_city' => $row->to_city,
+                            'pickuptime' => $row->pickuptime,
+                            'duration' => $row->duration,
+                            'rides' => []
+                        ];
                     }
-                    echo json_encode(['orders' => $orders, 'has_orders' => !empty($orders)]); */
+
+                    $orders[$tId]['rides'][] = [
+                        'order_item_id' => $row->order_item_id,
+                        'places'        => $row->places,
+                        'pickup'        => $row->pickup,
+                        'dropoff'       => $row->dropoff,
+                        'date'          => $row->date,
+                        'price'         => $row->price,
+                        'voucher'       => $row->voucher,
+                        'user'          => [
+                            'id'    => $row->user_id,
+                            'name'  => $row->user_name,
+                            'email' => $row->email,
+                            'phone' => $row->phone,
+                        ]
+                    ];
+                }
                     
-                    echo json_encode(['orders' => $orders, 'has_orders' => !empty($orders)]);
-                /*} else {
-                    echo json_encode(['msg' => "Nema rezervisanih vožnji za $tomorrow"]);
-                    exit();
-                } */
+                echo json_encode(['orders' => $orders, 'has_orders' => !empty($orders)]);
             }
         } catch(PDOException $e) {
             http_response_code(500);
