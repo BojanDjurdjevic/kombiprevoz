@@ -36,7 +36,9 @@ export const useAdminStore = defineStore('admin', () => {
         {key: 'to_city', title: 'Grad dolaska'},
         {key: 'pickuptime', title: 'Vreme polaska'},
         {key: 'total_places', title: 'Broj putnika'},
-        {key: 'actions', title: 'Uredi'}
+        {key: 'actions', title: 'Dodaj slobodnog vozača', sortable: false},
+        {key: 'assign', title: 'Dodeli vozača', sortable: false},
+        {key: 'details', title: 'Detalji', sortable: false}
     ]
 
     const depDay = ref({
@@ -129,6 +131,12 @@ export const useAdminStore = defineStore('admin', () => {
                 return
             }
             
+        },
+        openTour: (item) => {
+            console.log(item)
+        },
+        assignDriver: (id) => {
+            console.log(id)
         },
         searchUser: () => {
             const dto = {

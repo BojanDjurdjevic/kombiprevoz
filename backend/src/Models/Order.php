@@ -643,6 +643,29 @@ class Order {
         }
     }
 
+    //------------------------------- AFTER ACTION HELPERS RELATED WITH ANOTHER CLASSES --------------------------------//
+
+    public function availableDrivers($date, $tour_id) {
+        $sql = "SELECT users.name, users.status, users.email, users.phone, users.city FROM users
+                WHERE users.status = 'driver' AND
+                NOT EXISTS (SELECT 1 FROM departures WHERE driver_id = users.id AND departures.date = :date)
+                AND users.city = (SELECT from_city FROM tours WHERE id = :tour_id) 
+                "
+        ;
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':date', $date);
+        $stmt->bindParam(':tour_id', $tour_id);
+        
+        try {
+            if($stmt->execute()) {
+                $drivers = $stmt->fetchAll(PDO::FETCH_OBJ);
+                return $drivers;
+            }
+        } catch(PDOException $e) {
+            return json_encode(['message' => $e->getMessage()]);
+        }
+    }
+
     //------------------------------- FUNCTIONS OF GET METHOD --------------------------------//
 
     public function getAll($in24, $in48) 
@@ -679,10 +702,11 @@ class Order {
         try {
             if($stmt->execute()) {
                 $rows = $stmt->fetchAll(PDO::FETCH_OBJ);
-
+                $tourID = 0;
                 $orders = [];
                 foreach($rows as $row) {
                     $tId = $row->tour_id;
+                    $tourID = $tId;
                     if(!isset($orders[$tId])) {
                         $orders[$tId] = [
                             'tour_id' => $row->tour_id,
@@ -690,6 +714,7 @@ class Order {
                             'to_city' => $row->to_city,
                             'pickuptime' => $row->pickuptime,
                             'duration' => $row->duration,
+                            'date' => $tomorrow,
                             'rides' => []
                         ];
                     }
@@ -710,8 +735,8 @@ class Order {
                         ]
                     ];
                 }
-                    
-                echo json_encode(['orders' => $orders, 'has_orders' => !empty($orders)]);
+                $drivers = $this->availableDrivers($tomorrow, $tourID);
+                echo json_encode(['orders' => $orders, 'has_orders' => !empty($orders), 'drivers' => $drivers]);
             }
         } catch(PDOException $e) {
             http_response_code(500);

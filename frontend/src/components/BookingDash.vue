@@ -18,6 +18,7 @@ const table_24 = computed(() => {
     pickuptime: tour.pickuptime,
     duration: tour.duration,
     rides_count: tour.rides.length,
+    date: tour.date,
     total_places: tour.rides.reduce((sum, r) => sum + r.places, 0),
   }));
 });
@@ -30,6 +31,7 @@ const table_48 = computed(() => {
     pickuptime: tour.pickuptime,
     duration: tour.duration,
     rides_count: tour.rides.length,
+    date: tour.date,
     total_places: tour.rides.reduce((sum, r) => sum + r.places, 0),
   }));
 });
@@ -84,7 +86,38 @@ const table_48 = computed(() => {
                     :items="table_24"
                     :search="admin.in24Search"
                   >
-                  
+                    <template v-slot:item.actions="{ item }">
+                      <div class="d-flex justify-space-between align-center">
+                      <v-select
+                        :items="drivers"
+
+                        label="Vozač"
+                        dense
+                        hide-details
+                        style="max-width: 150px"
+                      />
+                      </div>
+                    </template>
+                    <template v-slot:item.assign="{ item }">
+                      <v-btn
+                        color="green-darken-4"
+                        size="small"
+                        icon="mdi-clipboard-check"
+                        @click="admin.actions.assignDriver(item.tour_id)"
+                      >
+                        
+                      </v-btn>
+                    </template>
+                    <template v-slot:item.details="{ item }">
+                      <v-btn
+                        color="indigo-darken-4"
+                        size="small"
+                        icon="mdi-location-enter"
+                        @click="admin.actions.openTour(item)"
+                      >
+                        
+                      </v-btn>
+                    </template>
                   </v-data-table>
                 </v-card>
               </div>
@@ -105,7 +138,40 @@ const table_48 = computed(() => {
                     :headers="admin.headers"
                     :items="table_48"
                     :search="admin.in48Search"
-                  ></v-data-table>
+                  >
+                    <template v-slot:item.actions="{ item }">
+                      <div class="d-flex justify-space-between align-center">
+                      <v-select
+                        :items="drivers"
+
+                        label="Vozač"
+                        dense
+                        hide-details
+                        style="max-width: 150px"
+                      />
+                      </div>
+                    </template>
+                    <template v-slot:item.assign="{ item }">
+                      <v-btn
+                        color="green-darken-4"
+                        size="small"
+                        icon="mdi-clipboard-check"
+                        @click="admin.actions.assignDriver(item.tour_id)"
+                      >
+                        
+                      </v-btn>
+                    </template>
+                    <template v-slot:item.details="{ item }">
+                      <v-btn
+                        color="indigo-darken-4"
+                        size="small"
+                        icon="mdi-location-enter"
+                        @click="admin.actions.openTour(item)"
+                      >
+                        
+                      </v-btn>
+                    </template>
+                  </v-data-table>
                 </v-card>
               </div>
             </v-card-text>
