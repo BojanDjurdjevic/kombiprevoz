@@ -89,12 +89,14 @@ const table_48 = computed(() => {
                     <template v-slot:item.actions="{ item }">
                       <div class="d-flex justify-space-between align-center">
                       <v-select
-                        :items="drivers"
-
+                        :items="admin.in24.drivers"
+                        :item-title="admin.in24.drivers.name"
+                        :item-value="admin.in24.drivers.id"
                         label="Vozač"
                         dense
                         hide-details
                         style="max-width: 150px"
+                        return-object
                       />
                       </div>
                     </template>
@@ -142,12 +144,14 @@ const table_48 = computed(() => {
                     <template v-slot:item.actions="{ item }">
                       <div class="d-flex justify-space-between align-center">
                       <v-select
-                        :items="drivers"
-
+                        :items="admin.drivers_48"
+                        item-title="name"
+                        item-value="id"
                         label="Vozač"
                         dense
                         hide-details
                         style="max-width: 150px"
+                        return-object
                       />
                       </div>
                     </template>

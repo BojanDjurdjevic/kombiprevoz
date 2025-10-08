@@ -646,10 +646,14 @@ class Order {
     //------------------------------- AFTER ACTION HELPERS RELATED WITH ANOTHER CLASSES --------------------------------//
 
     public function availableDrivers($date, $tour_id) {
-        $sql = "SELECT users.name, users.status, users.email, users.phone, users.city FROM users
+        $sql = "SELECT users.id, users.name, users.status, users.email, users.phone, users.city FROM users
                 WHERE users.status = 'driver' AND
                 NOT EXISTS (SELECT 1 FROM departures WHERE driver_id = users.id AND departures.date = :date)
-                AND users.city = (SELECT from_city FROM tours WHERE id = :tour_id) 
+                AND users.city IN 
+                (
+                    (SELECT from_city FROM tours WHERE id = :tour_id), 
+                    (SELECT to_city FROM tours WHERE id = :tour_id)
+                ) 
                 "
         ;
         $stmt = $this->db->prepare($sql);

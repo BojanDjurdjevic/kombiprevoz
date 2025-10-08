@@ -41,6 +41,14 @@ export const useAdminStore = defineStore('admin', () => {
         {key: 'details', title: 'Detalji', sortable: false}
     ]
 
+    const drivers_24 = ref({})
+    const drivers_48 = ref({})
+
+    const assignedDriverID_24 = ref(null)
+    const assignedDriverID_48 = ref(null) 
+
+    // SEARCH BOOKINGS BY FILTERS
+
     const depDay = ref({
         date: null,
         range: null
@@ -119,6 +127,7 @@ export const useAdminStore = defineStore('admin', () => {
                 try {
                     const res = await api.getOrder(dto)
                     in48.value = res.data 
+                    drivers_48.value = res.data.drivers 
                     console.log(in48.value)
                     console.log("tip: ", typeof(in48.value.orders))
                     lastFetch48.value = now
@@ -159,7 +168,8 @@ export const useAdminStore = defineStore('admin', () => {
         actions,
         adminView, depDay, tourID, bCode, driverID, tours, usrEmail, tourName, toursFrom, toursTo,
         selectedCity, selectedCountry, cityOptions, toAddCountry, tab_bookings, items_bookings,
-        in24Search, headers, in48Search, in24, in48,
+        in24Search, headers, in48Search, in24, in48, drivers_24, drivers_48, assignedDriverID_24,
+        assignedDriverID_48,
         
     }
 
