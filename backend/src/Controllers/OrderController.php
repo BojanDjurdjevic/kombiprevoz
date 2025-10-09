@@ -191,7 +191,8 @@ class OrderController {
                     if(isset($this->data->orders->selected) && !empty($this->data->orders->selected)
                         && isset($this->data->orders->driver) && !empty($this->data->orders->driver)) {
                             $this->order->selected = $this->data->orders->selected;
-                            $this->order->driver = $this->data->orders->driver
+                            $this->order->driver = $this->data->orders->driver;
+                            $this->order->tour_id = $this->data->orders->tour_id;
                         ;
                             $this->order->assignDriverTo();
                     }

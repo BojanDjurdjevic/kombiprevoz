@@ -1596,7 +1596,7 @@ class Order {
         $generated = (string)$now . "KP";
         $new_code = substr($generated, -9);
         $dep_date = $this->selected[0]->date;
-        $this->tour_id = $this->selected[0]->tour_id;
+        //$this->tour_id = $this->selected[0]->tour_id;
         
         $pathD = $this->generateDeparture($this->selected, $new_code, $dep_date);
 
@@ -1604,12 +1604,12 @@ class Order {
         $this->sendOrdersToDriver($this->driver->name, $new_code, $pathD['path'], $this->driver->email);
 
         foreach($this->selected as $ord) {
-            $sql = "UPDATE orders SET driver_id = :driver, dep_id = :dep_id WHERE id = :id";
+            $sql = "UPDATE order_items SET driver_id = :driver, dep_id = :dep_id WHERE id = :id";
             $stmt = $this->db->prepare($sql);
             $this->driver->id = htmlspecialchars(strip_tags($this->driver->id), ENT_QUOTES);
-            $this->id = htmlspecialchars(strip_tags($ord->id), ENT_QUOTES);
-            $this->user_id = htmlspecialchars(strip_tags($ord->user_id), ENT_QUOTES);
-            $this->tour_id = htmlspecialchars(strip_tags($ord->tour_id), ENT_QUOTES);
+            $this->id = htmlspecialchars(strip_tags($ord->order_item_id), ENT_QUOTES);
+            $this->user_id = htmlspecialchars(strip_tags($ord->user->id), ENT_QUOTES);
+            //$this->tour_id = htmlspecialchars(strip_tags($ord->tour_id), ENT_QUOTES);
             $stmt->bindParam(':driver', $this->driver->id);
             $stmt->bindParam(':dep_id', $dep_id);
             $stmt->bindParam(':id', $this->id);

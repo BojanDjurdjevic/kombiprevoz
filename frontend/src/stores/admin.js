@@ -105,6 +105,7 @@ export const useAdminStore = defineStore('admin', () => {
                 try {
                     const res = await api.getOrder(dto)
                     in24.value = res.data
+                    drivers_24.value = res.data.drivers
                     console.log(in24.value)
                     lastFetch.value = now
                 } catch (error) {
@@ -129,7 +130,6 @@ export const useAdminStore = defineStore('admin', () => {
                     in48.value = res.data 
                     drivers_48.value = res.data.drivers 
                     console.log(in48.value)
-                    console.log("tip: ", typeof(in48.value.orders))
                     lastFetch48.value = now
                 } catch (error) {
                     console.log(error)
@@ -144,8 +144,23 @@ export const useAdminStore = defineStore('admin', () => {
         openTour: (item) => {
             console.log(item)
         },
-        assignDriver: (id) => {
-            console.log(id)
+        assignDriver: (driver, tour_id, rides) => {
+            /*
+            let arr = Object.values(rides)
+            let order_items = []
+            arr.forEach(item => {
+                order_items.push(item.rides)
+            }) */
+            const dto = {
+                user_id: user.user.id,
+                orders: {
+                    driver: driver,
+                    tour_id: tour_id,
+                    selected: rides
+                }
+            }
+
+            console.log(dto)
         },
         searchUser: () => {
             const dto = {

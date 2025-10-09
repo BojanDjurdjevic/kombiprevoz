@@ -20,6 +20,7 @@ const table_24 = computed(() => {
     rides_count: tour.rides.length,
     date: tour.date,
     total_places: tour.rides.reduce((sum, r) => sum + r.places, 0),
+    rides: tour.rides
   }));
 });
 
@@ -33,8 +34,10 @@ const table_48 = computed(() => {
     rides_count: tour.rides.length,
     date: tour.date,
     total_places: tour.rides.reduce((sum, r) => sum + r.places, 0),
+    rides: tour.rides
   }));
 });
+
 </script>
 
 <template>
@@ -89,9 +92,10 @@ const table_48 = computed(() => {
                     <template v-slot:item.actions="{ item }">
                       <div class="d-flex justify-space-between align-center">
                       <v-select
+                        v-model="admin.assignedDriverID_24"
                         :items="admin.in24.drivers"
-                        :item-title="admin.in24.drivers.name"
-                        :item-value="admin.in24.drivers.id"
+                        item-title="name"
+                        item-value="id"
                         label="Vozač"
                         dense
                         hide-details
@@ -105,7 +109,7 @@ const table_48 = computed(() => {
                         color="green-darken-4"
                         size="small"
                         icon="mdi-clipboard-check"
-                        @click="admin.actions.assignDriver(item.tour_id)"
+                        @click="admin.actions.assignDriver(admin.assignedDriverID_24, item.tour_id, item.rides)"
                       >
                         
                       </v-btn>
@@ -115,7 +119,7 @@ const table_48 = computed(() => {
                         color="indigo-darken-4"
                         size="small"
                         icon="mdi-location-enter"
-                        @click="admin.actions.openTour(item)"
+                        @click="admin.actions.openTour(item.rides)"
                       >
                         
                       </v-btn>
@@ -144,6 +148,7 @@ const table_48 = computed(() => {
                     <template v-slot:item.actions="{ item }">
                       <div class="d-flex justify-space-between align-center">
                       <v-select
+                        v-model="admin.assignedDriverID_48"
                         :items="admin.drivers_48"
                         item-title="name"
                         item-value="id"
@@ -160,7 +165,7 @@ const table_48 = computed(() => {
                         color="green-darken-4"
                         size="small"
                         icon="mdi-clipboard-check"
-                        @click="admin.actions.assignDriver(item.tour_id)"
+                        @click="admin.actions.assignDriver(admin.assignedDriverID_48, item.tour_id, item.rides)"
                       >
                         
                       </v-btn>
@@ -170,7 +175,7 @@ const table_48 = computed(() => {
                         color="indigo-darken-4"
                         size="small"
                         icon="mdi-location-enter"
-                        @click="admin.actions.openTour(item)"
+                        @click="admin.actions.openTour(item.rides)"
                       >
                         
                       </v-btn>
