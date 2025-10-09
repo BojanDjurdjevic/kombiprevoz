@@ -144,23 +144,31 @@ export const useAdminStore = defineStore('admin', () => {
         openTour: (item) => {
             console.log(item)
         },
-        assignDriver: (driver, tour_id, rides) => {
-            /*
-            let arr = Object.values(rides)
-            let order_items = []
-            arr.forEach(item => {
-                order_items.push(item.rides)
-            }) */
+        assignDriver: async (driver, tour_id, rides) => {
             const dto = {
-                user_id: user.user.id,
                 orders: {
+                    user_id: user.user.id,
                     driver: driver,
                     tour_id: tour_id,
                     selected: rides
                 }
             }
-
-            console.log(dto)
+            if(!dto.orders.driver || !dto.orders.selected || !dto.orders.tour_id) {
+                user.errorMsg = "Proverite sve podatke, nije moguće dodeliti vozača!"
+                user.clearMsg(3000)
+            }
+            
+            try {
+                loading.value = true
+                const res = await api.orderItemUpdate(dto)
+                user.showSucc(res, 3000)
+                console.log(res.data)
+            } catch (error) {
+                console.log(error)
+            } finally {
+                loading.value = false
+            }
+            
         },
         searchUser: () => {
             const dto = {

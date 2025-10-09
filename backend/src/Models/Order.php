@@ -574,7 +574,7 @@ class Order {
 
         $template = '';
         foreach ($users as $pax) {
-            $template .= Validator::mailerDriverTemplate($pax->code, $pax->user, $pax->places, $pax->pickup, $pax->from_city, $pax->dropoff, $pax->to_city, $pax->date, $pax->pickuptime, $pax->price, $pax->phone);
+            $template .= Validator::mailerDriverTemplate($pax->code, $pax->user->name, $pax->places, $pax->pickup, $pax->from_city, $pax->dropoff, $pax->to_city, $pax->date, $pax->pickuptime, $pax->price, $pax->user->phone);
         }
 
         $html = file_get_contents("src/driver.html");
@@ -731,6 +731,10 @@ class Order {
                         'date'          => $row->date,
                         'price'         => $row->price,
                         'voucher'       => $row->voucher,
+                        'code'          => $row->code,   
+                        'from_city'     => $row->from_city,
+                        'to_city'       => $row->to_city, 
+                        'pickuptime'    => $row->pickuptime,
                         'user'          => [
                             'id'    => $row->user_id,
                             'name'  => $row->user_name,
@@ -1616,13 +1620,17 @@ class Order {
             
             try {
                 if($stmt->execute()) {
-                    $updated = $this->reGenerateVoucher();
-                    $this->sendVoucher($ord->email, $ord->user, $updated['path'], $updated['code'], 'resend');
-                    //echo json_encode(["driver_assign' => 'Uspešno ste dodelili vožnje vozaču {$this->driver->name}"], JSON_PRETTY_PRINT);
+                    //$updated = $this->reGenerateVoucher();
+                    //$this->sendVoucher($ord->email, $ord->user, $updated['path'], $updated['code'], 'resend');
+                    echo json_encode([
+                        "success" => true,
+                        "msg" => "Uspešno ste dodelili vožnje vozaču {$this->driver->name}"
+                    ], JSON_PRETTY_PRINT);
                 }
             } catch (PDOException $e) {
+                http_response_code(500);
                 echo json_encode([
-                    "driver_assign" => 'Došlo je do greške pri konekciji na bazu!',
+                    "error" => 'Došlo je do greške pri konekciji na bazu!',
                     "msg" => $e->getMessage()
                 ], JSON_PRETTY_PRINT);
                 
