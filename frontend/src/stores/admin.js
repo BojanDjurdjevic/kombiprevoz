@@ -156,8 +156,9 @@ export const useAdminStore = defineStore('admin', () => {
             if(!dto.orders.driver || !dto.orders.selected || !dto.orders.tour_id) {
                 user.errorMsg = "Proverite sve podatke, nije moguće dodeliti vozača!"
                 user.clearMsg(3000)
-            }
-            
+            } /*
+            console.log(dto)
+            return */
             try {
                 loading.value = true
                 const res = await api.orderItemUpdate(dto)

@@ -682,8 +682,9 @@ class Order {
             echo json_encode(['error' => 'Odaberite 24h ili 48h']);
             exit();
         } 
-        $sql = "SELECT order_items.id as order_item_id, tours.id as tour_id, orders.user_id as user_id, order_items.places, tours.from_city, 
-                order_items.add_from as pickup, tours.to_city, order_items.add_to as dropoff,
+        $sql = "SELECT order_items.id as order_item_id, orders.id as order_id, 
+                tours.id as tour_id, orders.user_id as user_id, order_items.places,  
+                order_items.add_from as pickup, tours.to_city, order_items.add_to as dropoff, tours.from_city,
                 order_items.date, tours.time as pickuptime, tours.duration,
                 orders.total as price, orders.code, orders.file_path as voucher, users.name as user_name, users.email as email, users.phone as phone
                 from orders 
@@ -725,6 +726,7 @@ class Order {
 
                     $orders[$tId]['rides'][] = [
                         'order_item_id' => $row->order_item_id,
+                        'order_id'      => $row->order_id,
                         'places'        => $row->places,
                         'pickup'        => $row->pickup,
                         'dropoff'       => $row->dropoff,
@@ -1072,7 +1074,7 @@ class Order {
     public function getDriverOfTour()
     {
         $sql = "SELECT orders.id, order_items.id as item_id, order_items.tour_id, 
-                orders.driver_id, order_items.places, tours.from_city, 
+                order_items.driver_id, order_items.places, tours.from_city, 
                 order_items.add_from as pickup, tours.to_city, order_items.add_to as dropoff,
                 order_items.date, tours.time as pickuptime, tours.duration,
                 order_items.price, orders.total, orders.code, orders.file_path as voucher
@@ -1600,7 +1602,6 @@ class Order {
         $generated = (string)$now . "KP";
         $new_code = substr($generated, -9);
         $dep_date = $this->selected[0]->date;
-        //$this->tour_id = $this->selected[0]->tour_id;
         
         $pathD = $this->generateDeparture($this->selected, $new_code, $dep_date);
 
@@ -1613,15 +1614,15 @@ class Order {
             $this->driver->id = htmlspecialchars(strip_tags($this->driver->id), ENT_QUOTES);
             $this->id = htmlspecialchars(strip_tags($ord->order_item_id), ENT_QUOTES);
             $this->user_id = htmlspecialchars(strip_tags($ord->user->id), ENT_QUOTES);
-            //$this->tour_id = htmlspecialchars(strip_tags($ord->tour_id), ENT_QUOTES);
+            $this->order_id = $ord->order_id;
             $stmt->bindParam(':driver', $this->driver->id);
             $stmt->bindParam(':dep_id', $dep_id);
             $stmt->bindParam(':id', $this->id);
             
             try {
                 if($stmt->execute()) {
-                    //$updated = $this->reGenerateVoucher();
-                    //$this->sendVoucher($ord->email, $ord->user, $updated['path'], $updated['code'], 'resend');
+                    $updated = $this->reGenerateVoucher();
+                    $this->sendVoucher($ord->email, $ord->user, $updated['path'], $updated['code'], 'resend');
                     echo json_encode([
                         "success" => true,
                         "msg" => "Uspešno ste dodelili vožnje vozaču {$this->driver->name}"
@@ -1653,7 +1654,7 @@ class Order {
 
         try {
             if($stmt->execute()) {
-                echo json_encode(['departure' => 'Uspešno ste kreirali polazak!'], JSON_PRETTY_PRINT);
+                //echo json_encode(['departure' => 'Uspešno ste kreirali polazak!'], JSON_PRETTY_PRINT);
                 return $this->db->lastInsertId();
             } 
         }catch (PDOException $e) {
