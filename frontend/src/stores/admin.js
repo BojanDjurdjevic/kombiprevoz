@@ -81,13 +81,27 @@ export const useAdminStore = defineStore('admin', () => {
 
     const actions = ref({
         searchBooking: () => {
+            if(!depDay.value.date && !bCode.value && !tourID.value && !usrEmail.value) {
+                user.errorMsg = "Morate dodati bar jedan parametar!"
+                user.clearMsg(3000)
+                return
+            }
+            loading.value = true
+            tab_bookings.value = 'Pretraga'
             const dto = {
                 departure: depDay.value,
-                tour_id: tourID.value,
+                tour_id: tourID.value.id,
                 code: bCode.value,
-                driver_id: driverID.value
+                user_email: usrEmail.value
             }
             console.log(dto)
+        },
+        clearBookingSearch: () => {
+            depDay.value.date = null,
+            depDay.value.range = null,
+            tourID.value = null,
+            bCode.value = null,
+            usrEmail.value = null
         },
         fetchBookings: async (tab) => {
             if(tab == 'U narednih 24h') {
@@ -156,6 +170,7 @@ export const useAdminStore = defineStore('admin', () => {
             if(!dto.orders.driver || !dto.orders.selected || !dto.orders.tour_id) {
                 user.errorMsg = "Proverite sve podatke, nije moguće dodeliti vozača!"
                 user.clearMsg(3000)
+                return
             } /*
             console.log(dto)
             return */ 
@@ -176,6 +191,18 @@ export const useAdminStore = defineStore('admin', () => {
                 email: usrEmail.value
             }
             console.log(dto)
+        },
+        fetchAllTours: async () => {
+            const dto = {
+                tour: 'all'
+            }
+            try {
+                const res = await api.getTours(dto)
+                tours.value = res.data.tours
+                console.log(tours.value)
+            } catch (error) {
+                console.log(error)
+            } 
         },
         searchTour: () => {
             const dto = {

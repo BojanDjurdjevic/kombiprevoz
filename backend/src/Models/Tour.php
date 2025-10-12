@@ -104,7 +104,10 @@ class Tour {
             $tours = [];
 
             while($row = $res->fetch(PDO::FETCH_OBJ)) {
-                array_push($tours, $row);
+                array_push($tours, [
+                    'name' => $row->from_city . " - " . $row->to_city,
+                    'id' => $row->id
+                ]);
             }
 
             echo json_encode(['tours' => $tours]);

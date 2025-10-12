@@ -49,7 +49,7 @@ class OrderController {
                             if(isset($this->data->orders->date) && !empty($this->data->orders->date) 
                             && !isset($this->data->orders->tour_id) && !empty($this->data->orders->tour_id)) {
                                 $this->order->date = $this->data->orders->date;
-                                if(Validator::isAdmin() || Validator::isSuper() || Validator::isDriver()) $this->order->getAllByDate();
+                                if(Validator::isAdmin() || Validator::isSuper() || Validator::isDriver()) $this->order->getAllByFilter();
                                 else echo json_encode(['orders' => 'Niste autorizovani da vidite tuđe rezervacije!']);
                             }
                             

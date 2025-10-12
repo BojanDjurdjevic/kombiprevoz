@@ -967,7 +967,7 @@ class Order {
     }
 
 
-    public function getAllByDate() 
+    public function getAllByFilter() 
     {
         $sql = "SELECT orders.id, orders.tour_id, orders.user_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,

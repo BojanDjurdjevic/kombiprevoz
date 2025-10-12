@@ -2,9 +2,13 @@
 import { useAdminStore } from "@/stores/admin";
 import { VDateInput } from "vuetify/labs/VDateInput";
 import { VNumberInput } from "vuetify/labs/VNumberInput";
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 
 const admin = useAdminStore();
+
+onMounted(async () => {
+  await admin.actions.fetchAllTours()
+})
 </script>
 
 <template>
@@ -76,15 +80,18 @@ const admin = useAdminStore();
     <div
       class="w-100 h-25 d-flex flex-column align-center justify-space-evenly"
     >
-      <v-btn class="w-75" prepend-icon="mdi-magnify" color="green-darken-3"
-        >Traži</v-btn
-      >
+      <v-btn 
+        class="w-75" 
+        prepend-icon="mdi-magnify" 
+        color="green-darken-3"
+        @click="admin.actions.searchBooking"
+      >Traži</v-btn>
       <v-btn
         class="w-75"
         prepend-icon="mdi-close-circle-multiple"
         color="red-darken-3"
-        >Obriši sve</v-btn
-      >
+        @click="admin.actions.clearBookingSearch"
+        >Obriši sve</v-btn>
     </div>
   </v-container>
 </template>

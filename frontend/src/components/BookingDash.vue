@@ -143,6 +143,7 @@ watch(() => bookings48.value, (val) => {
                           dense
                           hide-details
                           style="max-width: 150px"
+                          clearable
                           return-object
                         />
                         <v-text-field
@@ -217,6 +218,7 @@ watch(() => bookings48.value, (val) => {
                           dense
                           hide-details
                           style="max-width: 150px"
+                          clearable
                           return-object
                         />
                         <v-text-field
