@@ -368,11 +368,11 @@ class Order {
         $pdf->setPaper("A4", "Portrait");
         // Drivers for each item
         if($myOrder != NULL && $myOrder['items'][0]['driver'] != NULL) {
-            $arr = explode(" ", $myOrder['items'][0]['driver']['name']);
+            $arr = explode(" ", $myOrder['items'][0]['driver']['dr_name']);
             $myDriver = $arr[0];
         } else $myDriver = null;
         if($myOrder != NULL && $myOrder['items'][1]['driver'] != NULL) {
-            $arr = explode(" ", $myOrder['items'][1]['driver']['name']);
+            $arr = explode(" ", $myOrder['items'][1]['driver']['dr_name']);
             $myDriver2 = $arr[0];
         } else $myDriver2 = null;
         // Dates for each item
@@ -1096,7 +1096,7 @@ class Order {
         //if($order) {
             foreach($orders as $order) {
                 if($order['driver_id']) {
-                    $sdr = "SELECT users.name as driver, users.email as dr_email, 
+                    $sdr = "SELECT users.name as dr_name, users.email as dr_email, 
                             users.phone as dr_phone FROM users
                             WHERE id = {$order['driver_id']}"
                     ;
@@ -1622,7 +1622,7 @@ class Order {
             try {
                 if($stmt->execute()) {
                     $updated = $this->reGenerateVoucher();
-                    $this->sendVoucher($ord->email, $ord->user, $updated['path'], $updated['code'], 'resend');
+                    $this->sendVoucher($ord->user->email, $ord->user->name, $updated['path'], $updated['code'], 'resend');
                     echo json_encode([
                         "success" => true,
                         "msg" => "Uspešno ste dodelili vožnje vozaču {$this->driver->name}"
