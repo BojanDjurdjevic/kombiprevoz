@@ -20,7 +20,9 @@ const table_24 = computed(() => {
     rides_count: tour.rides.length,
     date: tour.date,
     total_places: tour.rides.reduce((sum, r) => sum + r.places, 0),
-    rides: tour.rides
+    rides: tour.rides,
+    drivers: tour.drivers,
+    selectedDriver: null,
   }));
 });
 
@@ -34,10 +36,11 @@ const table_48 = computed(() => {
     rides_count: tour.rides.length,
     date: tour.date,
     total_places: tour.rides.reduce((sum, r) => sum + r.places, 0),
-    rides: tour.rides
+    rides: tour.rides,
+    drivers: tour.drivers, // ovo je dodato
+    selectedDriver: null,
   }));
 });
-
 </script>
 
 <template>
@@ -91,17 +94,18 @@ const table_48 = computed(() => {
                   >
                     <template v-slot:item.actions="{ item }">
                       <div class="d-flex justify-space-between align-center">
-                      <v-select
-                        v-model="admin.assignedDriverID_24"
-                        :items="admin.in24.drivers"
-                        item-title="name"
-                        item-value="id"
-                        label="Vozač"
-                        dense
-                        hide-details
-                        style="max-width: 150px"
-                        return-object
-                      />
+                        <v-select
+                          v-if="item.drivers && Array.isArray(item.drivers)"
+                          v-model="item.selectedDriver"
+                          :items="item.drivers"
+                          item-title="name"
+                          item-value="id"
+                          label="Vozač"
+                          dense
+                          hide-details
+                          style="max-width: 150px"
+                          
+                        />
                       </div>
                     </template>
                     <template v-slot:item.assign="{ item }">
@@ -109,9 +113,15 @@ const table_48 = computed(() => {
                         color="green-darken-4"
                         size="small"
                         icon="mdi-clipboard-check"
-                        @click="admin.actions.assignDriver(admin.assignedDriverID_24, item.tour_id, item.rides)"
+                        :disabled="!item.selectedDriver"
+                        @click="
+                          admin.actions.assignDriver(
+                            item.selectedDriver,
+                            item.tour_id,
+                            item.rides
+                          )
+                        "
                       >
-                        
                       </v-btn>
                     </template>
                     <template v-slot:item.details="{ item }">
@@ -121,7 +131,6 @@ const table_48 = computed(() => {
                         icon="mdi-location-enter"
                         @click="admin.actions.openTour(item.rides)"
                       >
-                        
                       </v-btn>
                     </template>
                   </v-data-table>
@@ -147,17 +156,17 @@ const table_48 = computed(() => {
                   >
                     <template v-slot:item.actions="{ item }">
                       <div class="d-flex justify-space-between align-center">
-                      <v-select
-                        v-model="admin.assignedDriverID_48"
-                        :items="admin.drivers_48"
-                        item-title="name"
-                        item-value="id"
-                        label="Vozač"
-                        dense
-                        hide-details
-                        style="max-width: 150px"
-                        return-object
-                      />
+                        <v-select
+                          v-model="admin.assignedDriverID_48"
+                          :items="admin.drivers_48"
+                          item-title="name"
+                          item-value="id"
+                          label="Vozač"
+                          dense
+                          hide-details
+                          style="max-width: 150px"
+                          return-object
+                        />
                       </div>
                     </template>
                     <template v-slot:item.assign="{ item }">
@@ -165,9 +174,15 @@ const table_48 = computed(() => {
                         color="green-darken-4"
                         size="small"
                         icon="mdi-clipboard-check"
-                        @click="admin.actions.assignDriver(admin.assignedDriverID_48, item.tour_id, item.rides)"
-                      >
                         
+                        @click="
+                          admin.actions.assignDriver(
+                            admin.assignedDriverID_48,
+                            item.tour_id,
+                            item.rides
+                          )
+                        "
+                      >
                       </v-btn>
                     </template>
                     <template v-slot:item.details="{ item }">
@@ -177,7 +192,6 @@ const table_48 = computed(() => {
                         icon="mdi-location-enter"
                         @click="admin.actions.openTour(item.rides)"
                       >
-                        
                       </v-btn>
                     </template>
                   </v-data-table>

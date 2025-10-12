@@ -644,7 +644,7 @@ class Order {
     }
 
     //------------------------------- AFTER ACTION HELPERS RELATED WITH ANOTHER CLASSES --------------------------------//
-
+    /*
     public function availableDrivers($date, $tour_id) {
         $sql = "SELECT users.id, users.name, users.status, users.email, users.phone, users.city FROM users
                 WHERE users.status = 'driver' AND
@@ -669,9 +669,63 @@ class Order {
             return json_encode(['message' => $e->getMessage()]);
         }
     }
+    */
+
+    public function availableDrivers($date, $tours) {
+        if (empty($tours)) return [];
+
+        // Svi gradovi za zadate ture
+        $sqlCities = "
+            SELECT id, from_city, to_city
+            FROM tours
+            WHERE id IN (" . implode(',', array_map('intval', $tours)) . ")
+        ";
+        $stmtCities = $this->db->prepare($sqlCities);
+        $stmtCities->execute();
+        $tourCities = $stmtCities->fetchAll(PDO::FETCH_OBJ);
+
+        // Liista gradova
+        $cities = [];
+        foreach ($tourCities as $t) {
+            $cities[] = $t->from_city;
+            $cities[] = $t->to_city;
+        }
+        $cities = array_unique($cities);
+
+        // Upitnici za IN klauzulu
+        $placeholders = str_repeat('?,', count($cities) - 1) . '?';
+
+        // Slobodni vozači u tim gradovima
+        $sqlDrivers = "
+            SELECT id, name, status, email, phone, city
+            FROM users
+            WHERE status = 'Driver'
+            AND NOT EXISTS (
+                SELECT 1 FROM departures 
+                WHERE driver_id = users.id AND date = ?
+            )
+            AND city IN ($placeholders)
+        ";
+        $stmtDrivers = $this->db->prepare($sqlDrivers);
+        $params = array_merge([$date], $cities);
+        $stmtDrivers->execute($params);
+        $drivers = $stmtDrivers->fetchAll(PDO::FETCH_OBJ);
+
+        // Grupisanje vozača po gradu
+        $grouped = [];
+        foreach ($drivers as $d) {
+            $grouped[$d->city][] = $d;
+        }
+
+        return [
+            'drivers_by_city' => $grouped,
+            'tour_cities' => $tourCities
+        ];
+    }
+
 
     //------------------------------- FUNCTIONS OF GET METHOD --------------------------------//
-
+    /*
     public function getAll($in24, $in48) 
     {
         if($in24 && empty($in48)) {
@@ -682,7 +736,7 @@ class Order {
             echo json_encode(['error' => 'Odaberite 24h ili 48h']);
             exit();
         } 
-        $sql = "SELECT order_items.id as order_item_id, orders.id as order_id, 
+        $sql = "SELECT order_items.id as order_item_id, order_items.driver_id, orders.id as order_id, 
                 tours.id as tour_id, orders.user_id as user_id, order_items.places,  
                 order_items.add_from as pickup, tours.to_city, order_items.add_to as dropoff, tours.from_city,
                 order_items.date, tours.time as pickuptime, tours.duration,
@@ -696,22 +750,15 @@ class Order {
                 ORDER BY tours.id, order_items.date, pickuptime"
         ;
         $stmt = $this->db->prepare($sql);
-        
-        /*
-        $test = date_create();
-        $now = date("Y-m-d H:i:s", date_timestamp_get($test));
-        $tomorrow = date("Y-m-d", strtotime("+24 hours", date_timestamp_get($test))); */
 
         $stmt->bindParam(':tomorrow', $tomorrow);
 
         try {
             if($stmt->execute()) {
                 $rows = $stmt->fetchAll(PDO::FETCH_OBJ);
-                $tourID = 0;
                 $orders = [];
                 foreach($rows as $row) {
                     $tId = $row->tour_id;
-                    $tourID = $tId;
                     if(!isset($orders[$tId])) {
                         $orders[$tId] = [
                             'tour_id' => $row->tour_id,
@@ -720,7 +767,8 @@ class Order {
                             'pickuptime' => $row->pickuptime,
                             'duration' => $row->duration,
                             'date' => $tomorrow,
-                            'rides' => []
+                            'rides' => [],
+                            'unasssigned_rides' => 0
                         ];
                     }
 
@@ -737,6 +785,7 @@ class Order {
                         'from_city'     => $row->from_city,
                         'to_city'       => $row->to_city, 
                         'pickuptime'    => $row->pickuptime,
+                        'driver_id'     => $row->driver_id,
                         'user'          => [
                             'id'    => $row->user_id,
                             'name'  => $row->user_name,
@@ -744,9 +793,22 @@ class Order {
                             'phone' => $row->phone,
                         ]
                     ];
+
+                    if(empty($row->driver_id)) $orders[$tId]['unasssigned_rides']++;
                 }
-                $drivers = $this->availableDrivers($tomorrow, $tourID);
-                echo json_encode(['orders' => $orders, 'has_orders' => !empty($orders), 'drivers' => $drivers]);
+
+                foreach($orders as $tId => &$tour) {
+                    if($tour['unasssigned_rides'] > 0) {
+                        $drivers = $this->availableDrivers($tomorrow, $tId);
+                        if(!empty($drivers)) $tour['drivers'] = $drivers;
+                        else $tour['drivers'] = null;
+                    } else {
+                        $tour['drivers'] = true;
+                    }
+                }
+                unset($tour);
+                
+                echo json_encode(['orders' => $orders, 'has_orders' => !empty($orders)]);
             }
         } catch(PDOException $e) {
             http_response_code(500);
@@ -757,6 +819,143 @@ class Order {
         }
         
     }
+    */
+
+    public function getAll($in24, $in48) 
+    {
+        if ($in24 && empty($in48)) {
+            $tomorrow = date("Y-m-d", strtotime("+1 day"));
+        } elseif ($in48 && empty($in24)) {
+            $tomorrow = date("Y-m-d", strtotime("+2 days"));
+        } else {
+            echo json_encode(['error' => 'Odaberite 24h ili 48h']);
+            exit();
+        } 
+
+        $sql = "SELECT 
+                    order_items.id AS order_item_id,
+                    order_items.driver_id,
+                    orders.id AS order_id,
+                    tours.id AS tour_id,
+                    orders.user_id AS user_id,
+                    order_items.places,
+                    order_items.add_from AS pickup,
+                    tours.to_city,
+                    order_items.add_to AS dropoff,
+                    tours.from_city,
+                    order_items.date,
+                    tours.time AS pickuptime,
+                    tours.duration,
+                    orders.total AS price,
+                    orders.code,
+                    orders.file_path AS voucher,
+                    users.name AS user_name,
+                    users.email AS email,
+                    users.phone AS phone
+                FROM orders 
+                INNER JOIN order_items ON order_items.order_id = orders.id
+                INNER JOIN tours ON order_items.tour_id = tours.id
+                INNER JOIN users ON orders.user_id = users.id
+                WHERE orders.deleted = 0 
+                AND order_items.deleted = 0
+                AND order_items.date = :tomorrow
+                ORDER BY tours.id, order_items.date, pickuptime";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':tomorrow', $tomorrow);
+
+        try {
+            if ($stmt->execute()) {
+                $rows = $stmt->fetchAll(PDO::FETCH_OBJ);
+                $orders = [];
+
+                foreach ($rows as $row) {
+                    $tId = $row->tour_id;
+
+                    if (!isset($orders[$tId])) {
+                        $orders[$tId] = [
+                            'tour_id' => $row->tour_id,
+                            'from_city' => $row->from_city,
+                            'to_city' => $row->to_city,
+                            'pickuptime' => $row->pickuptime,
+                            'duration' => $row->duration,
+                            'date' => $tomorrow,
+                            'rides' => [],
+                            'unassigned_rides' => 0
+                        ];
+                    }
+
+                    $orders[$tId]['rides'][] = [
+                        'order_item_id' => $row->order_item_id,
+                        'order_id'      => $row->order_id,
+                        'places'        => $row->places,
+                        'pickup'        => $row->pickup,
+                        'dropoff'       => $row->dropoff,
+                        'date'          => $row->date,
+                        'price'         => $row->price,
+                        'voucher'       => $row->voucher,
+                        'code'          => $row->code,   
+                        'from_city'     => $row->from_city,
+                        'to_city'       => $row->to_city, 
+                        'pickuptime'    => $row->pickuptime,
+                        'driver_id'     => $row->driver_id,
+                        'user'          => [
+                            'id'    => $row->user_id,
+                            'name'  => $row->user_name,
+                            'email' => $row->email,
+                            'phone' => $row->phone,
+                        ]
+                    ];
+
+                    if (empty($row->driver_id)) {
+                        $orders[$tId]['unassigned_rides']++;
+                    }
+                }
+
+                $tourIDs = array_keys($orders);
+
+                // Svi vozači iz helpera
+                $driversData = $this->availableDrivers($tomorrow, $tourIDs);
+                $driversByCity = $driversData['drivers_by_city'];
+                $tourCities = $driversData['tour_cities'];
+
+                // Povezati vozače i ture
+                foreach ($orders as $tId => &$tour) {
+                    $tourCity = null;
+                    foreach ($tourCities as $tc) {
+                        if ($tc->id == $tId) {
+                            $tourCity = $tc;
+                            break;
+                        }
+                    }
+
+                    $hasUnassigned = $tour['unassigned_rides'] > 0;
+
+                    if ($hasUnassigned) {
+                        $available = [];
+
+                        if (isset($driversByCity[$tourCity->from_city]))
+                            $available = array_merge($available, $driversByCity[$tourCity->from_city]);
+                        if (isset($driversByCity[$tourCity->to_city]))
+                            $available = array_merge($available, $driversByCity[$tourCity->to_city]);
+
+                        $tour['drivers'] = !empty($available) ? $available : null;
+                    } else {
+                        $tour['drivers'] = true;
+                    }
+                }
+                unset($tour);
+
+                echo json_encode([
+                    'orders' => $orders,
+                    'has_orders' => !empty($orders)
+                ]);
+            }
+        } catch (PDOException $e) {
+            echo json_encode(['message' => $e->getMessage()]);
+        }
+    }
+
 
     public function getAllByDate() 
     {

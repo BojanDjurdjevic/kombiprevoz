@@ -105,7 +105,7 @@ export const useAdminStore = defineStore('admin', () => {
                 try {
                     const res = await api.getOrder(dto)
                     in24.value = res.data
-                    drivers_24.value = res.data.drivers
+                    //drivers_24.value = res.data.drivers
                     console.log(in24.value)
                     lastFetch.value = now
                 } catch (error) {
