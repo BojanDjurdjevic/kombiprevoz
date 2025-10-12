@@ -473,7 +473,7 @@ class Order {
                     
         $output = $pdf->output();
         file_put_contents($file_path, $output);
-        if($myOrder != NULL && $myDriver or $myDriver2) {
+        if($myOrder != NULL && $myDriver && $myDriver2) {
             return [
                 'email' => $owner[0]['email'],
                 'name' => $owner[0]['name'],
@@ -485,6 +485,16 @@ class Order {
                 'driver2' => $myDriver2,
                 'driver_phone2' => $myOrder['items'][1]['driver']['dr_phone'],
                 'driver_email2' => $myOrder['items'][1]['driver']['dr_phone']
+            ];
+        } elseif($myOrder != NULL && $myDriver) {
+            return [
+                'email' => $owner[0]['email'],
+                'name' => $owner[0]['name'],
+                'path' => $file_path,
+                'code' => $myOrder['items'][0]['order']['code'],
+                'driver' => $myDriver,
+                'driver_phone' => $myOrder['items'][0]['driver']['dr_phone'],
+                'driver_email' => $myOrder['items'][0]['driver']['dr_phone'],
             ];
         } else
         return [

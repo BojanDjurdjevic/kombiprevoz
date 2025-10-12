@@ -1,6 +1,6 @@
 <script setup>
 import { useAdminStore } from "@/stores/admin";
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 
 const admin = useAdminStore();
 /*
@@ -9,7 +9,7 @@ const bookings48 = computed(() => admin.in48 || []);
 */
 const bookings24 = computed(() => Object.values(admin.in24?.orders || {}));
 const bookings48 = computed(() => Object.values(admin.in48?.orders || {}));
-
+/*
 const table_24 = computed(() => {
   return Object.values(bookings24.value).map((tour) => ({
     tour_id: tour.tour_id,
@@ -24,8 +24,27 @@ const table_24 = computed(() => {
     drivers: tour.drivers,
     selectedDriver: null,
   }));
-});
+}); */
+const table_24 = ref([])
 
+watch(() => bookings24.value, (val) => {
+  if(val) {
+    table_24.value = Object.values(val).map(tour => ({
+      tour_id: tour.tour_id,
+      from_city: tour.from_city,
+      to_city: tour.to_city,
+      pickuptime: tour.pickuptime,
+      duration: tour.duration,
+      rides_count: tour.rides.length,
+      date: tour.date,
+      total_places: tour.rides.reduce((sum, r) => sum + r.places, 0),
+      rides: tour.rides,
+      drivers: tour.drivers,
+      selectedDriver: null,
+    }))
+  }
+}, { immediate: true })
+/*
 const table_48 = computed(() => {
   return Object.values(bookings48.value).map((tour) => ({
     tour_id: tour.tour_id,
@@ -41,6 +60,26 @@ const table_48 = computed(() => {
     selectedDriver: null,
   }));
 });
+*/
+
+const table_48 = ref([])
+watch(() => bookings48.value, (val) => {
+  if(val) {
+    table_48.value = Object.values(val).map(tour => ({
+      tour_id: tour.tour_id,
+      from_city: tour.from_city,
+      to_city: tour.to_city,
+      pickuptime: tour.pickuptime,
+      duration: tour.duration,
+      rides_count: tour.rides.length,
+      date: tour.date,
+      total_places: tour.rides.reduce((sum, r) => sum + r.places, 0),
+      rides: tour.rides,
+      drivers: tour.drivers,
+      selectedDriver: null,
+    }))
+  }
+}, { immediate: true })
 </script>
 
 <template>
@@ -104,7 +143,17 @@ const table_48 = computed(() => {
                           dense
                           hide-details
                           style="max-width: 150px"
-                          
+                          return-object
+                        />
+                        <v-text-field
+                          v-if="item.drivers && !Array.isArray(item.drivers)"
+                          label="Vozač dodeljen!"
+                          disabled
+                        />
+                        <v-text-field
+                          v-if="!item.drivers"
+                          label="Nema dostupnih vozača!"
+                          disabled
                         />
                       </div>
                     </template>
@@ -119,7 +168,9 @@ const table_48 = computed(() => {
                             item.selectedDriver,
                             item.tour_id,
                             item.rides
-                          )
+                          ),
+                          item.selectedDriver = null,
+                          item.drivers = true
                         "
                       >
                       </v-btn>
@@ -157,8 +208,9 @@ const table_48 = computed(() => {
                     <template v-slot:item.actions="{ item }">
                       <div class="d-flex justify-space-between align-center">
                         <v-select
-                          v-model="admin.assignedDriverID_48"
-                          :items="admin.drivers_48"
+                          v-if="item.drivers && Array.isArray(item.drivers)"
+                          v-model="item.selectedDriver"
+                          :items="item.drivers"
                           item-title="name"
                           item-value="id"
                           label="Vozač"
@@ -167,6 +219,16 @@ const table_48 = computed(() => {
                           style="max-width: 150px"
                           return-object
                         />
+                        <v-text-field
+                          v-if="item.drivers && !Array.isArray(item.drivers)"
+                          label="Vozač dodeljen!"
+                          disabled
+                        />
+                        <v-text-field
+                          v-if="!item.drivers"
+                          label="Nema dostupnih vozača!"
+                          disabled
+                        />
                       </div>
                     </template>
                     <template v-slot:item.assign="{ item }">
@@ -174,13 +236,15 @@ const table_48 = computed(() => {
                         color="green-darken-4"
                         size="small"
                         icon="mdi-clipboard-check"
-                        
+                        :disabled="!item.selectedDriver"
                         @click="
                           admin.actions.assignDriver(
-                            admin.assignedDriverID_48,
+                            item.selectedDriver,
                             item.tour_id,
                             item.rides
-                          )
+                          ),
+                          item.selectedDriver = null,
+                          item.drivers = true
                         "
                       >
                       </v-btn>
