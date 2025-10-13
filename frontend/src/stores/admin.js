@@ -57,10 +57,17 @@ export const useAdminStore = defineStore('admin', () => {
     const bCode = ref(null)
     const driverID = ref(null)
 
+    const dep_city = ref()
+    const arr_city = ref()
+
     const tours = ref([
         {id: 1, name: 'Novi Sad - Rijeka'},
         {id: 2, name: 'Rijeka - Novi Sad'}
     ])
+    const cities = ref({
+        from: [],
+        to: [] 
+    })
 
     // USERS
     const usrEmail = ref(null)
@@ -81,17 +88,30 @@ export const useAdminStore = defineStore('admin', () => {
 
     const actions = ref({
         searchBooking: () => {
-            if(!depDay.value.date && !bCode.value && !tourID.value && !usrEmail.value) {
+            if(!depDay.value.date && !bCode.value && !tourID.value && !usrEmail.value
+                && !dep_city.value && !arr_city.value
+            ) {
                 user.errorMsg = "Morate dodati bar jedan parametar!"
+                user.clearMsg(3000)
+                return
+            }
+            let code = null
+            if (bCode.value) code = bCode.value.trim()
+            if(code != null && code.length < 7) {
+                user.errorMsg = "Neispravan broj rezervacije! Broj mora imati tačno 7 brojeva"
                 user.clearMsg(3000)
                 return
             }
             loading.value = true
             tab_bookings.value = 'Pretraga'
+            let tID = null 
+            if(tourID.value) tID = tourID.value.id 
             const dto = {
                 departure: depDay.value,
-                tour_id: tourID.value.id,
-                code: bCode.value,
+                tour_id: tID,
+                code: code,
+                from_city: dep_city.value,
+                to_city: arr_city.value,
                 user_email: usrEmail.value
             }
             console.log(dto)
@@ -102,6 +122,8 @@ export const useAdminStore = defineStore('admin', () => {
             tourID.value = null,
             bCode.value = null,
             usrEmail.value = null
+            dep_city.value = null,
+            arr_city.value = null
         },
         fetchBookings: async (tab) => {
             if(tab == 'U narednih 24h') {
@@ -199,7 +221,10 @@ export const useAdminStore = defineStore('admin', () => {
             try {
                 const res = await api.getTours(dto)
                 tours.value = res.data.tours
+                cities.value.from = res.data.from_cities
+                cities.value.to = res.data.to_cities
                 console.log(tours.value)
+                console.log(cities.value)
             } catch (error) {
                 console.log(error)
             } 
@@ -220,7 +245,7 @@ export const useAdminStore = defineStore('admin', () => {
         adminView, depDay, tourID, bCode, driverID, tours, usrEmail, tourName, toursFrom, toursTo,
         selectedCity, selectedCountry, cityOptions, toAddCountry, tab_bookings, items_bookings,
         in24Search, headers, in48Search, in24, in48, drivers_24, drivers_48, assignedDriverID_24,
-        assignedDriverID_48,
+        assignedDriverID_48, cities, dep_city, arr_city,
         
     }
 

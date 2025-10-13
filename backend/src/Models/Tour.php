@@ -102,15 +102,31 @@ class Tour {
 
         if($num > 0) {
             $tours = [];
+            $from_cities = [];
+            $to_cities = [];
 
             while($row = $res->fetch(PDO::FETCH_OBJ)) {
                 array_push($tours, [
                     'name' => $row->from_city . " - " . $row->to_city,
-                    'id' => $row->id
+                    'id' => $row->id,
+                    'from_city' => $row->from_city,
+                    'to_city' => $row->to_city,
+                    'departures' => $row->departures,
+                    'time' => $row->time,
+                    'duration' => $row->duration,
+                    'price' => $row->price,
+                    'seats' => $row->seats
                 ]);
             }
 
-            echo json_encode(['tours' => $tours]);
+            foreach($tours as $id => $t) {
+                $from_cities[] = $t['from_city'];
+                $to_cities[] = $t['to_city'];
+            }
+            $from_cities = array_values(array_unique($from_cities));
+            $to_cities = array_values(array_unique($to_cities));
+
+            echo json_encode(['tours' => $tours, 'from_cities' => $from_cities, 'to_cities' => $to_cities]);
         } else
         echo json_encode(['msg' => "Nema dostupnih vožnji."]);
     } 

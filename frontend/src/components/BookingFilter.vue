@@ -47,24 +47,18 @@ onMounted(async () => {
         <v-select
           prepend-icon="mdi-city-variant"
           clearable
-          :items="admin.tours"
-          item-title="name"
-          item-value="id"
+          :items="admin.cities.from"
           label="Grad polaska"
-          v-model="admin.tourID"
-          return-object
+          v-model="admin.dep_city"
         ></v-select>
       </div>
       <div class="ma-1">
         <v-select
           prepend-icon="mdi-city-variant"
           clearable
-          :items="admin.tours"
-          item-title="name"
-          item-value="id"
+          :items="admin.cities.to"
           label="Grad dolaska"
-          v-model="admin.tourID"
-          return-object
+          v-model="admin.arr_city"
         ></v-select>
       </div>
       <div class="ma-1">
