@@ -104,7 +104,7 @@ export const useAdminStore = defineStore("admin", () => {
   });
 
   const actions = ref({
-    searchBooking: () => {
+    searchBooking: async () => {
       if (
         !depDay.value.date &&
         !bCode.value &&
@@ -137,8 +137,6 @@ export const useAdminStore = defineStore("admin", () => {
 
       loading.value = true;
 
-      tab_bookings.value = "Pretraga"
-
       let outDate = null; //
       let toDate = null; //
       if (depDay.value.date) outDate = search.dateFormat(depDay.value.date)
@@ -150,22 +148,36 @@ export const useAdminStore = defineStore("admin", () => {
         if (!validEmail) return displayError("Neispravan email, molimo unesite validan email!")
       }
       const dto = {
-        departure: outDate,
-        tour_id: tID,
-        code: code,
-        from_city: dep_city.value,
-        to_city: arr_city.value,
-        user_email: usrEmail.value,
-      };
-      console.log(dto)
+        user_id: user.user.id,
+        filters: {
+            departure: outDate,
+            tour_id: tID,
+            code: code,
+            from_city: dep_city.value,
+            to_city: arr_city.value,
+            user_email: usrEmail.value,
+        }
+      }
+
+      try {
+        const res = await api.getOrder(dto)
+        console.log(res.data)
+      } catch (error) {
+        console.log(error)
+      } finally {
+        tab_bookings.value = "Pretraga"
+        loading.value = false
+      }
+      //console.log(dto)
     },
     clearBookingSearch: () => {
-      (depDay.value.date = null),
-        (depDay.value.range = null),
-        (tourID.value = null),
-        (bCode.value = null),
-        (usrEmail.value = null);
-      (dep_city.value = null), (arr_city.value = null)
+        depDay.value.date = null,
+        depDay.value.range = null,
+        tourID.value = null,
+        bCode.value = null,
+        usrEmail.value = null,
+        dep_city.value = null, 
+        arr_city.value = null
     },
     fetchBookings: async (tab) => {
       if (tab == "U narednih 24h") {
@@ -231,11 +243,9 @@ export const useAdminStore = defineStore("admin", () => {
           selected: rides,
         },
       };
-      if (!dto.orders.driver || !dto.orders.selected || !dto.orders.tour_id) {
-        user.errorMsg = "Proverite sve podatke, nije moguće dodeliti vozača!";
-        user.clearMsg(3000)
-        return;
-      } /*
+      if (!dto.orders.driver || !dto.orders.selected || !dto.orders.tour_id) 
+      return displayError("Proverite sve podatke, nije moguće dodeliti vozača!")  
+        /*
             console.log(dto)
             return */
       try {

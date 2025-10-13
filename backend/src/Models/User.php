@@ -291,7 +291,7 @@ class User {
     {
         $sql = "SELECT id, name, email, phone FROM users
                 WHERE status = 'Driver'
-                and id NOT IN (SELECT driver_id FROM orders WHERE date = :date)
+                and id NOT IN (SELECT driver_id FROM order_items WHERE date = :date)
         ";
         $stmt = $this->db->prepare($sql);
         $date = htmlspecialchars(strip_tags($date), ENT_QUOTES);

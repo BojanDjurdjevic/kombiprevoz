@@ -13,6 +13,15 @@ class Validator {
         }
     }
 
+    public static function validateCode($code) {
+        $mycode = strtoupper(trim((string) $code)); /* 
+        if (!preg_match('/^\d{7}KP$/', $mycode)) {
+            return false;
+        } else return true; */
+        if(empty($mycode)) return false;
+        return preg_match('/^\d{7}KP$/', $mycode) === 1;
+    }
+
     public static function validatePassword($str) 
     {
         if(strlen($str)<6 or strlen($str)>21) return false;

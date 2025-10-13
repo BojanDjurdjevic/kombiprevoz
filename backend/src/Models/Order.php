@@ -39,6 +39,9 @@ class Order {
     public $selected;
     public $items;
 
+    public $from_city;
+    public $to_city;
+
     private $user;
     private $tour;
     private $db;
@@ -973,29 +976,61 @@ class Order {
     }
 
 
-    public function getAllByFilter() 
+    public function getAllByFilter($email) 
     {
-        $sql = "SELECT orders.id, orders.tour_id, orders.user_id, orders.places, tours.from_city, 
-                orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
-                orders.date, tours.time as pickuptime, tours.duration,
-                orders.total as price, orders.code, orders.file_path as voucher, users.name as user, users.email, users.phone
-                from orders 
-                INNER JOIN tours on orders.tour_id = tours.id
-                INNER JOIN users on orders.user_id = users.id
-                WHERE orders.date = '$this->date' AND orders.deleted = 0"
-        ;
-        $res = $this->db->query($sql);
-        $num = $res->rowCount();
+        if($this->code) return $this->getByCode();
 
-        if($num > 0) {
-            $drivers = $this->user->getAvailableDrivers($this->date);
-            $orders = [];
-            while($row = $res->fetch(PDO::FETCH_OBJ)) {
-                array_push($orders, $row);
-            }
-            echo json_encode(['orders' => $orders, 'drivers' => $drivers], JSON_PRETTY_PRINT);
-        } else
-        echo json_encode(['msg' => 'Nema rezervisanih vožnji za traženi datum.']);
+        $params = [
+            'date' => $this->date,
+            'from_city' => $this->from_city,
+            'to_city' => $this->to_city,
+            'tour_id' => $this->tour_id,
+            'email' => $email
+        ];
+
+        $params = array_filter($params, fn($p) => !empty($p));
+
+        $cleaned = Validator::cleanParams($params);
+
+        $sql = "SELECT orders.id as order_id, order_items.id as item_id, 
+                order_items.tour_id, orders.user_id, order_items.places, tours.from_city, 
+                order_items.add_from as pickup, tours.to_city, order_items.add_to as dropoff,
+                order_items.date, order_items.price, order_items.deleted,
+                tours.time as pickuptime, tours.duration,
+                orders.total, orders.code, orders.file_path as voucher, 
+                users.name as user, users.email, users.phone
+                from order_items
+                JOIN orders on orders.id = order_items.order_id
+                JOIN tours on order_items.tour_id = tours.id
+                JOIN users on orders.user_id = users.id
+                
+                WHERE 1=1"
+        ;
+
+        if(isset($cleaned['date'])) $sql .= " AND orders_items.date = :date ";
+        if(isset($cleaned['from_city'])) $sql .= " AND tours.from_city = :from_city";
+        if(isset($cleaned['to_city'])) $sql .= " AND tours.to_city = :to_city";
+        if(isset($cleaned['tour_id'])) $sql .= " AND order_items.tour_id = :tour_id";
+        if(isset($cleaned['email'])) $sql .= " AND users.email = :email";
+
+        $stmt = $this->db->prepare($sql);
+        foreach($cleaned as $k => $v) {
+            $stmt->bindValue(':' . $k, $v);
+        }
+
+        try {
+            $stmt->execute();
+            $orders = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+            header('Content-Type: application/json');
+            echo json_encode(['orders' => $orders, 'has_orders' => !empty($orders)], JSON_PRETTY_PRINT);
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode([
+                'error' => 'Došlo je do greške pri konekciji na bazu!',
+                'msg' => $e->getMessage()
+            ]);
+        }
     }
 
     public function getAllByDateRange(? string $from, ? string $to)
@@ -1131,40 +1166,43 @@ class Order {
     }
 
     public function getByCode() {
-        $sql = "SELECT orders.id, orders.tour_id, orders.user_id, orders.places, tours.from_city, 
-                orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
-                orders.date, tours.time as pickuptime, tours.duration,
-                orders.total as price, orders.code, orders.file_path as voucher, orders.deleted,
+        $sql = "SELECT orders.id as order_id, order_items.id as item_id, 
+                order_items.tour_id, orders.user_id, order_items.places, tours.from_city, 
+                order_items.add_from as pickup, tours.to_city, order_items.add_to as dropoff,
+                order_items.date, order_items.price, order_items.deleted,
+                tours.time as pickuptime, tours.duration,
+                orders.total, orders.code, orders.file_path as voucher, 
                 users.name as user, users.email, users.phone
-                from orders 
-                INNER JOIN tours on orders.tour_id = tours.id
-                INNER JOIN users on orders.user_id = users.id
+                from order_items
+                JOIN orders on orders.id = order_items.order_id
+                JOIN tours on order_items.tour_id = tours.id
+                JOIN users on orders.user_id = users.id 
                 WHERE orders.code = :code"
         ;
-        $stmt = $this->db->prepare($sql);
 
-        if(Validator::validateString($this->code)) {
+        if(Validator::validateCode($this->code)) {
+            $stmt = $this->db->prepare($sql);
             $this->code = htmlspecialchars(strip_tags($this->code));
             $stmt->bindParam(':code', $this->code);
 
             try {
                 if($stmt->execute()) {
                     $order = $stmt->fetch(PDO::FETCH_OBJ);
-                    //$num = $order->rowCount();
 
-                    if($order) {
-                        echo json_encode(['order' => $order], JSON_PRETTY_PRINT);
-                    } else echo json_encode(['order' => 'Rezervacija nije pronađena.'], JSON_PRETTY_PRINT);
+                    echo json_encode(['order' => $order, 'has_order' => !empty($order)], JSON_PRETTY_PRINT);
                 }
             } catch (PDOException $e) {
+                http_response_code(500);
                 echo json_encode([
                     'order' => 'Došlo je do greške pri konekciji na bazu podataka.',
                     'msg' => $e->getMessage()
                 ], JSON_PRETTY_PRINT);
             }
-        } else
-        echo json_encode(['order' => 'Pogrešno unet broj rezervacije. Molimo Vas da unesete validan kod
-                        koji sadrži 7 brojeva i 2 velika slova: xxxxxxxKP'], JSON_PRETTY_PRINT);
+        } else {
+            http_response_code(422);
+            echo json_encode(['error' => 'Pogrešno unet broj rezervacije. Molimo Vas da unesete validan kod
+                            koji sadrži 7 brojeva i 2 velika slova: xxxxxxxKP'], JSON_PRETTY_PRINT);
+        }
     }
 
     public function getItems($order_id) 

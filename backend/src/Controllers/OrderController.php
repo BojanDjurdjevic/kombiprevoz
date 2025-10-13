@@ -26,15 +26,16 @@ class OrderController {
 
             switch($request) {
                 case 'GET':
-                    if(isset($this->data->orders) && !empty($this->data->orders)) {
-                        if(isset($this->data->orders->user_id) && !empty($this->data->orders->user_id) && !isset($this->data->orders->adminOrders)) {
+                    if(isset($this->data->orders) && !empty($this->data->orders) ) {
+                        if(isset($this->data->orders->user_id) && !empty($this->data->orders->user_id) 
+                            && !isset($this->data->orders->adminOrders) && !isset($this->data->orders->filters)) {
                             $this->order->user_id = $this->data->orders->user_id;
                             $this->order->getByUser();
-                        }
+                        } /*
                         if(isset($this->data->orders->ord_code) && !empty($this->data->orders->ord_code)) {
                             $this->order->code = $this->data->orders->ord_code;
                             $this->order->getByCode();
-                        }
+                        } */
                         //if(Validator::isAdmin() || Validator::isSuper() || Validator::isDriver()) {
                             if(isset($this->data->orders->adminOrders->all) && !empty($this->data->orders->adminOrders->all)) {
                                 if(Validator::isAdmin() || Validator::isSuper() || Validator::isDriver()) 
@@ -46,11 +47,33 @@ class OrderController {
                                     ]);
                                 } 
                             }
-                            if(isset($this->data->orders->date) && !empty($this->data->orders->date) 
-                            && !isset($this->data->orders->tour_id) && !empty($this->data->orders->tour_id)) {
-                                $this->order->date = $this->data->orders->date;
-                                if(Validator::isAdmin() || Validator::isSuper() || Validator::isDriver()) $this->order->getAllByFilter();
-                                else echo json_encode(['orders' => 'Niste autorizovani da vidite tuđe rezervacije!']);
+                            if(isset($this->data->orders->filters) && !empty($this->data->orders->filters)) {
+                                $email = null;
+                                if(isset($this->data->orders->filters->departure) && !empty($this->data->orders->filters->departure))
+                                $this->order->date = $this->data->orders->filters->departure;
+                                else $this->order->date = null;
+                                if(isset($this->data->orders->filters->code) && !empty($this->data->orders->filters->code))
+                                $this->order->code = $this->data->orders->filters->code;
+                                else $this->order->code = null;
+                                if(isset($this->data->orders->filters->from_city) && !empty($this->data->orders->filters->from_city))
+                                $this->order->from_city = $this->data->orders->filters->from_city;
+                                else $this->order->from_city = null;
+                                if(isset($this->data->orders->filters->to_city) && !empty($this->data->orders->filters->to_city))
+                                $this->order->to_city = $this->data->orders->filters->to_city;
+                                else $this->order->to_city = null;
+                                if(isset($this->data->orders->filters->tour_id) && !empty($this->data->orders->filters->tour_id))
+                                $this->order->tour_id = $this->data->orders->filters->tour_id;
+                                else $this->order->tour_id = null;
+                                if(isset($this->data->orders->filters->user_email) && !empty($this->data->orders->filters->user_email))
+                                $email = $this->data->orders->filters->user_email;
+                                if(Validator::isAdmin() || Validator::isSuper()) 
+                                $this->order->getAllByFilter($email);
+                                else {
+                                    http_response_code(422);
+                                    echo json_encode([
+                                        'error' => 'Niste autorizovani da vidite tuđe rezervacije!'
+                                    ]);
+                                } 
                             }
                             
                             if(isset($this->data->orders->from_date) && isset($this->data->orders->to_date)) {
@@ -81,11 +104,12 @@ class OrderController {
                                 else echo json_encode(['orders' => 'Niste autorizovani da vidite tuđe rezervacije!']);
                             }
                         //} else echo json_encode(['orders' => 'Niste autorizovani da vidite tuđe rezervacije!']);
-                    } else
-                    echo json_encode([
-                        http_response_code(401),
-                        'error' => 'Proverite podatke. Nisu pronađene rezervacije.'
-                    ]);
+                    } else {
+                        http_response_code(401);
+                        echo json_encode([
+                            'error' => 'Proverite podatke. Nisu pronađene rezervacije.'
+                        ]);
+                    }
                     /*
                     if(isset($this->data->adminOrders) && !empty($this->data->adminOrders)) {
 

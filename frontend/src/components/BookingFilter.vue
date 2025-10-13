@@ -32,6 +32,7 @@ onMounted(async () => {
           v-model="admin.depDay.date"
           label="Datum vožnje"
           clearable
+          :disabled="admin.bCode"
         ></v-date-input>
       </div>
       <div class="ma-1">
@@ -44,6 +45,7 @@ onMounted(async () => {
           label="Izaberi Rutu"
           v-model="admin.tourID"
           return-object
+          :disabled="admin.bCode"
         ></v-select>
       </div>
       <div class="ma-1">
@@ -53,6 +55,7 @@ onMounted(async () => {
           :items="admin.cities.from"
           label="Grad polaska"
           v-model="admin.dep_city"
+          :disabled="admin.bCode"
         ></v-select>
       </div>
       <div class="ma-1">
@@ -62,6 +65,7 @@ onMounted(async () => {
           :items="admin.cities.to"
           label="Grad dolaska"
           v-model="admin.arr_city"
+          :disabled="admin.bCode"
         ></v-select>
       </div>
       <div class="ma-1">
@@ -72,6 +76,7 @@ onMounted(async () => {
           clearable
           type="email"
           :rules="[user.rules.email]"
+          :disabled="admin.bCode"
         ></v-text-field>
       </div>
     </div>
