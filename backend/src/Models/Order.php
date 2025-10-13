@@ -926,8 +926,14 @@ class Order {
 
                 // Svi vozači iz helpera
                 $driversData = $this->availableDrivers($tomorrow, $tourIDs);
-                $driversByCity = $driversData['drivers_by_city'];
-                $tourCities = $driversData['tour_cities'];
+                if($driversData) {
+                    $driversByCity = $driversData['drivers_by_city'];
+                    $tourCities = $driversData['tour_cities'];
+                } else {
+                    $driversByCity = [];
+                    $tourCities = [];
+                }
+                
 
                 // Povezati vozače i ture
                 foreach ($orders as $tId => &$tour) {

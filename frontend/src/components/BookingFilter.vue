@@ -3,8 +3,10 @@ import { useAdminStore } from "@/stores/admin";
 import { VDateInput } from "vuetify/labs/VDateInput";
 import { VNumberInput } from "vuetify/labs/VNumberInput";
 import { ref, onMounted } from "vue";
+import { useUserStore } from "@/stores/user";
 
 const admin = useAdminStore();
+const user = useUserStore();
 
 onMounted(async () => {
   await admin.actions.fetchAllTours()
@@ -21,7 +23,7 @@ onMounted(async () => {
         <v-text-field
           prepend-icon="mdi-book-open-variant"
           v-model="admin.bCode"
-          label="Broj rezervacije"
+          :label="admin.bNum"
           clearable
         ></v-text-field>
       </div>
@@ -29,6 +31,7 @@ onMounted(async () => {
         <v-date-input
           v-model="admin.depDay.date"
           label="Datum vožnje"
+          clearable
         ></v-date-input>
       </div>
       <div class="ma-1">
@@ -68,6 +71,7 @@ onMounted(async () => {
           label="Email korisnika"
           clearable
           type="email"
+          :rules="[user.rules.email]"
         ></v-text-field>
       </div>
     </div>
