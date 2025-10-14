@@ -84,6 +84,8 @@ export const useAdminStore = defineStore("admin", () => {
     to: [],
   });
 
+  const filteredOrders = ref(null)
+
   // USERS
   const usrEmail = ref(null);
 
@@ -161,7 +163,8 @@ export const useAdminStore = defineStore("admin", () => {
 
       try {
         const res = await api.getOrder(dto)
-        console.log(res.data)
+        filteredOrders.value = res.data
+        console.log(filteredOrders.value)
       } catch (error) {
         console.log(error)
       } finally {
@@ -296,6 +299,6 @@ export const useAdminStore = defineStore("admin", () => {
     cityOptions, toAddCountry, tab_bookings, items_bookings, in24Search,
     headers, in48Search, in24, in48, drivers_24, drivers_48,
     assignedDriverID_24, assignedDriverID_48, cities,
-    dep_city, arr_city,
+    dep_city, arr_city, filteredOrders,
   };
 });

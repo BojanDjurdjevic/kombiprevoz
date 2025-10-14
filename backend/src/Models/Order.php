@@ -1007,7 +1007,7 @@ class Order {
                 WHERE 1=1"
         ;
 
-        if(isset($cleaned['date'])) $sql .= " AND orders_items.date = :date ";
+        if(isset($cleaned['date'])) $sql .= " AND order_items.date = :date ";
         if(isset($cleaned['from_city'])) $sql .= " AND tours.from_city = :from_city";
         if(isset($cleaned['to_city'])) $sql .= " AND tours.to_city = :to_city";
         if(isset($cleaned['tour_id'])) $sql .= " AND order_items.tour_id = :tour_id";
@@ -1187,9 +1187,9 @@ class Order {
 
             try {
                 if($stmt->execute()) {
-                    $order = $stmt->fetch(PDO::FETCH_OBJ);
+                    $orders = $stmt->fetchAll(PDO::FETCH_OBJ);
 
-                    echo json_encode(['order' => $order, 'has_order' => !empty($order)], JSON_PRETTY_PRINT);
+                    echo json_encode(['orders' => $orders, 'has_order' => !empty($order)], JSON_PRETTY_PRINT);
                 }
             } catch (PDOException $e) {
                 http_response_code(500);
