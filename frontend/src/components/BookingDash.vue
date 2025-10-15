@@ -145,7 +145,7 @@ watch(() => bookings48.value, (val) => {
                             </v-card-text>
 
                             <v-card-actions>
-                              <v-btn color="primary" size="small" @click="showDetails(item.raw)">
+                              <v-btn color="primary" size="small" @click="admin.showDetails(item.raw)">
                                 Detalji
                               </v-btn>
                             </v-card-actions>
@@ -163,6 +163,38 @@ watch(() => bookings48.value, (val) => {
                       ></v-pagination>
                     </template>
                   </v-data-iterator>
+
+                  <!-- DIALOG to show details -->
+
+                  <v-dialog v-model="admin.manageDialog" fullscreen transition="dialog-bottom-transition" persistent>
+                    <v-card>
+                      <!-- Header -->
+                      <v-toolbar color="indigo-darken-4">
+                        <v-btn icon @click="admin.manageDialog = false">
+                          <v-icon>mdi-arrow-left</v-icon>
+                        </v-btn>
+                        <v-toolbar-title>Rezervacija #{{ admin.selected?.code }}</v-toolbar-title>
+                        <v-spacer></v-spacer>
+                      </v-toolbar>
+
+                      <!-- Main Content -->
+                      <v-card-text class="pa-4">
+                        <p><strong>Ruta:</strong> {{ admin.selected?.from_city }} → {{ admin.selected?.to_city }}</p>
+                        <p><strong>Datum:</strong> {{ admin.formatDate(selected?.date) }}</p>
+                        <p><strong>Putnici:</strong> {{ admin.selected?.places }}</p>
+                        <p><strong>Cena:</strong> {{ admin.selected?.price }} €</p>
+                        <p><strong>Korisnik:</strong> {{ admin.selected?.user }}</p>
+                        <p><strong>Email:</strong> {{ admin.selected?.email }}</p>
+                      </v-card-text>
+
+                      <!-- Btn -->
+                      <v-card-actions>
+                        <v-btn block color="success" @click="admin.manageDialog = false">
+                          Zatvori
+                        </v-btn>
+                      </v-card-actions>
+                    </v-card>
+                  </v-dialog>
                 </v-container>
               </div>
               <div class="w-100" v-if="admin.tab_bookings == 'U narednih 24h'">

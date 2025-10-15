@@ -111,10 +111,12 @@ export const useAdminStore = defineStore("admin", () => {
     const d = new Date(date)
     return d.toLocaleDateString('sr-RS', { day: '2-digit', month: '2-digit', year: 'numeric' })
   }
-  
+
+  const selected = ref(null)
+  const manageDialog = ref(false)
   function showDetails(order) {
-    console.log('Detalji:', order)
-    // Ovde možeš otvoriti modal, navigirati ili prikazati dodatne info
+    selected.value = order
+    manageDialog.value = true
   }
 
   // USERS
@@ -330,7 +332,7 @@ export const useAdminStore = defineStore("admin", () => {
     cityOptions, toAddCountry, tab_bookings, items_bookings, in24Search,
     headers, in48Search, in24, in48, drivers_24, drivers_48,
     assignedDriverID_24, assignedDriverID_48, cities,
-    dep_city, arr_city, filteredOrders, page, reservations, pageCount, 
+    dep_city, arr_city, filteredOrders, page, reservations, pageCount, selected, manageDialog,
 
     formatDate, showDetails,
   };
