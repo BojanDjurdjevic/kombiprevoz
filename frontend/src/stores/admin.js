@@ -84,7 +84,38 @@ export const useAdminStore = defineStore("admin", () => {
     to: [],
   });
 
+  
+
+  // ------------- FROM API ----------------//
+
+  const page = ref(1)
   const filteredOrders = ref(null)
+  const reservations = ref([
+    // Primer podataka iz API-ja
+    {
+      order_id: 1,
+      from_city: 'Beograd',
+      to_city: 'Berlin',
+      date: '2025-10-15',
+      price: 120,
+      places: 2,
+      code: '1234567KP',
+      user: 'Marko Marković',
+    },
+    // ...
+  ])
+  
+  const pageCount = computed(() => Math.ceil(reservations.value.length / 5))
+  
+  function formatDate(date) {
+    const d = new Date(date)
+    return d.toLocaleDateString('sr-RS', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  }
+  
+  function showDetails(order) {
+    console.log('Detalji:', order)
+    // Ovde možeš otvoriti modal, navigirati ili prikazati dodatne info
+  }
 
   // USERS
   const usrEmail = ref(null);
@@ -299,6 +330,8 @@ export const useAdminStore = defineStore("admin", () => {
     cityOptions, toAddCountry, tab_bookings, items_bookings, in24Search,
     headers, in48Search, in24, in48, drivers_24, drivers_48,
     assignedDriverID_24, assignedDriverID_48, cities,
-    dep_city, arr_city, filteredOrders,
+    dep_city, arr_city, filteredOrders, page, reservations, pageCount, 
+
+    formatDate, showDetails,
   };
 });

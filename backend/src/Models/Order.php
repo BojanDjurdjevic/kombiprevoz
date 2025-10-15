@@ -1189,7 +1189,7 @@ class Order {
                 if($stmt->execute()) {
                     $orders = $stmt->fetchAll(PDO::FETCH_OBJ);
 
-                    echo json_encode(['orders' => $orders, 'has_order' => !empty($order)], JSON_PRETTY_PRINT);
+                    echo json_encode(['orders' => $orders, 'has_orders' => !empty($orders)], JSON_PRETTY_PRINT);
                 }
             } catch (PDOException $e) {
                 http_response_code(500);

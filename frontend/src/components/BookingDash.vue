@@ -87,7 +87,7 @@ watch(() => bookings48.value, (val) => {
     class="mt-6 pa-3 w-100 d-flex flex-column align-center"
     v-if="admin.adminView == 'Bookings'"
   >
-    <v-card class="w-100">
+    <v-card class="w-100 h-100">
       <v-toolbar>
         <template v-slot>
           <v-tabs v-model="admin.tab_bookings" align-tabs="title">
@@ -111,7 +111,59 @@ watch(() => bookings48.value, (val) => {
           <v-card flat>
             <v-card-text>
               <div class="w-100" v-if="admin.tab_bookings == 'Pretraga'">
-                Pretraga
+                <v-container v-if="admin.filteredOrders && admin.filteredOrders.has_orders"
+                  
+                >
+                  <v-data-iterator
+                    :items="admin.filteredOrders.orders"
+                    :items-per-page="5"
+                    v-model:page="admin.page"
+                  >
+                    <template v-slot:default="{ items }">
+                      <v-row dense>
+                        <v-col
+                          v-for="(item, i) in items"
+                          :key="item.raw.item_id"
+                          cols="12"
+                          sm="6"
+                          md="4"
+                        >
+                          <v-card class="rounded-2xl shadow-md hover:shadow-lg transition-all">
+                            <v-card-title class="text-lg font-semibold">
+                              {{ item.raw.from_city }} → {{ item.raw.to_city }}
+                            </v-card-title>
+
+                            <v-card-subtitle class="text-sm text-gray-600">
+                              Datum: {{admin.formatDate(item.raw.date) }}
+                            </v-card-subtitle>
+
+                            <v-card-text class="space-y-2">
+                              <div><strong>Kod:</strong> {{ item.raw.code }}</div>
+                              <div><strong>Putnici:</strong> {{ item.raw.places }}</div>
+                              <div><strong>Cena:</strong> {{ item.raw.price }} €</div>
+                              <div><strong>Korisnik:</strong> {{ item.raw.user }}</div>
+                            </v-card-text>
+
+                            <v-card-actions>
+                              <v-btn color="primary" size="small" @click="showDetails(item.raw)">
+                                Detalji
+                              </v-btn>
+                            </v-card-actions>
+                          </v-card>
+                        </v-col>
+                      </v-row>
+                    </template>
+
+                    <!-- Pagination -->
+                    <template v-slot:footer>
+                      <v-pagination
+                        v-model="admin.page"
+                        :length="pageCount"
+                        total-visible="5"
+                      ></v-pagination>
+                    </template>
+                  </v-data-iterator>
+                </v-container>
               </div>
               <div class="w-100" v-if="admin.tab_bookings == 'U narednih 24h'">
                 <v-card title="Rezervacije u narednih 24h" flat>
