@@ -1,6 +1,8 @@
 <script setup>
 import { useAdminStore } from "@/stores/admin";
 import { ref, computed, watch } from "vue";
+import { VDateInput } from "vuetify/labs/VDateInput";
+import { VNumberInput } from "vuetify/labs/VNumberInput";
 
 const admin = useAdminStore();
 /*
@@ -178,13 +180,62 @@ watch(() => bookings48.value, (val) => {
                       </v-toolbar>
 
                       <!-- Main Content -->
-                      <v-card-text class="pa-4">
-                        <p><strong>Ruta:</strong> {{ admin.selected?.from_city }} → {{ admin.selected?.to_city }}</p>
-                        <p><strong>Datum:</strong> {{ admin.formatDate(selected?.date) }}</p>
-                        <p><strong>Putnici:</strong> {{ admin.selected?.places }}</p>
-                        <p><strong>Cena:</strong> {{ admin.selected?.price }} €</p>
-                        <p><strong>Korisnik:</strong> {{ admin.selected?.user }}</p>
-                        <p><strong>Email:</strong> {{ admin.selected?.email }}</p>
+                      <v-card-text class="pa-4 ">
+                        <h3 class="text-center">Detalji vožnje</h3>
+                        <div class="w-100 h-100 d-flex">
+                          <div class="w-50 h-100 pa-3 d-flex flex-column justify-space-evenly">
+                            <p><strong>Ruta:</strong> {{ admin.selected?.from_city }} → {{ admin.selected?.to_city }}</p>
+                            <p><strong>Adresa polaska:</strong> {{ admin.selected?.pickup }}</p>
+                            <p><strong>Adresa dolaska:</strong> {{ admin.selected?.dropoff }}</p>
+                            <p><strong>Datum:</strong> {{ admin.formatDate(selected?.date) }}</p>
+                            <p><strong>Vreme:</strong> {{ admin.selected?.pickuptime }}</p>
+                            <p><strong>Broj mesta:</strong> {{ admin.selected?.places }}</p>
+                            <p><strong>Cena:</strong> {{ admin.selected?.price }} €</p>
+                            <p><strong>Korisnik:</strong> {{ admin.selected?.user }}</p>
+                            <p><strong>Email:</strong> {{ admin.selected?.email }}</p>
+                          </div>
+                          <div class="w-50 h-100 pa-6">
+                            <v-text-field
+                              v-model="admin.changeFromAddress"
+                              prepend-icon="mdi-map-marker"
+                              label="Unesi novu adresu polaska"
+                              clearable 
+                              class="w-75"
+                            ></v-text-field>
+                            <v-text-field
+                              v-model="admin.changeToAddress"
+                              prepend-icon="mdi-map-marker"
+                              label="Unesi novu adresu dolaska"
+                              clearable 
+                              class="w-75"
+                            ></v-text-field>
+                            <v-date-input
+                              v-model="admin.changeDate"
+                              label="Unesi novi datum"
+                              clearable 
+                              class="w-75"
+                            ></v-date-input>
+                            <v-number-input
+                              v-model="admin.changeSeats"
+                              prepend-icon="mdi-numeric"
+                              label="Unesi novi broj mesta"
+                              clearable 
+                              class="w-75"
+                              min="1"
+                              max="7"
+                            ></v-number-input>
+                            <div class="w-75 mt-6 d-flex justify-space-around">
+                              <v-btn 
+                                variant="elevated" 
+                                color="green-darken-4"
+                                @click="admin.actions.manageBookingItems"
+                              >Potvrdi</v-btn>
+                              <v-btn color="red-darken-3"
+                                @click="admin.actions.clearManageItems"
+                              >Poništi</v-btn>
+                            </div>
+                          </div>
+                        </div>
                       </v-card-text>
 
                       <!-- Btn -->

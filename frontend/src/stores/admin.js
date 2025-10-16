@@ -24,8 +24,8 @@ export const useAdminStore = defineStore("admin", () => {
       "Primer: 1234567KP / 1234567kp -> Bez razmaka."
   ) {
     user.errorMsg = str;
-
-    user.clearMsg(6000);
+    user.clearMsg(6000)
+    if(user.errorMsg) manageDialog.value = false
   }
 
   watch(() => {
@@ -86,7 +86,7 @@ export const useAdminStore = defineStore("admin", () => {
 
   
 
-  // ------------- FROM API ----------------//
+  // ------------- FROM API BY Filters ----------------//
 
   const page = ref(1)
   const filteredOrders = ref(null)
@@ -118,6 +118,13 @@ export const useAdminStore = defineStore("admin", () => {
     selected.value = order
     manageDialog.value = true
   }
+
+  // ------------ ON MANAGE BOOKING DIALOG -----------------------//
+  
+  const changeFromAddress = ref(null)
+  const changeToAddress = ref(null)
+  const changeDate = ref(null)
+  const changeSeats = ref(null)
 
   // USERS
   const usrEmail = ref(null);
@@ -214,6 +221,20 @@ export const useAdminStore = defineStore("admin", () => {
         usrEmail.value = null,
         dep_city.value = null, 
         arr_city.value = null
+    },
+    manageBookingItems: () => {
+      if(!changeDate.value && !changeFromAddress.value && !changeToAddress.value && !changeSeats.value) {
+        displayError("Sva pola su prazna! Unesite bar jednu izmenu u formu!")
+        setTimeout(() => {
+          manageDialog.value = true
+        }, 5400)
+      }
+    },
+    clearManageItems: () => {
+      changeDate.value = null
+      changeFromAddress.value = null
+      changeToAddress.value = null
+      changeSeats.value = null
     },
     fetchBookings: async (tab) => {
       if (tab == "U narednih 24h") {
@@ -333,6 +354,7 @@ export const useAdminStore = defineStore("admin", () => {
     headers, in48Search, in24, in48, drivers_24, drivers_48,
     assignedDriverID_24, assignedDriverID_48, cities,
     dep_city, arr_city, filteredOrders, page, reservations, pageCount, selected, manageDialog,
+    changeDate, changeFromAddress, changeSeats, changeToAddress,
 
     formatDate, showDetails,
   };
