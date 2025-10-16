@@ -117,6 +117,7 @@ export const useAdminStore = defineStore("admin", () => {
   function showDetails(order) {
     selected.value = order
     manageDialog.value = true
+    console.log(selected.value)
   }
 
   // ------------ ON MANAGE BOOKING DIALOG -----------------------//
@@ -228,7 +229,36 @@ export const useAdminStore = defineStore("admin", () => {
         setTimeout(() => {
           manageDialog.value = true
         }, 5400)
+        return
       }
+      let resch = {
+        outDate: null,
+        inDate: null
+      }
+      if(selected.value.user_city == selected.value.from_city) {
+        resch.outDate = changeDate.value
+        resch.inDate = null
+      } else {
+        resch.outDate = null
+        resch.inDate = changeDate.value
+      }
+      const dto = {
+        orders: {
+          user_id: user.user.id,
+          address: {
+            add_from: changeFromAddress.value,
+            add_to: changeToAddress.value
+          },
+          new_places: changeSeats.value,
+          reschedule: resch
+        }
+      }
+      changeDate.value = null
+      changeFromAddress.value = null
+      changeToAddress.value = null
+      changeSeats.value = null
+      manageDialog.value = false
+      console.log(dto)
     },
     clearManageItems: () => {
       changeDate.value = null

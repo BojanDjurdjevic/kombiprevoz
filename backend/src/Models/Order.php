@@ -113,6 +113,7 @@ class Order {
     // CHECK if the DEADLINE (48H) for changes is NOT passed:
     public function checkDeadline() 
     {
+        if(Validator::isAdmin() || Validator::isSuper()) return true;
         $current = "SELECT places, date, order_items.price, tour_id, time FROM order_items 
         INNER JOIN orders on order_items.order_id = orders.id
         INNER JOIN tours on order_items.tour_id = tours.id
@@ -998,7 +999,7 @@ class Order {
                 order_items.date, order_items.price, order_items.deleted,
                 tours.time as pickuptime, tours.duration,
                 orders.total, orders.code, orders.file_path as voucher, 
-                users.name as user, users.email, users.phone
+                users.name as user, users.email, users.phone, users.city as user_city
                 from order_items
                 JOIN orders on orders.id = order_items.order_id
                 JOIN tours on order_items.tour_id = tours.id
@@ -1172,7 +1173,7 @@ class Order {
                 order_items.date, order_items.price, order_items.deleted,
                 tours.time as pickuptime, tours.duration,
                 orders.total, orders.code, orders.file_path as voucher, 
-                users.name as user, users.email, users.phone
+                users.name as user, users.email, users.phone, users.city as user_city
                 from order_items
                 JOIN orders on orders.id = order_items.order_id
                 JOIN tours on order_items.tour_id = tours.id
