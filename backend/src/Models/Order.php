@@ -1551,23 +1551,32 @@ class Order {
                     if(empty($this->newDate) && empty($this->newPlaces)) {
                         //$mydata = $this->generateVoucher($this->code);
                         //$this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
-                    }
+                    } /*
                     echo json_encode([
                         "success" => true,
                         "msg" => 'Uspešno ste izmenili adresu/adrese rezervacije!',
-                    ], JSON_PRETTY_PRINT);
+                    ], JSON_PRETTY_PRINT); */
+                    return [
+                        "success" => true,
+                        "msg" => 'Uspešno ste izmenili adresu/adrese rezervacije!',
+                    ];
                 } 
-            } catch (PDOException $e) {
+            } catch (PDOException $e) { /*
                 http_response_code(500);
                 echo json_encode([
                     'error' => 'Došlo je do greške pri konekciji na bazu podataka.',
                     'db' => $e->getMessage()
-                ], JSON_PRETTY_PRINT);
+                ], JSON_PRETTY_PRINT); */
+                return [
+                    'error' => 'Došlo je do greške pri konekciji na bazu podataka.',
+                    'db' => $e->getMessage()
+                ];
             }
             
-        } else {
+        } else { /*
             http_response_code(422);
-            echo json_encode(["error" => 'Molimo Vas da unesete validne adrese!']);
+            echo json_encode(["error" => 'Molimo Vas da unesete validne adrese!']); */
+            return ["error" => 'Molimo Vas da unesete validne adrese!'];
         }           
     }
 
@@ -1590,28 +1599,40 @@ class Order {
             $stmt->bindParam(':places', $this->newPlaces);
             $stmt->bindParam(':total', $new_total);
             $stmt->bindParam(':id', $this->id);
-
-            if($stmt->execute()) {
-                $this->updateTotalPrice();
-                $mydata = $this->reGenerateVoucher();
-                $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
-                echo json_encode([
-                    "success" => true,
-                    "msg" => "Uspešno ste izmenili broj mesta u rezervaciji na {$this->newPlaces}.",
-                    "mesta" => $this->places,
-                    "NovaMesta" => $this->newPlaces, 
-                    "Dostupno" => $this->availability($this->date)
-                ], JSON_PRETTY_PRINT);
-            } else {
-                http_response_code(422);
-                echo json_encode(["places" => 'Trenutno nije moguće izmeniti ovu rezervaciju!']);
-            }    
-        } else {
+            try {
+                if($stmt->execute()) {
+                    $this->updateTotalPrice();
+                    $mydata = $this->reGenerateVoucher();
+                    $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update'); /*
+                    echo json_encode([
+                        "success" => true,
+                        "msg" => "Uspešno ste izmenili broj mesta u rezervaciji na {$this->newPlaces}."
+                    ], JSON_PRETTY_PRINT); */
+                    return [
+                        "success" => true,
+                        "msg" => "Uspešno ste izmenili broj mesta u rezervaciji na {$this->newPlaces}."
+                    ];
+                } else { /*
+                    http_response_code(422);
+                    echo json_encode(["places" => 'Trenutno nije moguće izmeniti ovu rezervaciju!']); */
+                    return ["error" => 'Trenutno nije moguće izmeniti ovu rezervaciju!'];
+                } 
+            } catch (PDOException $e) {
+                return [
+                    'error' => 'Došlo je do greške pri konekciji na bazu podataka.',
+                    'db' => $e->getMessage()
+                ];
+            } 
+        } else { /*
             http_response_code(422);
             echo json_encode([
                 "error" => "Nema dovoljno slobodnih mesta da biste izvršili izmenu!",
                 "available" => $this->availability($this->date) + $this->places
-            ], JSON_PRETTY_PRINT);
+            ], JSON_PRETTY_PRINT); */
+            return [
+                "error" => "Nema dovoljno slobodnih mesta da biste izvršili izmenu!",
+                "available" => $this->availability($this->date) + $this->places
+            ];
         }
     }
 
@@ -1620,7 +1641,7 @@ class Order {
     public function outbound($voucher) 
     {
         if($this->isDeparture($this->newDate)) {
-            if($this->isUnlocked($this->newDate)) {
+            if($this->isUnlocked($this->newDate) || Validator::isAdmin() || Validator::isSuper()) {
                 if($this->items->items[0]->places <= $this->availability($this->newDate)) {
                     $sql = "UPDATE order_items SET date = :date WHERE id = :id";
                     $stmt = $this->db->prepare($sql);
@@ -1630,35 +1651,49 @@ class Order {
 
                     $stmt->bindParam(':id', $this->items->items[0]->id);
                     $stmt->bindParam('date', $this->newDate);
-
-                    if($stmt->execute()) {
-                        $this->updateTotalPrice();
-                        if($voucher) {
-                            $mydata = $this->reGenerateVoucher();
-                            $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
-                        }   
-                    } else {
-                        http_response_code(422);
-                        echo json_encode(['error' => "Nije moguće promeniti datum vaše vožnje na: $this->newDate. Molimo kontaktirajte našu podršku!"]);
-                        exit();
-                    }    
-                } else {
+                    try {
+                        if($stmt->execute()) {
+                            $this->updateTotalPrice();
+                            if($voucher) {
+                                $mydata = $this->reGenerateVoucher();
+                                $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
+                            }   
+                        } else { /*
+                            http_response_code(422);
+                            echo json_encode(['error' => "Nije moguće promeniti datum vaše vožnje na: $this->newDate. Molimo kontaktirajte našu podršku!"]);
+                            exit(); */
+                            return ['error' => "Nije moguće promeniti datum vaše vožnje na: $this->newDate. Molimo kontaktirajte našu podršku!"];
+                        }    
+                    } catch (PDOException $e) {
+                        return [
+                            'error' => 'Došlo je do greške pri konekciji na bazu podataka.',
+                            'db' => $e->getMessage()
+                        ];
+                    }
+                } else { /*
                     http_response_code(422);
                     echo json_encode([
                         'error' => 'Nema dovoljno slobodnih mesta za izabrani datum.'
                     ], JSON_PRETTY_PRINT);
-                    exit();
+                    exit(); */
+                    return [
+                        'error' => 'Nema dovoljno slobodnih mesta za izabrani datum.'
+                    ];
                 }  
-            } else {
+            } else { /*
                 http_response_code(422);
                 echo json_encode(["error" => "Odabrani datum je ili nepostojeći, ili je već prošao. Novi odabrani polazak mora biti najmanje 24 časa od ovog momenta!"]);
-                exit(); 
+                exit(); */
+                return ["error" => "Odabrani datum je ili nepostojeći, ili je već prošao. Novi odabrani polazak mora biti najmanje 24 časa od ovog momenta!"];
             }
-        } else {
+        } else { /*
             echo json_encode([
-                'reschedule' => 'Nemamo polaske za odabrani datum.'
+                'error' => 'Nemamo polaske za odabrani datum.'
             ], JSON_PRETTY_PRINT);
-            exit();
+            exit(); */
+            return [
+                'error' => 'Nemamo polaske za odabrani datum.'
+            ];
         } 
     }
 
@@ -1667,7 +1702,7 @@ class Order {
     public function inbound($voucher)
     {
         if($this->isDeparture($this->newDateIn)) {
-            if($this->isUnlocked($this->newDateIn)) {
+            if($this->isUnlocked($this->newDateIn) || Validator::isAdmin() || Validator::isSuper()) {
                 if($this->items->items[1]->places <= $this->availability($this->newDateIn)) {
                     $sql = "UPDATE order_items SET date = :date WHERE id = :id";
                     $stmt = $this->db->prepare($sql);
@@ -1677,36 +1712,50 @@ class Order {
 
                     $stmt->bindParam(':id', $this->items->items[1]->id);
                     $stmt->bindParam('date', $this->newDateIn);
-
-                    if($stmt->execute()) {
-                        $this->updateTotalPrice();
-                        if($voucher) {
-                            $mydata = $this->reGenerateVoucher();
-                            $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
+                    try {
+                        if($stmt->execute()) {
+                            $this->updateTotalPrice();
+                            if($voucher) {
+                                $mydata = $this->reGenerateVoucher();
+                                $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
+                            }   
+                        } else { /*
+                            http_response_code(422);
+                            echo json_encode(['error' => "Nije moguće promeniti datum vaše vožnje na: $this->newDateIn. Molimo kontaktirajte našu podršku!"]);
+                            exit(); */
+                            return ['error' => "Nije moguće promeniti datum vaše vožnje na: $this->newDateIn. Molimo kontaktirajte našu podršku!"];
                         }   
-                    } else {
-                        http_response_code(422);
-                        echo json_encode(['error' => "Nije moguće promeniti datum vaše vožnje na: $this->newDateIn. Molimo kontaktirajte našu podršku!"]);
-                        exit();
-                    }    
-                } else {
+                    } catch (PDOException $e) {
+                        return [
+                            'error' => 'Došlo je do greške pri konekciji na bazu podataka.',
+                            'db' => $e->getMessage()
+                        ];
+                    } 
+                } else { /*
                     http_response_code(422);
                     echo json_encode([
                         'error' => 'Nema dovoljno slobodnih mesta za izabrani datum.'
                     ], JSON_PRETTY_PRINT);
-                    exit();
+                    exit(); */
+                    return [
+                        'error' => 'Nema dovoljno slobodnih mesta za izabrani datum.'
+                    ];
                 }  
-            } else {
+            } else { /*
                 http_response_code(422);
                 echo json_encode(["error" => "Odabrani datum je ili nepostojeći, ili je već prošao. Novi odabrani polazak mora biti najmanje 24 časa od ovog momenta!"]); 
-                exit();
+                exit(); */
+                return ["error" => "Odabrani datum je ili nepostojeći, ili je već prošao. Novi odabrani polazak mora biti najmanje 24 časa od ovog momenta!"];
             }
-        } else {
+        } else { /*
             http_response_code(422);
             echo json_encode([
                 'error' => 'Nemamo polaske za odabrani datum.'
             ], JSON_PRETTY_PRINT);
-            exit();
+            exit(); */
+            return [
+                'error' => 'Nemamo polaske za odabrani datum.'
+            ];
         } 
     }
 
@@ -1720,39 +1769,57 @@ class Order {
                 $this->outbound(false);
                 $this->inbound(false);
                 $this->db->commit();
+                /*
                 echo json_encode([
                     'success' => true,
                     'msg' => 'Uspešno ste izmenili datume vaših vožnji'
                 ], JSON_PRETTY_PRINT);
-                exit();
+                exit();*/
+                return [
+                    'success' => true,
+                    'msg' => 'Uspešno ste izmenili datume vaših vožnji'
+                ];
             } elseif(isset($this->newDate) && !empty($this->newDate) && empty($this->newDateIn)) {
-                $this->outbound(false);
+                $this->outbound(false); /*
                 echo json_encode([
                     'success' => true,
                     'msg' => "Uspešno ste promenili datum vaše vožnje na: $this->newDate"
                 ], JSON_PRETTY_PRINT);
-                exit();
+                exit(); */
+                return [
+                    'success' => true,
+                    'msg' => "Uspešno ste promenili datum vaše vožnje na: $this->newDate"
+                ];
             } elseif(isset($this->newDateIn) && !empty($this->newDateIn) && empty($this->newDate)) {
-                $this->inbound(false);
+                $this->inbound(false); /*
                 echo json_encode([
                     'success' => true,
                     'msg' => "Uspešno ste promenili datum vaše vožnje na: $this->newDateIn"
                 ], JSON_PRETTY_PRINT);
-                exit();
-            } else {
+                exit(); */
+                return [
+                    'success' => true,
+                    'msg' => "Uspešno ste promenili datum vaše vožnje na: $this->newDateIn"
+                ];
+            } else { /*
                 http_response_code(422);
-                echo json_encode(['error' => 'Unesite bar jedan datum'], JSON_PRETTY_PRINT);
+                echo json_encode(['error' => 'Unesite bar jedan datum'], JSON_PRETTY_PRINT); */
+                return ['error' => 'Unesite bar jedan datum'];
             }
         } catch (Exception $e) {
             if($this->db->inTransaction()) {
                 $this->db->rollBack();
             }
-
+            /*
             http_response_code(422);
             json_encode([
                 'error' => 'Nije moguće izvršiti promenu datuma',
                 'msg' => $e
-            ], JSON_PRETTY_PRINT);
+            ], JSON_PRETTY_PRINT); */
+            return [
+                'error' => 'Došlo je do greške prilikom konekcije na bazu podataka',
+                'db' => $e
+            ];
         }
         
         

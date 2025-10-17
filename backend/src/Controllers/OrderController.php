@@ -168,49 +168,93 @@ class OrderController {
                         if($this->order->findUserId() || Validator::isAdmin() || Validator::isSuper()) {
                             if($this->order->checkDeadline()) {
                                 if(isset($this->data->orders->address) && !empty($this->data->orders->address)) {
-                                    $this->order->updateAddress();
-                                }
+                                    $address = $this->order->updateAddress();
+                                } else
+                                $address = [
+                                    'msg' => ''
+                                ];
+                                /*
                                 if(isset($this->data->orders->new_places) && !empty($this->data->orders->new_places) 
                                 && isset($this->data->orders->reschedule) && !empty($this->data->orders->reschedule)) {
                                     if($this->order->isUnlocked($this->data->orders->reschedule)) {
                                         $this->order->rescheduleAndPlaces();
                                     }
                                     else echo json_encode(["reschedule" => "Odabrani datum je ili nepostojeći, ili je već prošao. Novi odabrani polazak mora biti najmanje 24 časa od ovog momenta!"]);
-                                } else {
+                                } else { */
                                     if(isset($this->data->orders->new_places) && !empty($this->data->orders->new_places)) {
                                         if($this->order->newPlaces != $this->order->places) {
-                                            $this->order->updatePlaces();
+                                            $myplaces = $this->order->updatePlaces();
                                         } else {
-                                            $places = $this->order->newPlaces;
+                                            $places = $this->order->newPlaces; /*
                                             http_response_code(401);
-                                            echo json_encode(["error" => "Naveli ste broj mesta koji već imate u rezervaciji: $places"]);
+                                            echo json_encode(["error" => "Naveli ste broj mesta koji već imate u rezervaciji: $places"]); */
+                                            $myplaces = ["error" => "Naveli ste broj mesta koji već imate u rezervaciji: $places"];
                                         } 
-                                    }
-                                    if(isset($this->data->orders->reschedule) && !empty($this->data->orders->reschedule)) {
+                                    } else $myplaces = ['msg' => ''];
+                                    if(isset($this->data->orders->reschedule) && (!empty($this->data->orders->reschedule->outDate)
+                                        || !empty($this->data->orders->reschedule->inDate))) {
                                         if($this->order->isUnlocked($this->data->orders->reschedule->outDate) ||
-                                            $this->order->isUnlocked($this->data->orders->reschedule->inDate)) {
+                                            $this->order->isUnlocked($this->data->orders->reschedule->inDate) || Validator::isSuper()
+                                            || Validator::isAdmin()) {
                                             if($this->order->newDate != $this->order->date && $this->order->items->items[1]->date != 
                                                 $this->order->newDateIn) {
-                                                $this->order->reschedule();
+                                                $reschedule = $this->order->reschedule();
                                             } else {
                                                 $d = $this->order->date;
-                                                $dIn = $this->order->items->items[1]->date;
+                                                $dIn = $this->order->items->items[1]->date; /*
                                                 http_response_code(422);
                                                 echo json_encode(["error" => "Naveli ste datume koje već imate u rezervaciji: 
-                                                                   Polazak - $d, Povratak - $dIn"]);
+                                                                   Polazak - $d, Povratak - $dIn"]); */
+                                                $reschedule = ["error" => "Naveli ste datume koje već imate u rezervaciji: 
+                                                                Polazak - $d, Povratak - $dIn"];
                                             }  
                                         } else {
                                             http_response_code(422);
-                                            echo json_encode(["error" => "Odabrani datum je ili nepostojeći, ili je već prošao. Novi odabrani polazak mora biti najmanje 24 časa od ovog momenta!"]); 
+                                            echo json_encode(["error" => "Odabrani datum je ili nepostojeći, ili je već prošao. Novi odabrani polazak mora biti najmanje 24 časa od ovog momenta!"]);
+                                            exit(); 
                                         }
                                            
-                                    }
-                                }
+                                    } else $reschedule = ['msg' => ''];
+                                //}
                             } else {
                                 http_response_code(422);
                                 echo json_encode(["error" => "Nije moguće izmeniti rezervaciju, jer je do polaska ostalo manje od 48 sati."], JSON_PRETTY_PRINT);
+                                exit();
                             }
-                        } else echo json_encode(["msg" => "Niste autorizovani da izmenite ovu rezervaciju!"], JSON_PRETTY_PRINT);
+                        } else {
+                            http_response_code(402);
+                            echo json_encode(["error" => "Niste autorizovani da izmenite ovu rezervaciju!"], JSON_PRETTY_PRINT);
+                            exit();
+                        }
+
+                        if(!isset($address['error']) && !isset($myplaces['error']) && !isset($reschedule['error'])) {
+                            echo json_encode([
+                                'success' => true,
+                                'msg' => [
+                                    $address['msg'],
+                                    " ",
+                                    $myplaces['msg'],
+                                    " ",
+                                    $reschedule['msg']
+                                ]
+                            ]);
+                        } else {
+                            if(isset($address['db']) or isset($myplaces['db']) or isset($reschedule['db'])) {
+                                http_response_code(500);
+                                echo json_encode(['error' => 'Došlo je do greške pri konekciji na bazu!']);
+                                exit();
+                            }
+                            $arr = [$address, $myplaces, $reschedule];
+                            $errors = [];
+                            foreach($arr as $a) {
+                                if(is_array($a) && isset($a['error'])) $errors[] = $a['error'];
+                            }
+                            http_response_code(422);
+                            header('Content-Type: application/json');
+                            echo json_encode([
+                                'error' => $errors
+                            ]);
+                        }
                     }
                     if(isset($this->data->orders->selected) && !empty($this->data->orders->selected)
                         && isset($this->data->orders->driver) && !empty($this->data->orders->driver)) {

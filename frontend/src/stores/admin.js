@@ -102,6 +102,8 @@ export const useAdminStore = defineStore("admin", () => {
   const confirmManage = ref(false)
   function showDetails(order) {
     selected.value = order
+    changeFromAddress.value = selected.value.pickup
+    changeToAddress.value = selected.value.dropoff
     manageDialog.value = true
     console.log(selected.value)
   }
@@ -214,26 +216,31 @@ export const useAdminStore = defineStore("admin", () => {
         displayError("Sva polja su prazna! Unesite bar jednu izmenu u formu!")
         setTimeout(() => {
           manageDialog.value = true
-        }, 5400)
+        }, 4400)
         return
       }
       confirmManage.value = true
     },
-    confimBookingItemsChange: () => {
+    confimBookingItemsChange: async () => {
       let resch = {
         outDate: null,
         inDate: null
-      }
-      if(selected.value.user_city == selected.value.from_city) {
-        resch.outDate = search.dateFormat(changeDate.value)
-        resch.inDate = null
-      } else {
-        resch.outDate = null
-        resch.inDate = search.dateFormat(changeDate.value)
+      } 
+      if(changeDate.value) {
+        if(selected.value.user_city == selected.value.from_city) {
+          resch.outDate = search.dateFormat(changeDate.value)
+          resch.inDate = null
+        } else {
+          resch.outDate = null
+          resch.inDate = search.dateFormat(changeDate.value)
+        }
       }
       const dto = {
         orders: {
           user_id: user.user.id,
+          update: {
+            id: selected.value.item_id
+          },
           address: {
             add_from: changeFromAddress.value,
             add_to: changeToAddress.value
@@ -241,14 +248,27 @@ export const useAdminStore = defineStore("admin", () => {
           new_places: changeSeats.value,
           reschedule: resch
         }
+      } 
+      try { 
+        const res = await api.orderItemUpdate(dto)
+        if(res.data.success) user.showSucc(res, 3000)
+        console.log(res.data) 
+        //console.log(dto)
+      } catch(error) {
+        console.dir(error, {depth: null})
+        user.showErr(error, 3000)
+      } finally {/*
+        changeDate.value = null
+        changeFromAddress.value = null
+        changeToAddress.value = null
+        changeSeats.value = null */
+        actions.value.clearManageItems()
+        actions.value.searchBooking()
+        manageDialog.value = false
+        confirmManage.value = false
       }
-      changeDate.value = null
-      changeFromAddress.value = null
-      changeToAddress.value = null
-      changeSeats.value = null
-      manageDialog.value = false
-      confirmManage.value = false
-      console.log(dto)
+      
+      //console.log(dto)
     },
     clearManageItems: () => {
       changeDate.value = null
