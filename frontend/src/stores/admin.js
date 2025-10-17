@@ -90,21 +90,6 @@ export const useAdminStore = defineStore("admin", () => {
 
   const page = ref(1)
   const filteredOrders = ref(null)
-  const reservations = ref([
-    // Primer podataka iz API-ja
-    {
-      order_id: 1,
-      from_city: 'Beograd',
-      to_city: 'Berlin',
-      date: '2025-10-15',
-      price: 120,
-      places: 2,
-      code: '1234567KP',
-      user: 'Marko Marković',
-    },
-    // ...
-  ])
-  
   const pageCount = computed(() => Math.ceil(reservations.value.length / 5))
   
   function formatDate(date) {
@@ -114,6 +99,7 @@ export const useAdminStore = defineStore("admin", () => {
 
   const selected = ref(null)
   const manageDialog = ref(false)
+  const confirmManage = ref(false)
   function showDetails(order) {
     selected.value = order
     manageDialog.value = true
@@ -225,22 +211,25 @@ export const useAdminStore = defineStore("admin", () => {
     },
     manageBookingItems: () => {
       if(!changeDate.value && !changeFromAddress.value && !changeToAddress.value && !changeSeats.value) {
-        displayError("Sva pola su prazna! Unesite bar jednu izmenu u formu!")
+        displayError("Sva polja su prazna! Unesite bar jednu izmenu u formu!")
         setTimeout(() => {
           manageDialog.value = true
         }, 5400)
         return
       }
+      confirmManage.value = true
+    },
+    confimBookingItemsChange: () => {
       let resch = {
         outDate: null,
         inDate: null
       }
       if(selected.value.user_city == selected.value.from_city) {
-        resch.outDate = changeDate.value
+        resch.outDate = search.dateFormat(changeDate.value)
         resch.inDate = null
       } else {
         resch.outDate = null
-        resch.inDate = changeDate.value
+        resch.inDate = search.dateFormat(changeDate.value)
       }
       const dto = {
         orders: {
@@ -258,6 +247,7 @@ export const useAdminStore = defineStore("admin", () => {
       changeToAddress.value = null
       changeSeats.value = null
       manageDialog.value = false
+      confirmManage.value = false
       console.log(dto)
     },
     clearManageItems: () => {
@@ -383,8 +373,8 @@ export const useAdminStore = defineStore("admin", () => {
     cityOptions, toAddCountry, tab_bookings, items_bookings, in24Search,
     headers, in48Search, in24, in48, drivers_24, drivers_48,
     assignedDriverID_24, assignedDriverID_48, cities,
-    dep_city, arr_city, filteredOrders, page, reservations, pageCount, selected, manageDialog,
-    changeDate, changeFromAddress, changeSeats, changeToAddress,
+    dep_city, arr_city, filteredOrders, page, pageCount, selected, manageDialog,
+    changeDate, changeFromAddress, changeSeats, changeToAddress, confirmManage,
 
     formatDate, showDetails,
   };

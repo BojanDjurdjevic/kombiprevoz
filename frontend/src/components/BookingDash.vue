@@ -246,6 +246,24 @@ watch(() => bookings48.value, (val) => {
                       </v-card-actions>
                     </v-card>
                   </v-dialog>
+
+                  <!-- CONFIRM CHANGES DIALOG -->
+
+                  <v-dialog v-model="admin.confirmManage" persistent height="20%" width="70%">
+                    <v-card >
+                      <v-toolbar color="red-darken-3" class="text-center">
+                        <v-toolbar-title>Da li ste sigurni da želite da napravite trajne izmene?</v-toolbar-title>
+                      </v-toolbar>
+                      <v-card-actions class="d-flex justify-center align-center">
+                        <v-btn color="success" @click="admin.actions.confimBookingItemsChange">Potvrdi</v-btn>
+                        <v-btn color="red-lighten-1" @click="admin.confirmManage = false">odustani</v-btn>
+                      </v-card-actions>
+                    </v-card>
+                  </v-dialog>
+                </v-container>
+                <!-- ----------- IF NO DATA -------------- -->
+                <v-container class="w-50 h-100" v-if="admin.filteredOrders && !admin.filteredOrders.has_orders">
+                  <p><b>Nema vožnji po zadatim filterima</b></p>  
                 </v-container>
               </div>
               <div class="w-100" v-if="admin.tab_bookings == 'U narednih 24h'">
