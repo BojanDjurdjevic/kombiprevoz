@@ -371,11 +371,11 @@ class Order {
         $pdf = new Dompdf($options);
         $pdf->setPaper("A4", "Portrait");
         // Drivers for each item
-        if($myOrder != NULL && $myOrder['items'][0]['driver'] != NULL) {
+        if($myOrder != NULL && !isset($myOrder['items'][0]['driver']) && $myOrder['items'][0]['driver'] != NULL) {
             $arr = explode(" ", $myOrder['items'][0]['driver']['dr_name']);
             $myDriver = $arr[0];
         } else $myDriver = null;
-        if($myOrder != NULL && $myOrder['items'][1]['driver'] != NULL) {
+        if($myOrder != NULL && !isset($myOrder['items'][1]['driver']) && $myOrder['items'][1]['driver'] != NULL) {
             $arr = explode(" ", $myOrder['items'][1]['driver']['dr_name']);
             $myDriver2 = $arr[0];
         } else $myDriver2 = null;
@@ -432,7 +432,7 @@ class Order {
         }
 
         // 2nd Item - Inbound
-        if($myOrder != NULL && $myOrder['items'][1]) {
+        if($myOrder != NULL && isset($myOrder['items'][1])) {
             $html = str_replace("{{ view }}", "visible", $html);
             $html = str_replace("{{ places2 }}", $myOrder['items'][1]['order']['places'], $html);
         
