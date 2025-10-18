@@ -371,11 +371,11 @@ class Order {
         $pdf = new Dompdf($options);
         $pdf->setPaper("A4", "Portrait");
         // Drivers for each item
-        if($myOrder != NULL && !isset($myOrder['items'][0]['driver']) && $myOrder['items'][0]['driver'] != NULL) {
+        if($myOrder != NULL && isset($myOrder['items'][0]['driver'])) { //&& $myOrder['items'][0]['driver'] != NULL
             $arr = explode(" ", $myOrder['items'][0]['driver']['dr_name']);
             $myDriver = $arr[0];
         } else $myDriver = null;
-        if($myOrder != NULL && !isset($myOrder['items'][1]['driver']) && $myOrder['items'][1]['driver'] != NULL) {
+        if($myOrder != NULL && isset($myOrder['items'][1]['driver'])) { // && $myOrder['items'][1]['driver'] != NULL
             $arr = explode(" ", $myOrder['items'][1]['driver']['dr_name']);
             $myDriver2 = $arr[0];
         } else $myDriver2 = null;
@@ -535,7 +535,7 @@ class Order {
         } else {
             $template = "<p> Poštovani/a {$name}, </p>
             <br>
-            <p> Vaša rezervacija broj <b> $new_code </b> je ažurirana </p>
+            <p> Vaša rezervacija broj <b> $new_code </b> je ažurirana. </p>
             <br>
             <p> U prilogu Vam šaljemo ažuriranu potvrdu rezervacije. </p>
             <br><br>
@@ -2053,8 +2053,8 @@ class Order {
         $order = $this->getFromDB($this->id);
 
         if($order) {
-            if($this->places <= $this->availability($this->date) && $this->isUnlocked($this->date)) {
-                $sql = "UPDATE orders SET deleted = 0, WHERE id = :id";
+            if($this->places <= $this->availability($this->date) && ($this->isUnlocked($this->date) || Validator::isSuper() || Validator::isAdmin())) {
+                $sql = "UPDATE order_items SET deleted = 0 WHERE id = :id";
                 $stmt = $this->db->prepare($sql);
                 $this->id = htmlspecialchars(strip_tags($this->id));
 

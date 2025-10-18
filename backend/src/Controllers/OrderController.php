@@ -3,6 +3,7 @@
 namespace Controllers;
 
 use Models\Order;
+use PDOException;
 use Rules\Validator;
 
 class OrderController {
@@ -263,6 +264,27 @@ class OrderController {
                             $this->order->tour_id = $this->data->orders->tour_id;
                         ;
                             $this->order->assignDriverTo();
+                    }
+                    if(isset($this->data->orders->voucher) && !empty($this->data->orders->voucher)) {
+                        $this->order->id = $this->data->orders->voucher->item_id;
+                        $this->order->getFromDB($this->order->id);
+                        try {
+                            $mydata = $this->order->reGenerateVoucher();
+                            $this->order->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->order->code, '');
+                            http_response_code(200);
+                            header('Content-Type: application/json');
+                            echo json_encode([
+                                'success' => true,
+                                'msg' => 'Vaučer je uspešno poslat na email adresu korisnika!'
+                            ]);
+                        } catch(PDOException $e) {
+                            http_response_code(500);
+                            header('Content-Type: application/json');
+                            echo json_encode([
+                                'error' => 'Došlo je do greške pri konekciji na bazu podataka!',
+                                'msg' => $e->getMessage()
+                            ]);
+                        }
                     }
                     break;
                 case 'DELETE':

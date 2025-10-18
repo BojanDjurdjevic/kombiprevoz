@@ -101,10 +101,13 @@ export const useAdminStore = defineStore("admin", () => {
   const manageDialog = ref(false)
   const confirmManage = ref(false)
   const cancelDialog = ref(false)
+  const restoreDialog = ref(false)
   function showDetails(order) {
     selected.value = order
     changeFromAddress.value = selected.value.pickup
     changeToAddress.value = selected.value.dropoff
+    changeDate.value = new Date(selected.value.date)
+    changeSeats.value = selected.value.places 
     manageDialog.value = true
     console.log(selected.value)
   }
@@ -222,6 +225,14 @@ export const useAdminStore = defineStore("admin", () => {
         }, 4400)
         return
       }
+      if(search.dateFormat(changeDate.value) == selected.value.date && changeFromAddress.value == selected.value.pickup 
+        && changeToAddress.value == selected.value.dropoff && changeSeats.value == selected.value.places) {
+        displayError("Niste uneli nikakvu izmenu! Pokušavate da pošaljete već postojeće podatke.")
+        setTimeout(() => {
+          manageDialog.value = true
+        }, 4400)
+        return
+      }
       confirmManage.value = true
     },
     confimBookingItemsChange: async () => {
@@ -260,11 +271,7 @@ export const useAdminStore = defineStore("admin", () => {
       } catch(error) {
         console.dir(error, {depth: null})
         user.showErr(error, 3000)
-      } finally {/*
-        changeDate.value = null
-        changeFromAddress.value = null
-        changeToAddress.value = null
-        changeSeats.value = null */
+      } finally {
         actions.value.clearManageItems()
         actions.value.searchBooking()
         manageDialog.value = false
@@ -280,11 +287,29 @@ export const useAdminStore = defineStore("admin", () => {
       changeSeats.value = null
     },
     // -------------- VOUCHER/CANCEL ACTIONS - BOOKINGS -----------------//
-    resendVoucher: () => {
-      console.log(selected.value.item_id)
-    },
-    cancelBookingItem: () => {
-      cancelDialog.value = true
+    resendVoucher: async () => {
+      loading.value = true
+      const dto = {
+        orders: {
+            user_id: user.user.id,
+            voucher: {
+                item_id: selected.value.item_id
+            }
+        }
+      }
+      console.log(dto) 
+      try {
+        const res = await api.orderItemUpdate(dto)
+        console.log(res.data)
+        if(res.data.success) user.showSucc(res, 3000)
+      } catch (error) {
+        console.dir(error, {depth: null})
+        user.showErr(error, 3000)
+      } finally {
+        manageDialog.value = false
+        actions.value.searchBooking()
+        loading.value = false
+      } 
     },
     confirmCancelBookingItem: async () => {
       loading.value = true
@@ -306,6 +331,31 @@ export const useAdminStore = defineStore("admin", () => {
         user.showErr(error, 3000)
       } finally {
         cancelDialog.value = false
+        manageDialog.value = false
+        loading.value = false
+        actions.value.searchBooking()
+      } 
+    },
+    restoreBookingItem: async () => {
+      loading.value = true
+      const dto = {
+        orders: {
+            user_id: user.user.id,
+            restore: {
+                item_id: selected.value.item_id
+            }
+        }
+      }
+      console.log(dto) 
+      try {
+        const res = await api.orderItemDelete(dto)
+        console.log(res.data)
+        if(res.data.success) user.showSucc(res, 3000)
+      } catch (error) {
+        console.dir(error, {depth: null})
+        user.showErr(error, 3000)
+      } finally {
+        restoreDialog.value = false
         manageDialog.value = false
         loading.value = false
         actions.value.searchBooking()
@@ -432,7 +482,7 @@ export const useAdminStore = defineStore("admin", () => {
     assignedDriverID_24, assignedDriverID_48, cities,
     dep_city, arr_city, filteredOrders, page, pageCount, selected, manageDialog,
     changeDate, changeFromAddress, changeSeats, changeToAddress, confirmManage,
-    cancelDialog,
+    cancelDialog, restoreDialog,
 
     formatDate, showDetails,
   };

@@ -272,7 +272,7 @@ watch(() => bookings48.value, (val) => {
                                 <v-btn 
                                   icon="mdi-close-thick"
                                   color="red-darken-3"
-                                  @click="admin.actions.cancelBookingItem"
+                                  @click="admin.cancelDialog = true"
                                 ></v-btn>
                               </div>
                               <div class="text-center" v-if="admin.selected.deleted">
@@ -280,7 +280,7 @@ watch(() => bookings48.value, (val) => {
                                 <v-btn 
                                   icon="mdi-check-all"
                                   color="red-darken-3"
-                                  @click="admin.actions.cancelBookingItem"
+                                  @click="admin.restoreDialog = true"
                                 ></v-btn>
                               </div>
                             </div>
@@ -321,6 +321,20 @@ watch(() => bookings48.value, (val) => {
                       <v-card-actions class="d-flex justify-center align-center">
                         <v-btn color="success" @click="admin.actions.confirmCancelBookingItem">Potvrdi</v-btn>
                         <v-btn color="red-lighten-1" @click="admin.cancelDialog = false">odustani</v-btn>
+                      </v-card-actions>
+                    </v-card>
+                  </v-dialog>
+
+                  <!-- CONFIRM RESTORE DIALOG -->
+
+                  <v-dialog v-model="admin.restoreDialog" persistent height="20%" width="70%">
+                    <v-card >
+                      <v-toolbar color="red-darken-3" class="text-center">
+                        <v-toolbar-title>Da li ste sigurni da želite da aktivirate ovu vožnju?</v-toolbar-title>
+                      </v-toolbar>
+                      <v-card-actions class="d-flex justify-center align-center">
+                        <v-btn color="success" @click="admin.actions.restoreBookingItem">Potvrdi</v-btn>
+                        <v-btn color="red-lighten-1" @click="admin.restoreDialog = false">odustani</v-btn>
                       </v-card-actions>
                     </v-card>
                   </v-dialog>
