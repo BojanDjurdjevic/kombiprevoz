@@ -100,6 +100,7 @@ export const useAdminStore = defineStore("admin", () => {
   const selected = ref(null)
   const manageDialog = ref(false)
   const confirmManage = ref(false)
+  const cancelDialog = ref(false)
   function showDetails(order) {
     selected.value = order
     changeFromAddress.value = selected.value.pickup
@@ -283,7 +284,32 @@ export const useAdminStore = defineStore("admin", () => {
       console.log(selected.value.item_id)
     },
     cancelBookingItem: () => {
-      console.log(selected.value.item_id)
+      cancelDialog.value = true
+    },
+    confirmCancelBookingItem: async () => {
+      loading.value = true
+      const dto = {
+        orders: {
+            user_id: user.user.id,
+            delete: {
+                item_id: selected.value.item_id
+            }
+        }
+      }
+      console.log(dto) 
+      try {
+        const res = await api.orderItemDelete(dto)
+        console.log(res.data)
+        if(res.data.success) user.showSucc(res, 3000)
+      } catch (error) {
+        console.dir(error, {depth: null})
+        user.showErr(error, 3000)
+      } finally {
+        cancelDialog.value = false
+        manageDialog.value = false
+        loading.value = false
+        actions.value.searchBooking()
+      } 
     },
     // -------------- 24/48 TO ASSIGN - BOOKINGS -----------------//
     fetchBookings: async (tab) => {
@@ -406,6 +432,7 @@ export const useAdminStore = defineStore("admin", () => {
     assignedDriverID_24, assignedDriverID_48, cities,
     dep_city, arr_city, filteredOrders, page, pageCount, selected, manageDialog,
     changeDate, changeFromAddress, changeSeats, changeToAddress, confirmManage,
+    cancelDialog,
 
     formatDate, showDetails,
   };

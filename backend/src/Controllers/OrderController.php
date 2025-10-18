@@ -270,7 +270,7 @@ class OrderController {
                         $this->order->id = $this->data->orders->delete->item_id;
                         //$this->order->user_id = $this->data->orders->delete->user_id;
                         if($this->order->findUserId() || Validator::isAdmin() || Validator::isSuper()) {
-                            if($this->order->checkDeadline()) {
+                            if($this->order->checkDeadline() || Validator::isAdmin() || Validator::isSuper()) {
                                 $this->order->delete();
                             } else {
                                 http_response_code(422);
