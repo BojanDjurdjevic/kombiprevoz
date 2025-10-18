@@ -135,6 +135,7 @@ export const useAdminStore = defineStore("admin", () => {
   });
 
   const actions = ref({
+    // -------------- SEARCH BY FILTER - BOOKINGS -----------------//
     searchBooking: async () => {
       if (
         !depDay.value.date &&
@@ -211,6 +212,7 @@ export const useAdminStore = defineStore("admin", () => {
         dep_city.value = null, 
         arr_city.value = null
     },
+    // -------------- ADMIN MANAGE BOOKINGS -----------------//
     manageBookingItems: () => {
       if(!changeDate.value && !changeFromAddress.value && !changeToAddress.value && !changeSeats.value) {
         displayError("Sva polja su prazna! Unesite bar jednu izmenu u formu!")
@@ -276,6 +278,14 @@ export const useAdminStore = defineStore("admin", () => {
       changeToAddress.value = null
       changeSeats.value = null
     },
+    // -------------- VOUCHER/CANCEL ACTIONS - BOOKINGS -----------------//
+    resendVoucher: () => {
+      console.log(selected.value.item_id)
+    },
+    cancelBookingItem: () => {
+      console.log(selected.value.item_id)
+    },
+    // -------------- 24/48 TO ASSIGN - BOOKINGS -----------------//
     fetchBookings: async (tab) => {
       if (tab == "U narednih 24h") {
         loading.value = true;
@@ -356,6 +366,7 @@ export const useAdminStore = defineStore("admin", () => {
         loading.value = false
       }
     },
+    // -------------- SEARCH BY FILTER - USER -----------------//
     searchUser: () => {
       const dto = {
         email: usrEmail.value,

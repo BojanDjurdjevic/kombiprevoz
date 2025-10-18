@@ -179,7 +179,9 @@ watch(() => bookings48.value, (val) => {
                         <v-spacer></v-spacer>
                       </v-toolbar>
 
-                      <!-- Main Content -->
+                      <!-- MAIN CONTENT - BOOKING DETAILS -->
+
+                      <!--  Details  -->
                       <v-card-text class="pa-4 ">
                         <h3 class="text-center">Detalji vožnje</h3>
                         <div class="w-100 h-100 d-flex">
@@ -194,45 +196,78 @@ watch(() => bookings48.value, (val) => {
                             <p><strong>Korisnik:</strong> {{ admin.selected?.user }}</p>
                             <p><strong>Email:</strong> {{ admin.selected?.email }}</p>
                           </div>
-                          <div class="w-50 h-100 pa-6">
-                            <v-text-field
-                              v-model="admin.changeFromAddress"
-                              prepend-icon="mdi-map-marker"
-                              label="Unesi novu adresu polaska"
-                              clearable 
-                              class="w-75"
-                            ></v-text-field>
-                            <v-text-field
-                              v-model="admin.changeToAddress"
-                              prepend-icon="mdi-map-marker"
-                              label="Unesi novu adresu dolaska"
-                              clearable 
-                              class="w-75"
-                            ></v-text-field>
-                            <v-date-input
-                              v-model="admin.changeDate"
-                              label="Unesi novi datum"
-                              clearable 
-                              class="w-75"
-                            ></v-date-input>
-                            <v-number-input
-                              v-model="admin.changeSeats"
-                              prepend-icon="mdi-numeric"
-                              label="Unesi novi broj mesta"
-                              clearable 
-                              class="w-75"
-                              min="1"
-                              max="7"
-                            ></v-number-input>
-                            <div class="w-75 mt-6 d-flex justify-space-around">
-                              <v-btn 
-                                variant="elevated" 
-                                color="green-darken-4"
-                                @click="admin.actions.manageBookingItems"
-                              >Potvrdi</v-btn>
-                              <v-btn color="red-darken-3"
-                                @click="admin.actions.clearManageItems"
-                              >Poništi</v-btn>
+
+                          <!--  ACTIONS - booking managing by admin  -->
+                          <!--  Update  -->
+                          <div class="w-50 h-100 pa-6 mt-3 d-flex flex-column justify-space-around">
+                            <div class="h-75 d-flex flex-column justify-space-evenly">
+                              <div>
+                                <v-text-field
+                                  v-model="admin.changeFromAddress"
+                                  prepend-icon="mdi-map-marker"
+                                  label="Unesi novu adresu polaska"
+                                  clearable 
+                                  class="w-75"
+                                ></v-text-field>
+                                <v-text-field
+                                  v-model="admin.changeToAddress"
+                                  prepend-icon="mdi-map-marker"
+                                  label="Unesi novu adresu dolaska"
+                                  clearable 
+                                  class="w-75"
+                                ></v-text-field>
+                                <v-date-input
+                                  v-model="admin.changeDate"
+                                  label="Unesi novi datum"
+                                  clearable 
+                                  class="w-75"
+                                ></v-date-input>
+                                <v-number-input
+                                  v-model="admin.changeSeats"
+                                  prepend-icon="mdi-numeric"
+                                  label="Unesi novi broj mesta"
+                                  clearable 
+                                  class="w-75"
+                                  min="1"
+                                  max="7"
+                                ></v-number-input>
+                              </div>
+                              <div class="w-75 d-flex justify-space-around">
+                                <v-btn 
+                                  variant="elevated" 
+                                  color="green-darken-4"
+                                  @click="admin.actions.manageBookingItems"
+                                >Potvrdi</v-btn>
+                                <v-btn color="red-darken-3"
+                                  @click="admin.actions.clearManageItems"
+                                >Poništi</v-btn>
+                              </div>
+                            <!--  Voucher sending and Cancel  -->
+                            </div>
+                            <div class="pa-6 h-25 w-75 d-flex justify-space-evenly align-center">
+                              <div class="text-center">
+                                <h4>Vidi Vaučer</h4>
+                                <v-btn icon="mdi-eye"
+                                  color="indigo-darken-3"
+                                  :href=" 'http://localhost:8080/' + admin.selected?.voucher "
+                                  target="_blank"
+                                ></v-btn>
+                              </div>
+                              <div class="text-center">
+                                <h4>Pošalji Vaučer</h4>
+                                <v-btn icon="mdi-email-arrow-right"
+                                  color="green-darken-3"
+                                  @click="admin.actions.resendVoucher"
+                                ></v-btn>
+                              </div>
+                              <div class="text-center">
+                                <h4>Obriši ovu vožnju</h4>
+                                <v-btn 
+                                  icon="mdi-close-thick"
+                                  color="red-darken-3"
+                                  @click="admin.actions.cancelBookingItem"
+                                ></v-btn>
+                              </div>
                             </div>
                           </div>
                         </div>
