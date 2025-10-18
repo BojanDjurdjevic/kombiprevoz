@@ -130,7 +130,14 @@ watch(() => bookings48.value, (val) => {
                           sm="6"
                           md="4"
                         >
-                          <v-card class="rounded-2xl shadow-md hover:shadow-lg transition-all">
+                          <v-card class="rounded-2xl shadow-md hover:shadow-lg transition-all relative">
+                            <v-badge
+                              v-if="item.raw.deleted == 1"
+                              color="red-darken-3"
+                              content="OBRISANO"
+                              bordered
+                              class="absolute top-2 right-2"
+                            ></v-badge>
                             <v-card-title class="text-lg font-semibold">
                               {{ item.raw.from_city }} → {{ item.raw.to_city }}
                             </v-card-title>
@@ -260,10 +267,18 @@ watch(() => bookings48.value, (val) => {
                                   @click="admin.actions.resendVoucher"
                                 ></v-btn>
                               </div>
-                              <div class="text-center">
+                              <div class="text-center" v-if="!admin.selected.deleted">
                                 <h4>Obriši ovu vožnju</h4>
                                 <v-btn 
                                   icon="mdi-close-thick"
+                                  color="red-darken-3"
+                                  @click="admin.actions.cancelBookingItem"
+                                ></v-btn>
+                              </div>
+                              <div class="text-center" v-if="admin.selected.deleted">
+                                <h4>Aktiviraj vožnju</h4>
+                                <v-btn 
+                                  icon="mdi-check-all"
                                   color="red-darken-3"
                                   @click="admin.actions.cancelBookingItem"
                                 ></v-btn>
