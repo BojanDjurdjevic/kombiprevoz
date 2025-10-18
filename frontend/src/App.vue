@@ -2,12 +2,24 @@
 import { RouterLink, RouterView } from 'vue-router'
 import Header from './components/Header.vue';
 import { useUserStore } from './stores/user';
+import { VOverlay, VProgressCircular } from 'vuetify/components'
 
 const user = useUserStore()
 </script>
 
 <template>
   <v-app>
+    <v-overlay :model-value="user.loading"
+      class="align-center justify-center"
+      
+    >
+      <v-progress-circular
+        v-if="user.loading"
+        indeterminate
+        color="indigo-darken-3"
+        size="72"
+      ></v-progress-circular>
+    </v-overlay>
     <Header />
     <v-main>
       <v-fade-transition mode="out-in">

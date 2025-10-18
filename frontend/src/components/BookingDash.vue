@@ -85,6 +85,15 @@ watch(() => bookings48.value, (val) => {
 </script>
 
 <template>
+  <v-overlay :model-value="admin.loading"
+    class="align-center justify-center"
+  >
+    <v-progress-circular
+      v-if="admin.loading"
+      indeterminate
+      color="white"
+    ></v-progress-circular>
+  </v-overlay>
   <div
     class="mt-6 pa-3 w-100 d-flex flex-column align-center"
     v-if="admin.adminView == 'Bookings'"

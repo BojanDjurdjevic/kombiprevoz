@@ -1650,7 +1650,7 @@ class Order {
                     $this->newDate = htmlspecialchars(strip_tags($this->newDate));
 
                     $stmt->bindParam(':id', $this->items->items[0]->id);
-                    $stmt->bindParam('date', $this->newDate);
+                    $stmt->bindParam(':date', $this->newDate);
                     try {
                         if($stmt->execute()) {
                             $this->updateTotalPrice();
@@ -1711,7 +1711,7 @@ class Order {
                     $this->newDate = htmlspecialchars(strip_tags($this->newDateIn));
 
                     $stmt->bindParam(':id', $this->items->items[1]->id);
-                    $stmt->bindParam('date', $this->newDateIn);
+                    $stmt->bindParam(':date', $this->newDateIn);
                     try {
                         if($stmt->execute()) {
                             $this->updateTotalPrice();
@@ -1767,7 +1767,7 @@ class Order {
             if(isset($this->newDate) && !empty($this->newDate) && isset($this->newDateIn) && !empty($this->newDateIn)) {
                 $this->db->beginTransaction();
                 $this->outbound(false);
-                $this->inbound(false);
+                $this->inbound(true);
                 $this->db->commit();
                 /*
                 echo json_encode([
@@ -1780,7 +1780,7 @@ class Order {
                     'msg' => 'Uspešno ste izmenili datume vaših vožnji'
                 ];
             } elseif(isset($this->newDate) && !empty($this->newDate) && empty($this->newDateIn)) {
-                $this->outbound(false); /*
+                $this->outbound(true); /*
                 echo json_encode([
                     'success' => true,
                     'msg' => "Uspešno ste promenili datum vaše vožnje na: $this->newDate"
@@ -1791,7 +1791,7 @@ class Order {
                     'msg' => "Uspešno ste promenili datum vaše vožnje na: $this->newDate"
                 ];
             } elseif(isset($this->newDateIn) && !empty($this->newDateIn) && empty($this->newDate)) {
-                $this->inbound(false); /*
+                $this->inbound(true); /*
                 echo json_encode([
                     'success' => true,
                     'msg' => "Uspešno ste promenili datum vaše vožnje na: $this->newDateIn"
@@ -1828,7 +1828,7 @@ class Order {
     // UPDATE PLACES and DATE
     public function rescheduleAndPlaces() 
     {
-        $this->getFromDB($this->id);
+        //$this->getFromDB($this->id);
         if(isset($this->newDate) && !empty($this->newDate) && isset($this->newPlaces) && !empty($this->newPlaces)) {
             if($this->isDeparture($this->newDate)) {
                 if($this->newPlaces <= $this->availability($this->newDate)) {

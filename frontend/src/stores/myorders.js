@@ -276,6 +276,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
                     new_places: seatsUp.value.seats
                 }
             }
+            clsSeats()
             try {
                 const res = await api.orderItemUpdate(dto)
                 console.log(res.data)
@@ -287,7 +288,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
                 user.showErr(error, 3000)
             } finally {
                 user.loading = false
-                clsSeats()
+                
             }
         },
         reschedule: async () => {

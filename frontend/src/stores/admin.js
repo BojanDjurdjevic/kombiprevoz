@@ -236,6 +236,7 @@ export const useAdminStore = defineStore("admin", () => {
       confirmManage.value = true
     },
     confimBookingItemsChange: async () => {
+      loading.value = true
       let resch = {
         outDate: null,
         inDate: null
@@ -267,7 +268,7 @@ export const useAdminStore = defineStore("admin", () => {
         const res = await api.orderItemUpdate(dto)
         if(res.data.success) user.showSucc(res, 3000)
         console.log(res.data) 
-        //console.log(dto)
+        console.log(dto)
       } catch(error) {
         console.dir(error, {depth: null})
         user.showErr(error, 3000)
@@ -276,6 +277,7 @@ export const useAdminStore = defineStore("admin", () => {
         actions.value.searchBooking()
         manageDialog.value = false
         confirmManage.value = false
+        loading.value = false
       }
       
       //console.log(dto)
