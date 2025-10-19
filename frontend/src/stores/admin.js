@@ -96,12 +96,13 @@ export const useAdminStore = defineStore("admin", () => {
     const d = new Date(date)
     return d.toLocaleDateString('sr-RS', { day: '2-digit', month: '2-digit', year: 'numeric' })
   }
-
+  // ALL MANAGE Dialogs:
   const selected = ref(null)
   const manageDialog = ref(false)
   const confirmManage = ref(false)
   const cancelDialog = ref(false)
   const restoreDialog = ref(false)
+
   function showDetails(order) {
     selected.value = order
     changeFromAddress.value = selected.value.pickup

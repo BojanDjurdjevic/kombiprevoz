@@ -96,6 +96,7 @@ class Tour {
 
     public function getAll() 
     {
+        $day = date('Y-m') . '%';
         $sql = "SELECT * from tours WHERE deleted = 0";
         $res = $this->db->query($sql);
         $num = $res->rowCount();
@@ -104,6 +105,7 @@ class Tour {
             $tours = [];
             $from_cities = [];
             $to_cities = [];
+            $fully = [];
 
             while($row = $res->fetch(PDO::FETCH_OBJ)) {
                 array_push($tours, [
@@ -121,7 +123,12 @@ class Tour {
 
             foreach($tours as $id => $t) {
                 $from_cities[] = $t['from_city'];
-                $to_cities[] = $t['to_city'];
+                $to_cities[] = $t['to_city']; /*
+                $this->id = $t['id'];
+                $full_days = $this->fullyBooked($day);
+                $fully[] = [
+                    $this->id => $full_days
+                ]; */
             }
             $from_cities = array_values(array_unique($from_cities));
             $to_cities = array_values(array_unique($to_cities));
@@ -269,14 +276,14 @@ class Tour {
             ], JSON_PRETTY_PRINT);
         }
 
-        echo json_encode([
+        return [
             'fullyBooked' => $fullyBooked,
             'availableD' => $availableDates,
             'allowed' => $allowed,
             'fullyBookedIn' => $fullyBookedIn,
             'availableDIn' => $availableDatesIn,
             'allowedIn' => $allowedIn
-        ], JSON_PRETTY_PRINT); 
+        ];
     }
     //------------------- Search avaailable tours ----------------------------//
     public function getBySearch() {
