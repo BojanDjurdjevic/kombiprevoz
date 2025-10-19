@@ -22,7 +22,7 @@ class TourController {
         switch($request) {
             case 'GET':
                 if(isset($this->data->tours)) {
-                    if($this->data->tours->tour == 'all') {
+                    if(isset($this->data->tours->tour) && $this->data->tours->tour == 'all') {
                         $this->tour->getAll();
                     } else {
                         if(isset($this->data->tours->days)) {
