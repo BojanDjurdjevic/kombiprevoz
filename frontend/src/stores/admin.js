@@ -237,6 +237,12 @@ export const useAdminStore = defineStore("admin", () => {
     },
     confimBookingItemsChange: async () => {
       loading.value = true
+
+      if(search.dateFormat(changeDate.value) == selected.value.date) changeDate.value = null
+      if(changeFromAddress.value == selected.value.pickup) changeFromAddress.value = null
+      if(changeToAddress.value == selected.value.dropoff) changeToAddress.value = null
+      if(changeSeats.value == selected.value.places) changeSeats.value = null
+
       let resch = {
         outDate: null,
         inDate: null
