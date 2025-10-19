@@ -1,32 +1,16 @@
 <script setup>
 import { useAdminStore } from "@/stores/admin";
+import { useSearchStore } from "@/stores/search";
 import { ref, computed, watch } from "vue";
 import { VDateInput } from "vuetify/labs/VDateInput";
 import { VNumberInput } from "vuetify/labs/VNumberInput";
 
 const admin = useAdminStore();
-/*
-const bookings24 = computed(() => admin.in24 || []);
-const bookings48 = computed(() => admin.in48 || []);
-*/
+const search = useSearchStore();
+
 const bookings24 = computed(() => Object.values(admin.in24?.orders || {}));
 const bookings48 = computed(() => Object.values(admin.in48?.orders || {}));
-/*
-const table_24 = computed(() => {
-  return Object.values(bookings24.value).map((tour) => ({
-    tour_id: tour.tour_id,
-    from_city: tour.from_city,
-    to_city: tour.to_city,
-    pickuptime: tour.pickuptime,
-    duration: tour.duration,
-    rides_count: tour.rides.length,
-    date: tour.date,
-    total_places: tour.rides.reduce((sum, r) => sum + r.places, 0),
-    rides: tour.rides,
-    drivers: tour.drivers,
-    selectedDriver: null,
-  }));
-}); */
+
 const table_24 = ref([])
 
 watch(() => bookings24.value, (val) => {
@@ -46,23 +30,6 @@ watch(() => bookings24.value, (val) => {
     }))
   }
 }, { immediate: true })
-/*
-const table_48 = computed(() => {
-  return Object.values(bookings48.value).map((tour) => ({
-    tour_id: tour.tour_id,
-    from_city: tour.from_city,
-    to_city: tour.to_city,
-    pickuptime: tour.pickuptime,
-    duration: tour.duration,
-    rides_count: tour.rides.length,
-    date: tour.date,
-    total_places: tour.rides.reduce((sum, r) => sum + r.places, 0),
-    rides: tour.rides,
-    drivers: tour.drivers, // ovo je dodato
-    selectedDriver: null,
-  }));
-});
-*/
 
 const table_48 = ref([])
 watch(() => bookings48.value, (val) => {
@@ -237,7 +204,23 @@ watch(() => bookings48.value, (val) => {
                                   label="Unesi novi datum"
                                   clearable 
                                   class="w-75"
-                                ></v-date-input>
+                                  :allowed-dates="admin.isDateAllowed"
+                                >
+                                  <template #day="{ date }">
+                                    <div
+                                      :class="[
+                                        'v-btn',
+                                        'v-size-default',
+                                        {
+                                          'red-darken-2 pointer-events-none' : admin.allowedDays.fullyBooked.includes(date),
+                                          'opacity-50 pointer-events-none': !admin.isDateAllowed(date)
+                                        }
+                                      ]"
+                                    >
+                                        {{ new Date(date).getDate() }}
+                                    </div>
+                                  </template>
+                                </v-date-input>
                                 <v-number-input
                                   v-model="admin.changeSeats"
                                   prepend-icon="mdi-numeric"

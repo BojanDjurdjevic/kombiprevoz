@@ -96,6 +96,50 @@ export const useAdminStore = defineStore("admin", () => {
     const d = new Date(date)
     return d.toLocaleDateString('sr-RS', { day: '2-digit', month: '2-digit', year: 'numeric' })
   }
+  // Fetch available dates:
+  const allowedDays = ref({
+    fullyBooked: [],
+    fulls: [],
+    allowed: []
+  })
+  async function adminDateQuery(from, to) {
+    let formD = search.qDateForm()
+    let dto = {
+      days: {
+        from: from,
+        to: to,
+        format: formD
+      }
+    }
+    console.log(dto)
+    try {
+      const res = await api.checkAvailableDates(dto)
+      console.log(res.data)
+      allowedDays.value.fullyBooked = res.data.fullyBooked
+      allowedDays.value.allowed = res.data.allowed
+      console.log(allowedDays.value.fullyBooked)
+    } catch (error) {
+      console.log(error)
+    }
+    
+  }
+  const isDateAllowed = (dateStr) => {
+    const date = new Date(dateStr)
+    const dayOfWeek = date.getDay()
+
+    let d = date
+    let year = String(d.getFullYear()) 
+    let months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+    let m = d.getMonth()
+    let month = months[m]
+    let dates = String(d.getDate())
+    let formated = year + "-" + month + "-" + dates
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    return allowedDays.value.allowed.includes(dayOfWeek) && !allowedDays.value.fullyBooked.includes(formated) && date >= new Date()
+  } 
   // ALL MANAGE Dialogs:
   const selected = ref(null)
   const manageDialog = ref(false)
@@ -109,6 +153,7 @@ export const useAdminStore = defineStore("admin", () => {
     changeToAddress.value = selected.value.dropoff
     changeDate.value = new Date(selected.value.date)
     changeSeats.value = selected.value.places 
+    adminDateQuery(selected.value.from_city, selected.value.to_city)
     manageDialog.value = true
     console.log(selected.value)
   }
@@ -493,6 +538,6 @@ export const useAdminStore = defineStore("admin", () => {
     changeDate, changeFromAddress, changeSeats, changeToAddress, confirmManage,
     cancelDialog, restoreDialog,
 
-    formatDate, showDetails,
+    formatDate, showDetails, adminDateQuery, isDateAllowed,
   };
 });
