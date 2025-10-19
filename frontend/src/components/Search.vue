@@ -120,7 +120,7 @@
                       'v-btn',
                       'v-size-default',
                       {
-                        'red-darken-2 text-red-darken-2 pointer-events-none' : search.allowedDays.fullyBooked.includes(date),
+                        'red-darken-2 pointer-events-none' : search.allowedDays.fullyBooked.includes(date),
                         'opacity-50 pointer-events-none': !search.isDateAllowed(date)
                       }
                     ]"

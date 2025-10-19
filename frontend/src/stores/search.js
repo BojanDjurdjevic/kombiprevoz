@@ -204,14 +204,17 @@ export const useSearchStore = defineStore('search', () => {
     let dates = String(d.getDate())
     let formated = year + "-" + month + "-" + dates
 
-    return allowedDays.value.allowed.includes(dayOfWeek) && !allowedDays.value.fullyBooked.includes(formated)
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    return allowedDays.value.allowed.includes(dayOfWeek) && !allowedDays.value.fullyBooked.includes(formated) && date >= new Date()
   } 
   const isDateInAllowed = (dateStr) => {
     const date = new Date(dateStr)
     const dayOfWeek = date.getDay()
     let formated = dateFormat(dateStr)
 
-    return allowedDaysIn.value.allowed.includes(dayOfWeek) && !allowedDaysIn.value.fullyBooked.includes(formated)
+    return allowedDaysIn.value.allowed.includes(dayOfWeek) && !allowedDaysIn.value.fullyBooked.includes(formated) && date >= new Date()
   } 
 
   async function sendSearch() {
