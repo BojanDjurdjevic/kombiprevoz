@@ -184,6 +184,26 @@ export const useAdminStore = defineStore("admin", () => {
     return countryData ? countryData.cities : [];
   });
 
+  const preview = ref(null)
+  const previewKey = ref(Date.now())
+  const flag = ref(null)
+
+  function selectFlag() {/*
+      if(!file) return
+      const reader = new FileReader()
+      reader.onload = (e) => (preview.value = e.target.result)
+      reader.readAsDataURL(file) */
+      const file = Array.isArray(flag.value) ? flag.value[0] : flag.value
+      if(file instanceof File) {
+        if (preview.value) {
+          URL.revokeObjectURL(preview.value)
+        }
+        preview.value = URL.createObjectURL(file)
+        previewKey.value = Date.now()
+        console.log(preview.value)
+      } else preview.value = null
+    }
+
   const actions = ref({
     // -------------- SEARCH BY FILTER - BOOKINGS -----------------//
     searchBooking: async () => {
@@ -503,6 +523,7 @@ export const useAdminStore = defineStore("admin", () => {
       };
       console.log(dto)
     },
+    // ------------------ TOURS ---------------------//
     fetchAllTours: async () => {
       const dto = {
         tour: "all",
@@ -526,6 +547,7 @@ export const useAdminStore = defineStore("admin", () => {
       };
       console.log(dto);
     },
+    
   });
 
   return {
@@ -536,8 +558,8 @@ export const useAdminStore = defineStore("admin", () => {
     assignedDriverID_24, assignedDriverID_48, cities,
     dep_city, arr_city, filteredOrders, page, pageCount, selected, manageDialog,
     changeDate, changeFromAddress, changeSeats, changeToAddress, confirmManage,
-    cancelDialog, restoreDialog,
+    cancelDialog, restoreDialog, preview, flag,
 
-    formatDate, showDetails, adminDateQuery, isDateAllowed,
+    formatDate, showDetails, adminDateQuery, isDateAllowed, selectFlag,
   };
 });

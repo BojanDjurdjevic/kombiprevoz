@@ -64,10 +64,28 @@ const items = [
                             label="Dodaj novu državu"
                           ></v-autocomplete>
                           <v-file-input
+                            v-model="admin.flag"
                             clearable
                             label="Dodaj zastavu"
+                            accept="image/*"
                             class="w-100"
-                          ></v-file-input>
+                            @change="admin.selectFlag"
+                            @click:clear="admin.preview = null"
+                          /> <!--
+                          <v-img
+                            v-if="admin.preview"
+                            :key="admin.preview"
+                            :src="admin.preview"
+                            max-height="250"
+                            max-width="250"
+                            class="mt-4 rounded-lg elevation-3"
+                            cover
+                          />-->
+                          <img
+                            v-if="admin.preview"
+                            :src="admin.preview"
+                            style="max-height:6rem; max-width:6rem; border-radius:100%; box-shadow:0 2px 8px rgba(0,0,0,0.3);"
+                          />
                           <v-btn color="green-darken-3" class="mb-3"
                             >Dodaj Državu</v-btn
                           >
