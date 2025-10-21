@@ -550,8 +550,18 @@ export const useAdminStore = defineStore("admin", () => {
       };
       console.log(dto);
     },
-    addCountry: () => {
+    addCountry: async () => {
+      const formData = new FormData()
+      formData.append("flag", flag.value)
+      formData.append("country_name", toAddCountry.value)
+      formData.append("country", "create")
 
+      try {
+        const res = await api.insertCountry(formData)
+        console.log(res.data)
+      } catch (error) {
+        console.log(error)
+      }
     },
     
   });

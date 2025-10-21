@@ -27,9 +27,9 @@ class CountryController {
                 $this->country->getCountry($this->data->country->country_id); 
             }
         } else if($request === 'POST') {
-            if(isset($this->data->country->name) && !empty($this->data->country->name)) {
-                $this->country->name = $this->data->country->name;
-                //$this->country->flag = $this->data->flag;
+            if(isset($this->data->country) && !empty($this->data->country) && $this->data->country == "create") {
+                $this->country->name = $this->data->country_name;
+                $this->country->flag = $this->data->files['flag'];
                 $this->country->create();
             }
         } elseif($request === 'PUT') {

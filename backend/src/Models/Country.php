@@ -56,6 +56,41 @@ class Country {
     }
 
     public function create() {
+        if(!isset($this->flag)) {
+            http_response_code(422);
+            echo json_encode(['error' => 'Slika nije poslata! Molimo Vas da pošaljete zastavu države.'], JSON_PRETTY_PRINT);
+            exit();
+        }
+
+        $file = $this->flag;
+
+        $allowed = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!in_array($file['type'], $allowed)) {
+            echo json_encode(['error' => 'Nepodržan tip fajla.']);
+            return;
+        }
+
+        if ($file['size'] > 5 * 1024 * 1024) { // max 5MB
+            echo json_encode(['error' => 'Fajl je prevelik.']);
+            return;
+        }
+
+        $targetDir = __DIR__ . '../assets/';
+        if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
+
+        $newName = uniqid('flag_', true) . '.' . pathinfo($file['name'], PATHINFO_EXTENSION);
+        $targetFile = $targetDir . $newName;
+
+        if (move_uploaded_file($file['tmp_name'], $targetFile)) {
+            return[
+                'msg' => 'Uspešno otpremljeno!',
+                'file' => $newName,
+                'path' => '/assets/' . $newName
+            ];
+        } else {
+            return['error' => 'Došlo je do greške pri snimanju fajla.'];
+        }
+
         $sql = "INSERT INTO countries 
                 SET name = :name"
         ;

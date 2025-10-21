@@ -87,7 +87,8 @@ const items = [
                             style="max-height:6rem; max-width:6rem; border-radius:100%; box-shadow:0 2px 8px rgba(0,0,0,0.3);"
                           />
                           <v-btn color="green-darken-3" class="mb-3"
-                            
+                            @click="admin.actions.addCountry"
+                            :disabled="!admin.flag || admin.toAddCountry"
                           >Dodaj Državu</v-btn
                           >
                         </div>
