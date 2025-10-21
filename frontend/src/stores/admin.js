@@ -147,15 +147,18 @@ export const useAdminStore = defineStore("admin", () => {
   const cancelDialog = ref(false)
   const restoreDialog = ref(false)
 
-  function showDetails(order) {
+  async function showDetails(order) {
     selected.value = order
+    console.log(selected.value)
     changeFromAddress.value = selected.value.pickup
     changeToAddress.value = selected.value.dropoff
     changeDate.value = new Date(selected.value.date)
-    changeSeats.value = selected.value.places 
-    adminDateQuery(selected.value.from_city, selected.value.to_city)
-    manageDialog.value = true
-    console.log(selected.value)
+    changeSeats.value = Number(selected.value.places) || 0
+    await adminDateQuery(selected.value.from_city, selected.value.to_city)
+    setTimeout(() => {
+      manageDialog.value = true
+    }, 0)
+    
   }
 
   // ------------ ON MANAGE BOOKING DIALOG -----------------------//
@@ -546,6 +549,9 @@ export const useAdminStore = defineStore("admin", () => {
         t_to: toursTo.value,
       };
       console.log(dto);
+    },
+    addCountry: () => {
+
     },
     
   });
