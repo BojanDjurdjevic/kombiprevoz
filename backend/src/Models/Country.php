@@ -3,6 +3,7 @@
 namespace Models;
 
 use PDO;
+use PDOException;
 
 class Country {
     public $id;
@@ -64,48 +65,54 @@ class Country {
 
         $file = $this->flag;
 
-        $allowed = ['image/jpeg', 'image/png', 'image/webp'];
-        if (!in_array($file['type'], $allowed)) {
+        $allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!in_array($file->type, $allowed)) {
             echo json_encode(['error' => 'Nepodržan tip fajla.']);
             return;
         }
 
-        if ($file['size'] > 5 * 1024 * 1024) { // max 5MB
+        if ($file->size > 5 * 1024 * 1024) { // max 5MB
             echo json_encode(['error' => 'Fajl je prevelik.']);
             return;
         }
 
-        $targetDir = __DIR__ . '/../assets/img/countries';
+        $targetDir = __DIR__ . '/../assets/img/countries/';
         if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
 
-        $newName = uniqid('flag_', true) . '.' . pathinfo($file['name'], PATHINFO_EXTENSION);
+        $newName = uniqid('flag_', true) . '.' . pathinfo($file->name, PATHINFO_EXTENSION);
         $targetFile = $targetDir . $newName;
+        $flagPath = 'src/assets/img/countries/' . $newName;
 
         if (move_uploaded_file($file->tmp_name, $targetFile)) {
-            return[
+            $sql = "INSERT INTO countries 
+                SET name = :name, file_path = :flag"
+            ;
+            $stmt = $this->db->prepare($sql);
+
+            $this->name = htmlspecialchars(strip_tags($this->name));
+            $stmt->bindParam(':name', $this->name);
+            $stmt->bindParam(':flag', $flagPath);
+
+            try {
+                $stmt->execute();
+
+                echo json_encode([
                 'msg' => 'Uspešno otpremljeno!',
                 'file' => $newName,
-                'path' => 'src/assets/img/countries' . $newName
-            ];
+                'path' => $flagPath
+                ], JSON_PRETTY_PRINT);
+                exit();
+
+            } catch (PDOException $e) {
+                echo json_encode([
+                    'error' => 'Došlo je do greške pri konekciji na bazu!',
+                    'msg' => $e->getMessage()
+                ], JSON_PRETTY_PRINT);
+            }
         } else {
-            return['error' => 'Došlo je do greške pri snimanju fajla.'];
+            echo json_encode(['error' => 'Došlo je do greške pri snimanju fajla.'], JSON_PRETTY_PRINT);
+            return;
         }
-        /*
-
-        $sql = "INSERT INTO countries 
-                SET name = :name"
-        ;
-        $stmt = $this->db->prepare($sql);
-
-        $this->name = htmlspecialchars(strip_tags($this->name));
-        $stmt->bindParam(':name', $this->name);
-
-        if($stmt->execute()) {
-            echo json_encode(
-                ['message' => 'Nova država je dodata.']
-            );
-        } else
-        json_encode(['message' => 'Trenutno nije moguće dodati državu']); */
         
     }
 
