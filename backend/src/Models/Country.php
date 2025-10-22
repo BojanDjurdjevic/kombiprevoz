@@ -75,21 +75,22 @@ class Country {
             return;
         }
 
-        $targetDir = __DIR__ . '../assets/';
+        $targetDir = __DIR__ . '/../assets/img/countries';
         if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
 
         $newName = uniqid('flag_', true) . '.' . pathinfo($file['name'], PATHINFO_EXTENSION);
         $targetFile = $targetDir . $newName;
 
-        if (move_uploaded_file($file['tmp_name'], $targetFile)) {
+        if (move_uploaded_file($file->tmp_name, $targetFile)) {
             return[
                 'msg' => 'Uspešno otpremljeno!',
                 'file' => $newName,
-                'path' => '/assets/' . $newName
+                'path' => 'src/assets/img/countries' . $newName
             ];
         } else {
             return['error' => 'Došlo je do greške pri snimanju fajla.'];
         }
+        /*
 
         $sql = "INSERT INTO countries 
                 SET name = :name"
@@ -104,7 +105,7 @@ class Country {
                 ['message' => 'Nova država je dodata.']
             );
         } else
-        json_encode(['message' => 'Trenutno nije moguće dodati državu']);
+        json_encode(['message' => 'Trenutno nije moguće dodati državu']); */
         
     }
 

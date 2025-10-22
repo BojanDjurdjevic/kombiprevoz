@@ -88,7 +88,7 @@ const items = [
                           />
                           <v-btn color="green-darken-3" class="mb-3"
                             @click="admin.actions.addCountry"
-                            :disabled="!admin.flag || admin.toAddCountry"
+                            :disabled="!admin.flag || !admin.toAddCountry"
                           >Dodaj Državu</v-btn
                           >
                         </div>
