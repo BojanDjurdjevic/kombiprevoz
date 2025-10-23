@@ -6,11 +6,7 @@ export default {
 
     getCountries(data) {
         console.log(data)
-        return axios.get("", {params: {data}}, {
-            headers: {
-                "Content-type": "json/application"   
-            }
-        })
+        return axios.get("", {params: {data}})
         
     },
     insertCountry(formData) {

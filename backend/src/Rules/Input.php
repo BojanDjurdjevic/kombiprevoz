@@ -41,7 +41,7 @@ class Input { /*
         $data = [];
 
         if ($method === 'GET') {
-            $data = $_GET;
+            $data = $_GET['data'] ?? $_GET;
         }
 
         elseif (str_contains($contentType, 'application/json')) {
