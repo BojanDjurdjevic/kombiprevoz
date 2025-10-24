@@ -1,11 +1,16 @@
 <script setup>
 import { useAdminStore } from '@/stores/admin';
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import europeCities from "@/data/country-city.json";
 import { VDateInput } from "vuetify/labs/VDateInput";
 import { VNumberInput } from "vuetify/labs/VNumberInput";
+import { useSearchStore } from '@/stores/search';
 
-const admin = useAdminStore()
+const admin = useAdminStore();
+
+onMounted(() => {
+  admin.actions.fetchCountries() 
+})
 
 const tab = ref(null);
 
@@ -98,9 +103,13 @@ const items = [
                             class="w-100 mt-5"
                             prepend-icon="mdi-city-variant"
                             clearable
-                            :items="europeCities.map((c) => c.country)"
+                            :items="admin.dbCountries"
+                            item-value="id"
+                            item-title="name"
                             label="Država kojoj grad pripada"
+                            return-object
                           ></v-autocomplete>
+                          <!-- europeCities.map((c) => c.country) -->
                           <v-autocomplete
                             v-model="admin.selectedCity"
                             class="w-100"

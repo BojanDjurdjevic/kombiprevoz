@@ -182,20 +182,16 @@ export const useAdminStore = defineStore("admin", () => {
   const cityOptions = computed(() => {
     if (!selectedCountry.value) return [];
     const countryData = europeCities.find(
-      (c) => c.country === selectedCountry.value
+      (c) => c.country === selectedCountry.value.name
     );
     return countryData ? countryData.cities : [];
   });
-
+  //countries
   const preview = ref(null)
   const previewKey = ref(Date.now())
   const flag = ref(null)
 
-  function selectFlag() {/*
-      if(!file) return
-      const reader = new FileReader()
-      reader.onload = (e) => (preview.value = e.target.result)
-      reader.readAsDataURL(file) */
+  function selectFlag() {
       const file = Array.isArray(flag.value) ? flag.value[0] : flag.value
       if(file instanceof File) {
         if (preview.value) {
@@ -205,7 +201,12 @@ export const useAdminStore = defineStore("admin", () => {
         previewKey.value = Date.now()
         console.log(preview.value)
       } else preview.value = null
-    }
+  }
+
+  //cities
+  const dbCountries = ref(null)
+
+
 
   const actions = ref({
     // -------------- SEARCH BY FILTER - BOOKINGS -----------------//
@@ -559,10 +560,27 @@ export const useAdminStore = defineStore("admin", () => {
       try {
         const res = await api.insertCountry(formData)
         console.log(res.data)
+        actions.value.fetchCountries()
       } catch (error) {
         console.log(error)
       }
     },
+    fetchCountries: async () => {
+      const dto = {
+        country: {
+          id: "",
+          name: ""
+        }
+      }
+      try {
+        const res = await api.getCountries(dto)
+        //let input = Object.values(msg.data.drzave)
+        dbCountries.value = res.data.drzave
+        console.log(dbCountries.value) 
+      } catch (error) {
+        console.log(error)
+      }
+    }
     
   });
 
@@ -574,7 +592,7 @@ export const useAdminStore = defineStore("admin", () => {
     assignedDriverID_24, assignedDriverID_48, cities,
     dep_city, arr_city, filteredOrders, page, pageCount, selected, manageDialog,
     changeDate, changeFromAddress, changeSeats, changeToAddress, confirmManage,
-    cancelDialog, restoreDialog, preview, flag,
+    cancelDialog, restoreDialog, preview, flag, dbCountries,
 
     formatDate, showDetails, adminDateQuery, isDateAllowed, selectFlag,
   };
