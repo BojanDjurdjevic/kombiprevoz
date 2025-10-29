@@ -75,7 +75,7 @@ const items = [
                             accept="image/*"
                             class="w-100"
                             @change="admin.selectFlag"
-                            @click:clear="admin.preview = null"
+                            @click:clear="admin.clearFlag"
                           /> <!--
                           <v-img
                             v-if="admin.preview"
@@ -120,13 +120,37 @@ const items = [
                             label="Dodaj novi grad"
                           ></v-autocomplete>
                           <v-file-input
+                            v-model="admin.cityPics"
                             clearable
                             label="Dodaj slike"
                             class="w-100"
                             multiple
                             chips
+                            @update:model-value="admin.selectCityPics"
+                            @click:clear="admin.clearCityPics"
                           ></v-file-input>
+                          <div v-if="admin.cityPreview" :key="admin.cityPreviewKey">
+                            <!--
+                            <v-img
+                              v-for="p, index in admin.cityPreview"
+                              :key="index"
+                              :src="p"
+                              max-height="250"
+                              max-width="250"
+                              class="mt-4 rounded-lg elevation-3"
+                              cover
+                            />
+                            -->
+                            <img
+                              v-for="p, index in admin.cityPreview"
+                              :key="index"
+                              :src="p"
+                              style="max-height:6rem; max-width:6rem; border-radius:100%; box-shadow:0 2px 8px rgba(0,0,0,0.3);"
+                            />
+                          </div>
+                          
                           <v-btn color="green-darken-3" class="mb-3"
+                            @click="admin.actions.addCity"
                             >Dodaj Grad</v-btn
                           >
                         </div>

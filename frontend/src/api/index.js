@@ -42,12 +42,22 @@ export default {
 
     getCities(cities) {
         console.log(cities)
+        return
         return axios.get("", {params: {cities}}, {
             headers: {
                 "Content-type": "json/application"   
             }
         })
         
+    },
+    insertCity(formData) {
+        console.log(formData)
+        return axios.post("", formData, {
+            headers: {
+                "Content-type": "multipart/form-data"
+            },
+            withCredentials: true
+        })
     },
 
     //---------------------------- TOURS ---------------------//

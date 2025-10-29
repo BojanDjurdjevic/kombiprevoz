@@ -1,4 +1,4 @@
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, onMounted, computed, watch, onBeforeUnmount } from "vue";
 import { defineStore } from "pinia";
 import { useUserStore } from "./user";
 import { useSearchStore } from "./search";
@@ -202,10 +202,58 @@ export const useAdminStore = defineStore("admin", () => {
         console.log(preview.value)
       } else preview.value = null
   }
+  function clearFlag() {
+    if(preview.value) {
+      URL.revokeObjectURL(preview.value)
+    }
+
+    preview.value = null
+    flag.value = null
+    previewKey.value = Date.now()
+  }
 
   //cities
   const dbCountries = ref(null)
+  const cityPics = ref(null)
+  const cityPreview = ref(null)
+  const cityPreviewKey = ref(null)
 
+  function selectCityPics() {
+    if (!cityPics.value || cityPics.value.length === 0) {
+      cityPreview.value = null
+      return
+    }
+
+    if (Array.isArray(cityPreview.value)) {
+      cityPreview.value.forEach(url => URL.revokeObjectURL(url))
+    }
+
+    cityPreview.value = Array.from(cityPics.value).map(file => URL.createObjectURL(file))
+    cityPreviewKey.value = Date.now()
+
+    console.log(cityPreview.value)
+  }
+
+  function clearCityPics() {
+    if (cityPreview.value && cityPreview.value.length > 0) {
+      cityPreview.value.forEach(url => URL.revokeObjectURL(url))
+    }
+    cityPreview.value = null
+    cityPics.value = null
+    cityPreviewKey.value = Date.now()
+  }
+
+
+  onBeforeUnmount(() => {
+    if (cityPreview.value.length > 0) {
+      cityPreview.value.forEach(url => URL.revokeObjectURL(url))
+      cityPreview.value = null
+    }
+    if (preview.value) {
+      URL.revokeObjectURL(preview.value)
+      preview.value = null
+    }
+  })
 
 
   const actions = ref({
@@ -580,6 +628,22 @@ export const useAdminStore = defineStore("admin", () => {
       } catch (error) {
         console.log(error)
       }
+    }, 
+    addCity: async () => {
+      const formData = new FormData()
+      formData.append("country_id", selectedCountry.value.id)
+      formData.append("name", selectedCity.value)
+      formData.append("cities", "create")
+      cityPics.value.forEach(file => formData.append('photos[]', file))
+
+      try { 
+        const res = await api.insertCity(formData)
+        console.log(res.data)
+      } catch (error) {
+        console.log(error)
+      } finally {
+        clearCityPics()
+      }
     }
     
   });
@@ -592,8 +656,10 @@ export const useAdminStore = defineStore("admin", () => {
     assignedDriverID_24, assignedDriverID_48, cities,
     dep_city, arr_city, filteredOrders, page, pageCount, selected, manageDialog,
     changeDate, changeFromAddress, changeSeats, changeToAddress, confirmManage,
-    cancelDialog, restoreDialog, preview, flag, dbCountries,
+    cancelDialog, restoreDialog, preview, flag, dbCountries, cityPics, cityPreview,
+    cityPreviewKey, 
 
-    formatDate, showDetails, adminDateQuery, isDateAllowed, selectFlag,
+    formatDate, showDetails, adminDateQuery, isDateAllowed, selectFlag, selectCityPics,
+    clearCityPics, clearFlag,
   };
 });

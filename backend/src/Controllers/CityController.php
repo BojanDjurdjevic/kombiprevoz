@@ -32,9 +32,10 @@ class CityController {
                 }
                 break;
             case 'POST':
-                if(isset($this->data->cities->name) && isset($this->data->cities->country_id)) {
-                    $this->city->name = $this->data->cities->name;
-                    $this->city->country_id = $this->data->cities->country_id;
+                if(isset($this->data->cities) && $this->data->cities == "create") {
+                    $this->city->name = $this->data->name;
+                    $this->city->country_id = $this->data->country_id;
+                    $this->city->photos = $this->data->photos;
                     $this->city->create();
                 }
                 break;

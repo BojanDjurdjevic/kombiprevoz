@@ -8,6 +8,7 @@ class City {
     public $id;
     public $country_id;
     public $name;
+    public $photos;
     private $db;
 
     public function __construct($db) 
