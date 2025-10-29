@@ -42,7 +42,6 @@ export default {
 
     getCities(cities) {
         console.log(cities)
-        return
         return axios.get("", {params: {cities}}, {
             headers: {
                 "Content-type": "json/application"   
