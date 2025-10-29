@@ -3,6 +3,7 @@
 namespace Models;
 
 use PDO;
+use PDOException;
 
 class City {
     public $id;
@@ -80,10 +81,29 @@ class City {
         $stmt->bindParam(':name', $this->name);
         $stmt->bindParam(':country_id', $this->country_id);
 
-        if($stmt->execute()) {
-            echo json_encode(['msg' => "Grad '$this->name' je uspešno dodat na listu."], JSON_PRETTY_PRINT);
-        } else
-        echo json_encode(['msg' => "Grad '$this->name' trenutno nije moguće dodati na listu."], JSON_PRETTY_PRINT);
+        try {
+            $stmt->execute();
+
+            $cityID = $this->db->lastInsertId();
+
+            // if photos sent
+            if(!empty($this->photos) && is_array($this->photos)) {
+                foreach($this->photos as $file) {
+                    // Check if the pics are valid:
+                    if($file['error'] == UPLOAD_ERR_OK) {
+                        
+                    }
+                }
+            }
+
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode([
+                'error' => 'Došlo je do greške pri konekciji na bazu!',
+                'msg' => $e->getMessage()
+            ], JSON_PRETTY_PRINT);
+        }
+        
     }
 
     public function update() 
