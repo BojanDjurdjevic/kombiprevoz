@@ -31,9 +31,9 @@ const search = useSearchStore()
     <v-container>
         <v-carousel :show-arrows="hover">
             <v-carousel-item
-            v-for="(item,i) in items"
+            v-for="(item,i) in dest.cityPics"
             :key="i"
-            :src="item.src"
+            :src="item"
             cover
             ></v-carousel-item>
         </v-carousel>

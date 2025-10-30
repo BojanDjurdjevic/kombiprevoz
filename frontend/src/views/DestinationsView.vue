@@ -37,21 +37,24 @@
                 <v-card height="18rem" width="18rem" elevation="9" to="gradovi" 
                     class="rounded-xl"
                     position="relative"
-                    @click="dest.takeCountry(n.country)"
+                    @click="dest.takeCountry(n)"
                 >
                     <v-img
                         class="align-end text-white"
                         height="100%"
                         
                         cover
-                        src="https://cdn.vuetifyjs.com/images/cards/docks.jpg"
+                        
+                        :src="dest.getCountryImage(n)"
                     >
+                        <!--
                         <template #sources v-if="!n.file_path || n.file_path == ''">
                             <source srcset="https://cdn.vuetifyjs.com/images/cards/docks.jpg">
                         </template>
                         <template #sources v-if="n.file_path || n.file_path != ''">
-                            <source :srcset="local + n.file_path">
+                            <source :srcset="'http://localhost:8080/' + n.file_path">
                         </template>
+                        -->
                         <v-card-title class="text-center"> {{ n.name }} </v-card-title>
                         <!--
                         <v-card-actions class="d-flex justify-center w-100">

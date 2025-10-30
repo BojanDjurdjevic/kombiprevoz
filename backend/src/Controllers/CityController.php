@@ -23,6 +23,10 @@ class CityController {
         switch($request) {
             case 'GET':
                 if(!isset($this->data->cities->id) && !isset($this->data->cities->country_id)) {
+                    if(isset($this->data->cities->byID)) {
+                        $this->city->country_id = $this->data->cities->byID;
+                        $this->city->byID();
+                    } else
                     $this->city->getAll();
                 } else {
                     if(isset($this->data->cities->country_id)) {

@@ -142,7 +142,7 @@ export const useSearchStore = defineStore('search', () => {
     try {
       const msg = await api.getCities(dto)
       if(from) {
-        availableCities.value = Object.values(msg.data.cities)
+        availableCities.value = msg.data.cities //Object.values(msg.data.cities)
       } else {
         availableCitiesTo.value = Object.values(msg.data.cities)
       }

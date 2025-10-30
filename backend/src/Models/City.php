@@ -18,20 +18,39 @@ class City {
     }
 
     public function getAll() {
-        $sql = "SELECT * from cities";
+        $sql = "SELECT cities.*, t_pics.id as pic_id, t_pics.file_path from cities
+                LEFT JOIN t_pics ON t_pics.city_id = cities.id
+        ";
         $res = $this->db->query($sql);
         $num = $res->rowCount();
 
         if($num > 0) {
             $allCities = [];
+            $rows = $res->fetchAll(PDO::FETCH_OBJ);
 
-            while($row = $res->fetch(PDO::FETCH_OBJ)) {
-                array_push($allCities, $row);
+            foreach($rows as $row) {
+                $cityID = $row->id;
+
+                if(!isset($allCities[$cityID])) {
+                    $city = [
+                        'id' => $row->id,
+                        'name' => $row->name,
+                        'country_id' => $row->country_id,
+                        'pictures' => [] 
+                    ];
+                }
+
+                if($row->pic_id && $row->file_path) {
+                    $allCities[$cityID]['pictures'][] = [
+                        'pic_id' => $row->pic_id,
+                        'file_path' => $row->file_path
+                    ];
+                }                
             }
 
-            echo json_encode(['cities' => $allCities], JSON_PRETTY_PRINT);
+            echo json_encode(['cities' => array_values($allCities)], JSON_PRETTY_PRINT);
         } else {
-            echo json_encode(['cities' => 'Nema pronađenih gradova.']);
+            echo json_encode(['cities' => []]);
         }
 
     }
@@ -53,6 +72,44 @@ class City {
             echo json_encode(['cities' => $citiesByCountry], JSON_PRETTY_PRINT);
         } else {
             echo json_encode(['cities' => 'Nema pronađenih gradova.']);
+        } 
+    }
+
+    public function byID() {
+        $sql = "SELECT cities.*, t_pics.id as pic_id, t_pics.file_path from cities
+                LEFT JOIN t_pics ON t_pics.city_id = cities.id
+                WHERE cities.country_id = '$this->country_id'
+        ";
+        $res = $this->db->query($sql);
+        $num = $res->rowCount();
+
+        if($num > 0) {
+            $allCities = [];
+            $rows = $res->fetchAll(PDO::FETCH_OBJ);
+
+            foreach($rows as $row) {
+                $cityID = $row->id;
+
+                if(!isset($allCities[$cityID])) {
+                    $allCities[$cityID] = [
+                        'id' => $row->id,
+                        'name' => $row->name,
+                        'country_id' => $row->country_id,
+                        'pictures' => [] 
+                    ];
+                }
+
+                if($row->pic_id && $row->file_path) {
+                    $allCities[$cityID]['pictures'][] = [
+                        'pic_id' => $row->pic_id,
+                        'file_path' => $row->file_path
+                    ];
+                }                
+            }
+
+            echo json_encode(['cities' => array_values($allCities)], JSON_PRETTY_PRINT);
+        } else {
+            echo json_encode(['cities' => []]);
         }
     }
 
@@ -94,13 +151,14 @@ class City {
                         $extension = pathinfo($file->name, PATHINFO_EXTENSION);
                         $fileName = uniqid('city_', true) . '.' . $extension;
                         $path = __DIR__ . '/../assets/img/cities/' . $fileName;
+                        $picture_path = 'src/assets/img/cities/' . $fileName;
                     }
                     // From TMP folder to folder on back
                     if(move_uploaded_file($file->tmp_name, $path)) {
                         // Store the pics to DB
                         $picSql = "INSERT INTO t_pics SET file_path = :file_path, city_id = :city_id, deleted = 0";
                         $stmtPic = $this->db->prepare($picSql);
-                        $stmtPic->bindParam(':file_path', $fileName);
+                        $stmtPic->bindParam(':file_path', $picture_path);
                         $stmtPic->bindParam(':city_id', $cityID);
                         $stmtPic->execute();
                         

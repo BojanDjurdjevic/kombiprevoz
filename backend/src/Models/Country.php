@@ -79,7 +79,7 @@ class Country {
         $targetDir = __DIR__ . '/../assets/img/countries/';
         if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
 
-        $newName = uniqid('flag_', true) . '.' . pathinfo($file->name, PATHINFO_EXTENSION);
+        $newName = $this->name .  pathinfo($file->name, PATHINFO_EXTENSION);
         $targetFile = $targetDir . $newName;
         $flagPath = 'src/assets/img/countries/' . $newName;
 
