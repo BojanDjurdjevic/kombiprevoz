@@ -2,6 +2,7 @@ import { ref, computed, shallowRef } from 'vue'
 import { defineStore } from 'pinia'
 import { useSearchStore } from './search'
 import router from '@/router'
+import api from '@/api'
 
 export const useDestStore = defineStore('dest', () => {
     const search = useSearchStore() /*
