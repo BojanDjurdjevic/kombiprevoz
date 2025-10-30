@@ -91,11 +91,31 @@ class City {
                 foreach($this->photos as $file) {
                     // Check if the pics are valid:
                     if($file['error'] == UPLOAD_ERR_OK) {
+                        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+                        $fileName = uniqid('city_', true) . '.' . $extension;
+                        $path = __DIR__ . '/../../assets/img/cities/' . $fileName;
+                    }
+                    // From TMP folder to folder on back
+                    if(move_uploaded_file($file['tmp_name'], $path)) {
+                        // Store the pics to DB
+                        $picSql = "INSERT INTO t_pics SET file_path = :file_path, city_id = :city_id, deleted = 0";
+                        $stmtPic = $this->db->prepare($picSql);
+                        $stmtPic->bindParam(':file_path', $fileName);
+                        $stmtPic->bindParam(':city_id', $cityID);
                         
+                    } else {
+                        http_response_code(422);
+                        echo json_encode([
+                            'success' => false,
+                            'error' => 'Došlo je do greške prilikom podizanja slika!'
+                        ]. JSON_PRETTY_PRINT);
                     }
                 }
-            }
-
+                echo json_encode([
+                    'success' => true,
+                    'msg' => 'Uspešno ste dodali novi grad!'
+                ]. JSON_PRETTY_PRINT);
+            } 
         } catch (PDOException $e) {
             http_response_code(500);
             echo json_encode([
