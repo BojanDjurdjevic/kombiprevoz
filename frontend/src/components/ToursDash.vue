@@ -150,6 +150,7 @@ const items = [
                           </div>
                           
                           <v-btn color="green-darken-3" class="mb-3"
+                            :disabled="!admin.selectedCity || !admin.selectedCountry || !admin.cityPics"
                             @click="admin.actions.addCity"
                             >Dodaj Grad</v-btn
                           >

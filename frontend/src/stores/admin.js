@@ -630,6 +630,7 @@ export const useAdminStore = defineStore("admin", () => {
       }
     }, 
     addCity: async () => {
+      if(!selectedCountry.value || !selectedCity.value || !cityPics.value) return displayError("Molimo popunite sva polja pre dodavanja grada!")
       const formData = new FormData()
       formData.append("country_id", selectedCountry.value.id)
       formData.append("name", selectedCity.value)
@@ -639,10 +640,13 @@ export const useAdminStore = defineStore("admin", () => {
       try { 
         const res = await api.insertCity(formData)
         console.log(res.data)
+        user.showSucc(res, 3000)
       } catch (error) {
         console.log(error)
+        user.showErr(error, 3000)
       } finally {
         clearCityPics()
+        
       }
     }
     
