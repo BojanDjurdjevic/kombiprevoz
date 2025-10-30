@@ -245,10 +245,13 @@ export const useAdminStore = defineStore("admin", () => {
 
 
   onBeforeUnmount(() => {
-    if (cityPreview.value.length > 0) {
-      cityPreview.value.forEach(url => URL.revokeObjectURL(url))
-      cityPreview.value = null
+    if(cityPreview.value) {
+      if (cityPreview.value.length > 0) {
+        cityPreview.value.forEach(url => URL.revokeObjectURL(url))
+        cityPreview.value = null
+      }
     }
+    
     if (preview.value) {
       URL.revokeObjectURL(preview.value)
       preview.value = null
