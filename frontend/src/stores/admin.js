@@ -243,6 +243,15 @@ export const useAdminStore = defineStore("admin", () => {
     cityPreviewKey.value = Date.now()
   }
 
+  function clearCountryPic() {
+    if(preview.value) {
+      URL.revokeObjectURL(preview.value)
+      preview.value = null
+    }
+    flag.value = null
+    toAddCountry.value = null
+  }
+
 
   onBeforeUnmount(() => {
     if(cityPreview.value) {
@@ -613,8 +622,12 @@ export const useAdminStore = defineStore("admin", () => {
         const res = await api.insertCountry(formData)
         console.log(res.data)
         actions.value.fetchCountries()
+        user.showSucc(res, 3000)
       } catch (error) {
         console.log(error)
+        user.showErr(error, 3000)
+      } finally {
+        clearCountryPic()
       }
     },
     fetchCountries: async () => {

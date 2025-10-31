@@ -72,14 +72,14 @@ class Country {
         }
 
         if ($file->size > 5 * 1024 * 1024) { // max 5MB
-            echo json_encode(['error' => 'Fajl je prevelik.']);
+            echo json_encode(['error' => 'Fajl je prevelik! Molimo vas da smanjite sliku pre unosa.']);
             return;
         }
 
         $targetDir = __DIR__ . '/../assets/img/countries/';
         if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
 
-        $newName = $this->name .  pathinfo($file->name, PATHINFO_EXTENSION);
+        $newName = $this->name . '.' . pathinfo($file->name, PATHINFO_EXTENSION);
         $targetFile = $targetDir . $newName;
         $flagPath = 'src/assets/img/countries/' . $newName;
 
@@ -95,11 +95,12 @@ class Country {
 
             try {
                 $stmt->execute();
-
+                http_response_code(200);
                 echo json_encode([
-                'msg' => 'Uspešno otpremljeno!',
-                'file' => $newName,
-                'path' => $flagPath
+                    'success' => true,
+                    'msg' => 'Uspešno ste dodali novu državu!',
+                    'file' => $newName,
+                    'path' => $flagPath
                 ], JSON_PRETTY_PRINT);
                 exit();
 

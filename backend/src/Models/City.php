@@ -153,6 +153,15 @@ class City {
                         $path = __DIR__ . '/../assets/img/cities/' . $fileName;
                         $picture_path = 'src/assets/img/cities/' . $fileName;
                     }
+                    // Check the size of file
+                    if ($file->size > 6 * 1024 * 1024) { // max 6MB
+                        http_response_code(422);
+                        echo json_encode([
+                            'error' => 'Fajl je prevelik! Molimo vas da smanjite sliku pre unosa.',
+                            'file' => $file
+                        ], JSON_PRETTY_PRINT);
+                        return;
+                    }
                     // From TMP folder to folder on back
                     if(move_uploaded_file($file->tmp_name, $path)) {
                         // Store the pics to DB
