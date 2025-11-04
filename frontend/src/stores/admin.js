@@ -292,6 +292,14 @@ export const useAdminStore = defineStore("admin", () => {
     if(!cityFrom.value || !cityTo.value || !daysOfTour.value || !hours.value || !pax.value || !price.value || !tourTime.value) return true
     else return false
   }
+
+  function filterDeps() {
+    let deps = []
+    daysOfTour.value.forEach(obj => {
+      deps.push(String(obj.id))
+    });
+    return deps
+  }
   
 
   const actions = ref({
@@ -699,15 +707,17 @@ export const useAdminStore = defineStore("admin", () => {
       daysOfTour.value = null,
       tourTime.value = null,
       hours.value = 3,
-      price.value = 30,
-      pax.value = 1
+      price.value = 50,
+      pax.value = 8
     },
     addTour: async () => {
+      if(!cityFrom.value || !cityTo.value || !daysOfTour.value || !hours.value || !pax.value || !price.value || !tourTime.value) return displayError('Sva polja su obavezna!')
+      let departures = filterDeps()
       const dto = {
         tours : {
-          from: cityFrom.value,
-          to: cityTo.value,
-          departures: daysOfTour.value,
+          from: cityFrom.value.name,
+          to: cityTo.value.name,
+          departures: departures,
           time: tourTime.value,
           duration: hours.value,
           price: price.value,
