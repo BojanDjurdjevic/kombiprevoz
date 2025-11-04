@@ -69,6 +69,11 @@ export default {
         return axios.get("", {params: {tours}})
     },
 
+    createTour(tour) {
+        return console.log('Novi Tour :', tour)
+        return axios.post("", tour)
+    },
+
     //------------------------------- USER -----------------------//
 
     isLogged(user) {

@@ -172,10 +172,12 @@ export const useAdminStore = defineStore("admin", () => {
   const usrEmail = ref(null);
 
   // TOURS
+  //filters
   const tourName = ref(null);
   const toursFrom = ref(null);
   const toursTo = ref(null);
 
+  //add destinations
   const toAddCountry = ref(null);
   const selectedCountry = ref(null);
   const selectedCity = ref(null);
@@ -267,6 +269,29 @@ export const useAdminStore = defineStore("admin", () => {
     }
   })
 
+  //Add new tour:
+
+  const countryFrom = ref(null)
+  const countryTo = ref(null)
+  const cityFrom = ref(null)
+  const cityTo = ref(null)
+  const daysOfTour = ref([])
+  const hours = ref(3)
+  const pax = ref(1)
+  const price = ref(30)
+  const tourTime = ref(null)
+
+  const validateTime = (value) => {
+    if (!value) return pattern.test(value) || 'Polje ne može biti prazno! Unesi ispravno vreme (HH:MM:SS)'
+
+    const pattern = /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/
+    return pattern.test(value) || 'Unesi ispravno vreme (HH:MM:SS)'
+  }
+
+  const disableTour = () => {
+    if(!cityFrom.value || !cityTo.value || !daysOfTour.value || !hours.value || !pax.value || !price.value || !tourTime.value) return true
+    else return false
+  }
   
 
   const actions = ref({
@@ -665,6 +690,36 @@ export const useAdminStore = defineStore("admin", () => {
         clearCityPics()
         
       }
+    },
+    clearTourForm: () => {
+      countryFrom.value = null,
+      countryTo.value = null,
+      cityFrom.value = null,
+      cityTo.value = null,
+      daysOfTour.value = null,
+      tourTime.value = null,
+      hours.value = 3,
+      price.value = 30,
+      pax.value = 1
+    },
+    addTour: async () => {
+      const dto = {
+        tours : {
+          from: cityFrom.value,
+          to: cityTo.value,
+          departures: daysOfTour.value,
+          time: tourTime.value,
+          duration: hours.value,
+          price: price.value,
+          seats: pax.value
+        }
+      }
+      try {
+        const res = await api.createTour(dto)
+        console.log(res)  
+      } catch (error) { 
+        console.log(error)
+      }
     }
     
   });
@@ -678,9 +733,10 @@ export const useAdminStore = defineStore("admin", () => {
     dep_city, arr_city, filteredOrders, page, pageCount, selected, manageDialog,
     changeDate, changeFromAddress, changeSeats, changeToAddress, confirmManage,
     cancelDialog, restoreDialog, preview, flag, dbCountries, cityPics, cityPreview,
-    cityPreviewKey, 
+    cityPreviewKey, countryFrom, countryTo, cityFrom, cityTo, tourTime, daysOfTour,
+    pax, price, hours,
 
     formatDate, showDetails, adminDateQuery, isDateAllowed, selectFlag, selectCityPics,
-    clearCityPics, clearFlag,
+    clearCityPics, clearFlag, validateTime, disableTour,
   };
 });

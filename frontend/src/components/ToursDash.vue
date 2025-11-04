@@ -7,6 +7,7 @@ import { VNumberInput } from "vuetify/labs/VNumberInput";
 import { useSearchStore } from '@/stores/search';
 
 const admin = useAdminStore();
+const search = useSearchStore()
 
 onMounted(() => {
   admin.actions.fetchCountries() 
@@ -19,6 +20,16 @@ const items = [
   "Dodaj novu rutu",
   "Države i Gradovi"
 ];
+
+const tourDays = [
+  {id: 0, day: "Nedelja"},
+  {id: 1, day: "Ponedeljak"},
+  {id: 2, day: "Utorak"},
+  {id: 3, day: "Sreda"},
+  {id: 4, day: "Četvrtak"},
+  {id: 5, day: "Petak"},
+  {id: 6, day: "Subota"}
+]
 </script>
 
 <template>
@@ -168,55 +179,82 @@ const items = [
                       <h3 class="mt-9">Dodaj novu rutu</h3>
                       <div class="w-100 pa-3 d-flex flex-wrap">
                         <v-autocomplete
+                          v-model="admin.countryFrom"
                           class="w-50 mt-5"
                           prepend-icon="mdi-receipt-text-edit-outline"
                           clearable
-                          :items="admin.tours"
+                          :items="admin.dbCountries"
                           label="Država polaska"
+                          item-title="name"
+                          item-value="id"
+                          return-object
+                          v-on:update:model-value="val => search.allCities(val.id, true)"
                         ></v-autocomplete>
                         <v-autocomplete
+                          v-model="admin.countryTo"
                           class="w-50 mt-5"
                           prepend-icon="mdi-country"
                           clearable
-                          :items="admin.tours"
+                          :items="admin.dbCountries"
                           label="Država dolaska"
+                          item-title="name"
+                          item-value="id"
+                          return-object
+                          v-on:update:model-value="val => search.allCities(val.id, false)"
                         ></v-autocomplete>
                         <v-autocomplete
+                          v-model="admin.cityFrom"
                           class="w-50 mt-5"
                           prepend-icon="mdi-city-variant"
                           clearable
-                          :items="admin.tours"
+                          :rules="[search.rules.required]"
+                          :items="search.availableCities"
+                          item-title="name"
+                          item-value="name"
                           label="Grad polaska"
+                          return-object
                         ></v-autocomplete>
                         <v-autocomplete
+                          v-model="admin.cityTo"
                           class="w-50 mt-5"
                           prepend-icon="mdi-country"
                           clearable
-                          :items="admin.tours"
+                          :rules="[search.rules.required]"
+                          :items="search.availableCitiesTo"
+                          item-title="name"
+                          item-value="name"
                           label="Grad dolaska"
+                          return-object
                         ></v-autocomplete>
                         <v-select
+                          v-model="admin.daysOfTour"
                           class="w-50 mt-5"
                           prepend-icon="mdi-calendar-month-outline"
                           clearable
                           chips
                           label="Izaberi dane polaska"
-                          :items="[
-                            'Ponedeljak',
-                            'Utorak',
-                            'Sreda',
-                            'Četvrtak',
-                            'Petak',
-                            'Subota',
-                            'Nedelja',
-                          ]"
+                          :items="tourDays"
                           multiple
+                          return-object
+                          item-title="day"
+                          item-value="id"
                         ></v-select>
+                        <v-text-field
+                          prepend-icon="mdi-time"
+                          class="w-50 mt-5"
+                          v-model="admin.tourTime"
+                          label="Vreme polaska"
+                          placeholder="hh:mm:ss"
+                          hint="Upiši u formatu 08:30:00"
+                          persistent-hint
+                          :rules="[admin.validateTime]"
+                        ></v-text-field>
                       </div>
                       <div class="w-100 d-flex">
                         <div class="w-50 d-flex flex-column align-center">
                           <h5>Trajanje u satima</h5>
                           <v-number-input
+                            v-model="admin.hours"
                             class="w-75 mt-1"
                             control-variant="split"
                             :max="33"
@@ -226,6 +264,7 @@ const items = [
                         <div class="w-50 d-flex flex-column align-center">
                           <h5>Maksimum putnika</h5>
                           <v-number-input
+                            v-model="admin.pax"
                             class="w-75 mt-1"
                             control-variant="split"
                             :max="8"
@@ -235,13 +274,16 @@ const items = [
                         <div class="w-50 d-flex flex-column align-center">
                           <h5>Cena u eurima</h5>
                           <v-number-input
+                            v-model="admin.price"
                             class="w-75 mt-1"
                             control-variant="split"
                             :min="30"
                           ></v-number-input>
                         </div>
                       </div>
-                      <v-btn color="green-darken-3" class="">Dodaj Rutu</v-btn>
+                      <v-btn color="green-darken-3" class="" :disabled="!admin.cityFrom || !admin.cityTo || !admin.daysOfTour || !admin.hours || !admin.pax || !admin.price || !admin.tourTime"
+                        @click="admin.actions.addTour"
+                      >Dodaj Rutu</v-btn>
                     </v-expansion-panel-text>
                   </v-expansion-panel>
                 </v-expansion-panels>
