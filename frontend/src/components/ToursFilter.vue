@@ -19,7 +19,7 @@ const admin = useAdminStore();
           item-title="name"
           item-value="id"
           label="Izaberi Rutu"
-          v-model="admin.tourID"
+          v-model="admin.tourName"
           return-object
         ></v-select>
       </div>
@@ -27,11 +27,11 @@ const admin = useAdminStore();
         <v-select
           prepend-icon="mdi-city-variant"
           clearable
-          :items="admin.tours"
+          :items="admin.cities.from"
           item-title="name"
           item-value="id"
           label="Grad polaska"
-          v-model="admin.tourID"
+          v-model="admin.toursFrom"
           return-object
         ></v-select>
       </div>
@@ -39,11 +39,11 @@ const admin = useAdminStore();
         <v-select
           prepend-icon="mdi-city-variant"
           clearable
-          :items="admin.tours"
+          :items="admin.cities.to"
           item-title="name"
           item-value="id"
           label="Grad dolaska"
-          v-model="admin.tourID"
+          v-model="admin.toursTo"
           return-object
         ></v-select>
       </div>
@@ -56,6 +56,7 @@ const admin = useAdminStore();
         class="w-75 ma-3"
         prepend-icon="mdi-close-circle-multiple"
         color="red-darken-3"
+        @click="admin.actions.clearTourFilters"
         >Obriši sve</v-btn
       >
     </div>

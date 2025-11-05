@@ -11,6 +11,7 @@ const search = useSearchStore()
 
 onMounted(() => {
   admin.actions.fetchCountries() 
+  admin.actions.fetchAllTours()
 })
 
 const tab = ref(null);

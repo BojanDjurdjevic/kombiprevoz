@@ -412,6 +412,8 @@ class Tour {
         }
     }
 
+    // -----------------------   POST   ----------------------------//
+
     public function create() 
     {
         $sql = "INSERT INTO tours SET
@@ -422,7 +424,6 @@ class Tour {
 
         $this->from_city = htmlspecialchars(strip_tags($this->from_city));
         $this->to_city = htmlspecialchars(strip_tags($this->to_city));
-        $this->departures = htmlspecialchars(strip_tags($this->departures));
         $this->time = htmlspecialchars(strip_tags($this->time));
         $this->duration = htmlspecialchars(strip_tags($this->duration));
         $this->price = htmlspecialchars(strip_tags($this->price));
@@ -436,10 +437,19 @@ class Tour {
         $stmt->bindParam(':price', $this->price);
         $stmt->bindParam(':seats', $this->seats);
 
-        if($stmt->execute()) {
-            echo json_encode(['msg' => "Vožnja od $this->from_city do $this->to_city je uspešno dodata."], JSON_PRETTY_PRINT);
-        } else
-            echo json_encode(['msg' => "Vožnja od $this->from_city do $this->to_city je uspešno dodata."], JSON_PRETTY_PRINT);
+        try {
+            if($stmt->execute()) {
+                http_response_code(200);
+                echo json_encode(['msg' => "Vožnja od $this->from_city do $this->to_city je uspešno dodata."], JSON_PRETTY_PRINT);
+            } 
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode([
+                'error' => "Vožnja od $this->from_city do $this->to_city ne može da se doda zbog neuspešne konekcije na bazu podataka.",
+                'msg' => $e->getMessage()
+            ], JSON_PRETTY_PRINT);
+        }
+            
     }
 
     public function update()

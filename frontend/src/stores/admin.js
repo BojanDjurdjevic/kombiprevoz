@@ -298,6 +298,7 @@ export const useAdminStore = defineStore("admin", () => {
     daysOfTour.value.forEach(obj => {
       deps.push(String(obj.id))
     });
+    deps = deps.toString()
     return deps
   }
   
@@ -645,6 +646,11 @@ export const useAdminStore = defineStore("admin", () => {
       };
       console.log(dto);
     },
+    clearTourFilters: () => {
+      tourName.value = null
+      toursFrom.value = null
+      toursTo.value = null
+    },
     addCountry: async () => {
       const formData = new FormData()
       formData.append("flag", flag.value)
@@ -727,8 +733,12 @@ export const useAdminStore = defineStore("admin", () => {
       try {
         const res = await api.createTour(dto)
         console.log(res)  
+        user.showSucc(res, 3000)
+        actions.value.clearTourForm()
+        actions.value.fetchAllTours()
       } catch (error) { 
         console.log(error)
+        user.showErr(error, 3000)
       }
     }
     

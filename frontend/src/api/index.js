@@ -70,7 +70,7 @@ export default {
     },
 
     createTour(tour) {
-        return console.log('Novi Tour :', tour)
+        //return console.log('Novi Tour :', tour)
         return axios.post("", tour)
     },
 
