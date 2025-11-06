@@ -56,6 +56,64 @@ const tourDays = [
         <v-tabs-window-item v-for="item in items" :key="item" :value="item">
           <v-card flat>
             <v-card-text>
+              <div v-if="tab == 'Postojeće rute'">
+                <v-data-iterator
+                    :items="admin.tours"
+                    :items-per-page="10"
+                    v-model:page="admin.tourPage"
+                  >
+                    <template v-slot:default="{ items }">
+                      <v-row dense>
+                        <v-col
+                          v-for="(item, i) in items"
+                          :key="item.raw.id"
+                          cols="12"
+                          sm="6"
+                          md="6"
+                        >
+                          <v-card class="rounded-2xl shadow-md hover:shadow-lg transition-all relative">
+                            <v-badge
+                              v-if="item.raw.deleted == 1"
+                              color="red-darken-3"
+                              content="Neaktivna"
+                              bordered
+                              class="absolute top-2 right-2"
+                            ></v-badge>
+                            <v-card-title class="text-lg font-semibold">
+                              {{ item.raw.from_city }} → {{ item.raw.to_city }}
+                            </v-card-title>
+
+                            <v-card-subtitle class="text-sm text-gray-600">
+                              Polasci: {{admin.formatDepDays(item.raw.departures) }}
+                            </v-card-subtitle>
+
+                            <v-card-text class="space-y-2">
+                              <div><strong>Vreme polaska:</strong> {{ item.raw.time }}</div>
+                              <div><strong>Trajanje:</strong> {{ item.raw.duration }} sati</div>
+                              <div><strong>Maksimum mesta:</strong> {{ item.raw.seats }}</div>
+                              <div><strong>Cena:</strong> {{ item.raw.price }} €</div>
+                            </v-card-text>
+
+                            <v-card-actions>
+                              <v-btn color="primary" size="small" @click="admin.showTour(item.raw)">
+                                Detalji
+                              </v-btn>
+                            </v-card-actions>
+                          </v-card>
+                        </v-col>
+                      </v-row>
+                    </template>
+
+                    <!-- Pagination -->
+                    <template v-slot:footer>
+                      <v-pagination
+                        v-model="admin.page"
+                        :length="admin.tPageCount"
+                        total-visible="5"
+                      ></v-pagination>
+                    </template>
+                  </v-data-iterator>
+              </div>
               <div class="w-100" v-if="tab == 'Dodaj novu rutu'">
                 <v-expansion-panels>
                   <v-expansion-panel expand focusable>

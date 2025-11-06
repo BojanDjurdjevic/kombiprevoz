@@ -177,6 +177,48 @@ export const useAdminStore = defineStore("admin", () => {
   const toursFrom = ref(null);
   const toursTo = ref(null);
 
+  // existing tours:
+
+  const tourPage = ref(1)
+  //const filteredOrders = ref(null)
+  const tPageCount = computed(() => Math.ceil(tours.value.length / 10))
+
+  function formatDepDays(str) {
+    str = str.split(',')
+    let days = []
+    for(let s of str) {
+      switch (s) {
+        case '0': 
+          days.push('Nedelja')
+          break;
+        case '1':
+          days.push('Ponedeljak')
+          break;
+        case '2':
+          days.push('Utorak')
+          break;
+        case '3':
+          days.push('Sreda')
+          break;
+        case '4':
+          days.push('Četvrtak')
+          break;
+        case '5':
+          days.push('Petak')
+          break;
+        case '6':
+          days.push('Subota')
+          break;
+      }
+    }
+
+    return days.join(', ')
+  }
+
+  function showTour(tour) {
+    console.log(tour)
+  }
+
   //add destinations
   const toAddCountry = ref(null);
   const selectedCountry = ref(null);
@@ -754,9 +796,9 @@ export const useAdminStore = defineStore("admin", () => {
     changeDate, changeFromAddress, changeSeats, changeToAddress, confirmManage,
     cancelDialog, restoreDialog, preview, flag, dbCountries, cityPics, cityPreview,
     cityPreviewKey, countryFrom, countryTo, cityFrom, cityTo, tourTime, daysOfTour,
-    pax, price, hours,
+    pax, price, hours, tPageCount, tourPage,
 
     formatDate, showDetails, adminDateQuery, isDateAllowed, selectFlag, selectCityPics,
-    clearCityPics, clearFlag, validateTime, disableTour,
+    clearCityPics, clearFlag, validateTime, disableTour, formatDepDays, showTour,
   };
 });
