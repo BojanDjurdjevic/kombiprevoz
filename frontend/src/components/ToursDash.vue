@@ -113,6 +113,192 @@ const tourDays = [
                       ></v-pagination>
                     </template>
                   </v-data-iterator>
+
+                    <!-- DIALOG to show details -->
+
+                  <v-dialog v-model="admin.manageTourDialog" fullscreen transition="dialog-bottom-transition" persistent>
+                    <v-card>
+                      <!-- Header -->
+                      <v-toolbar color="indigo-darken-4">
+                        <v-btn icon @click="admin.manageTourDialog = false">
+                          <v-icon>mdi-arrow-left</v-icon>
+                        </v-btn>
+                        <v-toolbar-title>Ruta #{{ admin.selectedTours?.name }}</v-toolbar-title>
+                        <v-spacer></v-spacer>
+                      </v-toolbar>
+
+                      <!-- MAIN CONTENT - TOUR DETAILS -->
+
+                      <!--  Details  -->
+                      <v-card-text class="pa-4 ">
+                        <h3 class="text-center">Detalji rute</h3>
+                        <div class="w-100 h-100 d-flex">
+                          <div class="w-50 h-100 pa-3 d-flex flex-column justify-space-evenly">
+                            <p><strong>Ruta:</strong> {{ admin.selectedTour?.from_city }} → {{ admin.selectedTour?.to_city }}</p>
+                            <p><strong>Polasci:</strong> {{admin.formatDepDays(selectedTour?.departures) }}</p>
+                            <p><strong>Vreme Polaska:</strong> {{ admin.selectedTour?.time }}</p>
+                            <p><strong>Trajanje:</strong> {{ admin.selectedTour?.duration }}</p>
+                            <p><strong>Maksimum mesta:</strong> {{ admin.selectedTour?.seats }}</p>
+                            <p><strong>Cena:</strong> {{ admin.selectedTour?.price }} €</p>
+                          </div>
+
+                          <!--  ACTIONS - tour managing by admin  -->
+                          <!--  Update Tour  -->
+                          <div class="w-50 h-100 pa-6 mt-3 d-flex flex-column justify-space-around">
+                            <div class="h-75 d-flex flex-column justify-space-evenly">
+                              <v-select
+                                v-model="admin.changeDeps"
+                                class="w-50 mt-5"
+                                prepend-icon="mdi-calendar-month-outline"
+                                clearable
+                                chips
+                                label="Izaberi dane polaska"
+                                :items="tourDays"
+                                multiple
+                                return-object
+                                item-title="day"
+                                item-value="id"
+                              ></v-select>
+                              <v-text-field
+                                prepend-icon="mdi-time"
+                                class="w-50 mt-5"
+                                v-model="admin.changeTime"
+                                label="Vreme polaska"
+                                placeholder="hh:mm:ss"
+                                hint="Upiši u formatu 08:30:00"
+                                persistent-hint
+                                :rules="[admin.validateTime]"
+                              ></v-text-field>
+                            </div>
+                            <div class="w-100 d-flex">
+                              <div class="w-50 d-flex flex-column align-center">
+                                <h5>Trajanje u satima</h5>
+                                <v-number-input
+                                  v-model="admin.changeDuration"
+                                  class="w-75 mt-1"
+                                  control-variant="split"
+                                  :max="33"
+                                  :min="1"
+                                ></v-number-input>
+                              </div>
+                              <div class="w-50 d-flex flex-column align-center">
+                                <h5>Maksimum putnika</h5>
+                                <v-number-input
+                                  v-model="admin.changeSeats"
+                                  class="w-75 mt-1"
+                                  control-variant="split"
+                                  :max="8"
+                                  :min="1"
+                                ></v-number-input>
+                              </div>
+                              <div class="w-50 d-flex flex-column align-center">
+                                <h5>Cena u eurima</h5>
+                                <v-number-input
+                                  v-model="admin.changePrice"
+                                  class="w-75 mt-1"
+                                  control-variant="split"
+                                  :min="30"
+                                ></v-number-input>
+                        </div>
+                              <div class="w-75 d-flex justify-space-around">
+                                <v-btn 
+                                  variant="elevated" 
+                                  color="green-darken-4"
+                                  
+                                >Potvrdi</v-btn>
+                                <v-btn color="red-darken-3"
+                                  
+                                >Poništi</v-btn>
+                              </div>
+                            <!--  Voucher sending and Cancel  -->
+                            </div>
+                            <div class="pa-6 h-25 w-75 d-flex justify-space-evenly align-center">
+                              <div class="text-center">
+                                <h4>Vidi Vaučer</h4>
+                                <v-btn icon="mdi-eye"
+                                  color="indigo-darken-3"
+                                  :href=" 'http://localhost:8080/' + admin.selected?.voucher "
+                                  target="_blank"
+                                ></v-btn>
+                              </div>
+                              <div class="text-center">
+                                <h4>Pošalji Vaučer</h4>
+                                <v-btn icon="mdi-email-arrow-right"
+                                  color="green-darken-3"
+                                  @click="admin.actions.resendVoucher"
+                                ></v-btn>
+                              </div>
+                              <div class="text-center" v-if="!admin.selected.deleted">
+                                <h4>Obriši ovu vožnju</h4>
+                                <v-btn 
+                                  icon="mdi-close-thick"
+                                  color="red-darken-3"
+                                  @click="admin.cancelDialog = true"
+                                ></v-btn>
+                              </div>
+                              <div class="text-center" v-if="admin.selected.deleted">
+                                <h4>Aktiviraj vožnju</h4>
+                                <v-btn 
+                                  icon="mdi-check-all"
+                                  color="red-darken-3"
+                                  @click="admin.restoreDialog = true"
+                                ></v-btn>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </v-card-text>
+
+                      <!-- Btn -->
+                      <v-card-actions>
+                        <v-btn block color="success" @click="admin.manageTourDialog = false">
+                          Zatvori
+                        </v-btn>
+                      </v-card-actions>
+                    </v-card>
+                  </v-dialog>
+
+                  <!-- CONFIRM CHANGES DIALOG -->
+
+                  <v-dialog v-model="admin.confirmManage" persistent height="20%" width="70%">
+                    <v-card >
+                      <v-toolbar color="red-darken-3" class="text-center">
+                        <v-toolbar-title>Da li ste sigurni da želite da napravite trajne izmene?</v-toolbar-title>
+                      </v-toolbar>
+                      <v-card-actions class="d-flex justify-center align-center">
+                        <v-btn color="success" @click="admin.actions.confimBookingItemsChange">Potvrdi</v-btn>
+                        <v-btn color="red-lighten-1" @click="admin.confirmManage = false">odustani</v-btn>
+                      </v-card-actions>
+                    </v-card>
+                  </v-dialog>
+
+                  <!-- CONFIRM CANCEL DIALOG -->
+
+                  <v-dialog v-model="admin.cancelDialog" persistent height="20%" width="70%">
+                    <v-card >
+                      <v-toolbar color="red-darken-3" class="text-center">
+                        <v-toolbar-title>Da li ste sigurni da želite da obrišete ovu vožnju?</v-toolbar-title>
+                      </v-toolbar>
+                      <v-card-actions class="d-flex justify-center align-center">
+                        <v-btn color="success" @click="admin.actions.confirmCancelBookingItem">Potvrdi</v-btn>
+                        <v-btn color="red-lighten-1" @click="admin.cancelDialog = false">odustani</v-btn>
+                      </v-card-actions>
+                    </v-card>
+                  </v-dialog>
+
+                  <!-- CONFIRM RESTORE DIALOG -->
+
+                  <v-dialog v-model="admin.restoreDialog" persistent height="20%" width="70%">
+                    <v-card >
+                      <v-toolbar color="red-darken-3" class="text-center">
+                        <v-toolbar-title>Da li ste sigurni da želite da aktivirate ovu vožnju?</v-toolbar-title>
+                      </v-toolbar>
+                      <v-card-actions class="d-flex justify-center align-center">
+                        <v-btn color="success" @click="admin.actions.restoreBookingItem">Potvrdi</v-btn>
+                        <v-btn color="red-lighten-1" @click="admin.restoreDialog = false">odustani</v-btn>
+                      </v-card-actions>
+                    </v-card>
+                  </v-dialog>
               </div>
               <div class="w-100" v-if="tab == 'Dodaj novu rutu'">
                 <v-expansion-panels>

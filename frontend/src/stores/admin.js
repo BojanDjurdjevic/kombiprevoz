@@ -140,7 +140,7 @@ export const useAdminStore = defineStore("admin", () => {
 
     return allowedDays.value.allowed.includes(dayOfWeek) && !allowedDays.value.fullyBooked.includes(formated) && date >= new Date()
   } 
-  // ALL MANAGE Dialogs:
+  // ALL BOOKING MANAGE Dialogs:
   const selected = ref(null)
   const manageDialog = ref(false)
   const confirmManage = ref(false)
@@ -215,8 +215,30 @@ export const useAdminStore = defineStore("admin", () => {
     return days.join(', ')
   }
 
-  function showTour(tour) {
-    console.log(tour)
+  // ALL TOUR MANAGE Dialogs:
+  const selectedTour = ref(null)
+  const manageTourDialog = ref(false)
+  const confirmTourManage = ref(false)
+  const cancelTourDialog = ref(false)
+  const restoreTourDialog = ref(false)
+
+  const changeTime = ref(null)
+  const changeTourSeats = ref(null)
+  const changeDuration = ref(null)
+  const changePrice = ref(null)
+  const changeDeps = ref(null)
+
+  async function showTour(tour) {
+    selectedTour.value = tour
+    console.log(selectedTour.value)
+    changeTime.value = selectedTour.value.time 
+    changeTourSeats.value = selectedTour.value.seats 
+    changeDuration.value = selectedTour.value.duration
+    changePrice.value = selectedTour.value.price
+    //setTimeout(() => {
+      manageTourDialog.value = true
+    //}, 0)
+    
   }
 
   //add destinations
@@ -796,7 +818,9 @@ export const useAdminStore = defineStore("admin", () => {
     changeDate, changeFromAddress, changeSeats, changeToAddress, confirmManage,
     cancelDialog, restoreDialog, preview, flag, dbCountries, cityPics, cityPreview,
     cityPreviewKey, countryFrom, countryTo, cityFrom, cityTo, tourTime, daysOfTour,
-    pax, price, hours, tPageCount, tourPage,
+    pax, price, hours, tPageCount, tourPage, manageTourDialog, confirmTourManage,
+    cancelTourDialog, restoreTourDialog, changeTime, changeTourSeats, changeDuration,
+    changePrice, changeDeps,
 
     formatDate, showDetails, adminDateQuery, isDateAllowed, selectFlag, selectCityPics,
     clearCityPics, clearFlag, validateTime, disableTour, formatDepDays, showTour,
