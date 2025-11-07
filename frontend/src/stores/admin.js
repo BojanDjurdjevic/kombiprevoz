@@ -235,9 +235,9 @@ export const useAdminStore = defineStore("admin", () => {
     changeTourSeats.value = selectedTour.value.seats 
     changeDuration.value = selectedTour.value.duration
     changePrice.value = selectedTour.value.price
-    //setTimeout(() => {
+    setTimeout(() => {
       manageTourDialog.value = true
-    //}, 0)
+    }, 0)
     
   }
 
@@ -820,7 +820,7 @@ export const useAdminStore = defineStore("admin", () => {
     cityPreviewKey, countryFrom, countryTo, cityFrom, cityTo, tourTime, daysOfTour,
     pax, price, hours, tPageCount, tourPage, manageTourDialog, confirmTourManage,
     cancelTourDialog, restoreTourDialog, changeTime, changeTourSeats, changeDuration,
-    changePrice, changeDeps,
+    changePrice, changeDeps, selectedTour,
 
     formatDate, showDetails, adminDateQuery, isDateAllowed, selectFlag, selectCityPics,
     clearCityPics, clearFlag, validateTime, disableTour, formatDepDays, showTour,
