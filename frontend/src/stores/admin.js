@@ -232,9 +232,9 @@ export const useAdminStore = defineStore("admin", () => {
     selectedTour.value = tour
     console.log(selectedTour.value)
     changeTime.value = selectedTour.value.time 
-    changeTourSeats.value = selectedTour.value.seats 
-    changeDuration.value = selectedTour.value.duration
-    changePrice.value = selectedTour.value.price
+    changeTourSeats.value = Number(selectedTour.value.seats) || 8
+    changeDuration.value = Number(selectedTour.value.duration) || 0
+    changePrice.value = Number(selectedTour.value.price) || 0
     setTimeout(() => {
       manageTourDialog.value = true
     }, 0)
@@ -357,9 +357,9 @@ export const useAdminStore = defineStore("admin", () => {
     else return false
   }
 
-  function filterDeps() {
+  function filterDeps(str) {
     let deps = []
-    daysOfTour.value.forEach(obj => {
+    str.forEach(obj => {
       deps.push(String(obj.id))
     });
     deps = deps.toString()
@@ -782,7 +782,7 @@ export const useAdminStore = defineStore("admin", () => {
     },
     addTour: async () => {
       if(!cityFrom.value || !cityTo.value || !daysOfTour.value || !hours.value || !pax.value || !price.value || !tourTime.value) return displayError('Sva polja su obavezna!')
-      let departures = filterDeps()
+      let departures = filterDeps(daysOfTour.value)
       const dto = {
         tours : {
           from: cityFrom.value.name,
@@ -804,6 +804,39 @@ export const useAdminStore = defineStore("admin", () => {
         console.log(error)
         user.showErr(error, 3000)
       }
+    },
+    updateTour: async () => {
+      let deps = filterDeps(changeDeps.value)
+      const dto = {
+        tours: {
+          update: true,
+          id: selectedTour.value.id,
+          departures: deps,
+          time: changeTime.value,
+          duration: changeDuration.value,
+          price: changePrice.value,
+          seats: changeTourSeats.value
+        }
+      }
+      try {
+        const res = await api.updateTour(dto)
+        user.showSucc(res, 6000)
+        console.log(res.data)
+        actions.value.fetchAllTours()
+      } catch (error) {
+        console.log(error)
+        user.showErr(error, 6000)
+      } finally {
+        actions.value.clearTourEdit()
+        manageTourDialog.value = false
+      }
+    },
+    clearTourEdit: () => {
+      changeDeps.value = null
+      changeDuration.value = null
+      changePrice.value = null
+      changeTourSeats.value = null
+      changeTime.value = null
     }
     
   });

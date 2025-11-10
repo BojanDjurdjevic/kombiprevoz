@@ -135,66 +135,91 @@ const tourDays = [
                         <div class="w-100 h-100 d-flex">
                           <div class="w-50 h-100 pa-3 d-flex flex-column justify-space-evenly">
                             <p><strong>Ruta:</strong> {{ admin.selectedTour?.from_city }} → {{ admin.selectedTour?.to_city }}</p>
-                            
+                            <p><strong>Polasci:</strong> {{ admin.formatDepDays(admin.selectedTour?.departures) }}</p>
                             <p><strong>Vreme Polaska:</strong> {{ admin.selectedTour?.time }}</p>
                             <p><strong>Trajanje:</strong> {{ admin.selectedTour?.duration }}</p>
                             <p><strong>Maksimum mesta:</strong> {{ admin.selectedTour?.seats }}</p>
                             <p><strong>Cena:</strong> {{ admin.selectedTour?.price }} €</p>
+                            <div class="w-100 d-flex justify-space-around">
+                              <div class="text-center">
+                                <h4>Aktiviraj turu</h4>
+                                <v-btn
+                                  color="green-darken-3"
+                                  icon="mdi-check-all"
+                                ></v-btn>
+                              </div>
+                              <div class="text-center">
+                                <h4>Deaktiviraj turu</h4>
+                                <v-btn
+                                  color="indigo-darken-3"
+                                  icon="mdi-check-all"
+                                ></v-btn>
+                              </div>
+                              <div class="text-center">
+                                <h4>Zauvek obriši</h4>
+                                <v-btn
+                                  color="red-darken-3"
+                                  icon="mdi-close-thick"
+                                ></v-btn>
+                              </div>
+                            </div>
                           </div>
 
                           <!--  ACTIONS - tour managing by admin  -->
                           <!--  Update Tour  -->
                           <div class="w-50 h-100 pa-6 mt-3 d-flex flex-column justify-space-around">
-                            <div class="h-75 d-flex flex-column justify-space-evenly">
+                            <div class="h-25 ">
                               <v-select
-                                
-                                class="w-50 mt-5"
+                                v-model="admin.changeDeps"
+                                class="w-75 mt-5"
                                 prepend-icon="mdi-calendar-month-outline"
                                 clearable
                                 chips
-                                label="Izaberi dane polaska"
+                                label="Izmeni dane polaska"
                                 :items="tourDays"
                                 multiple
                                 return-object
                                 item-title="day"
                                 item-value="id"
+                                @click:clear="admin.changeDeps = null"
                               ></v-select>
                               <v-text-field
-                                prepend-icon="mdi-time"
-                                class="w-50 mt-5"
-                                
+                                prepend-icon="mdi-clock-time-three-outline"
+                                class="w-75 mt-5"
+                                v-model="admin.changeTime"
                                 label="Vreme polaska"
                                 placeholder="hh:mm:ss"
+                                clearable
                                 hint="Upiši u formatu 08:30:00"
                                 persistent-hint
                                 :rules="[admin.validateTime]"
                               ></v-text-field>
                             </div>
-                            <div class="w-100 d-flex">
-                              <div class="w-50 d-flex flex-column align-center">
+                            <div class="w-100 h-50">
+                              <div class="w-75 d-flex flex-column align-center">
                                 <h5>Trajanje u satima</h5>
                                 <v-number-input
-                                  
+                                  v-model="admin.changeDuration"
                                   class="w-75 mt-1"
                                   control-variant="split"
                                   :max="33"
                                   :min="1"
                                 ></v-number-input>
                               </div>
-                              <div class="w-50 d-flex flex-column align-center">
+                              <div class="w-75 d-flex flex-column align-center">
                                 <h5>Maksimum putnika</h5>
                                 <v-number-input
-                                  
+                                  v-model="admin.changeTourSeats"
                                   class="w-75 mt-1"
                                   control-variant="split"
                                   :max="8"
                                   :min="1"
                                 ></v-number-input>
                               </div>
-                              <div class="w-50 d-flex flex-column align-center">
+                              <div class="w-75 d-flex flex-column align-center">
                                 <h5>Cena u eurima</h5>
                                 <v-number-input
-                                  
+                                  v-model="admin.changePrice"
                                   class="w-75 mt-1"
                                   control-variant="split"
                                   :min="30"
@@ -204,10 +229,11 @@ const tourDays = [
                                 <v-btn 
                                   variant="elevated" 
                                   color="green-darken-4"
-                                  
+                                  @click="admin.actions.updateTour"
+                                  :disabled="!admin.changeDeps || !admin.changeTime || !admin.changeDuration || !admin.changeTourSeats || !admin.changePrice"
                                 >Potvrdi</v-btn>
                                 <v-btn color="red-darken-3"
-                                  
+                                  @click="admin.actions.clearTourEdit"
                                 >Poništi</v-btn>
                               </div>
                               <!-- ACTIONS  -->

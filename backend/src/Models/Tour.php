@@ -452,18 +452,18 @@ class Tour {
             
     }
 
+    // ------------------------------ PUT ---------------------------------------/
+
     public function update()
     {
         $sql = "UPDATE tours SET
-        from_city = :from_city, to_city = :to_city, departures = :departures,
-        time = :time, duration = :duration, price = :price, seats = :seats
+        departures = :departures, time = :time, duration = :duration, 
+        price = :price, seats = :seats
         WHERE id = :id
         ";
         $stmt = $this->db->prepare($sql);
 
         $this->id = htmlspecialchars(strip_tags($this->id));
-        $this->from_city = htmlspecialchars(strip_tags($this->from_city));
-        $this->to_city = htmlspecialchars(strip_tags($this->to_city));
         $this->departures = htmlspecialchars(strip_tags($this->departures));
         $this->time = htmlspecialchars(strip_tags($this->time));
         $this->duration = htmlspecialchars(strip_tags($this->duration));
@@ -471,18 +471,26 @@ class Tour {
         $this->seats = htmlspecialchars(strip_tags($this->seats));
 
         $stmt->bindParam(':id', $this->id);
-        $stmt->bindParam(':from_city', $this->from_city);
-        $stmt->bindParam(':to_city', $this->to_city);
         $stmt->bindParam(':departures', $this->departures);
         $stmt->bindParam(':time', $this->time);
         $stmt->bindParam(':duration', $this->duration);
         $stmt->bindParam(':price', $this->price);
         $stmt->bindParam(':seats', $this->seats);
 
-        if($stmt->execute()) {
-            echo json_encode(['msg' => "Vožnja je uspešno izmenjena."], JSON_PRETTY_PRINT);
-        } else
-            echo json_encode(['msg' => "Trenutno nije moguće izmeniti ovu vožnju."], JSON_PRETTY_PRINT);
+        try {
+            if($stmt->execute()) {
+                http_response_code(200);
+                echo json_encode([
+                    'success' => true,
+                    'msg' => "Vožnja je uspešno izmenjena."
+                ], JSON_PRETTY_PRINT);
+            }
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode([
+                'error' => 'Došlo je do greške prilikom konekcije na bazu podataka!'
+            ], JSON_PRETTY_PRINT);
+        }
     }
 
     public function delete() 

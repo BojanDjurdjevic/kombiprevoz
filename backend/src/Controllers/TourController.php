@@ -58,8 +58,6 @@ class TourController {
                 break;
             case 'PUT':
                 $this->tour->id = $this->data->tours->id;
-                $this->tour->from_city = $this->data->tours->from;
-                $this->tour->to_city = $this->data->tours->to;
                 $this->tour->departures = $this->data->tours->departures;
                 $this->tour->time = $this->data->tours->time;
                 $this->tour->duration = $this->data->tours->duration;

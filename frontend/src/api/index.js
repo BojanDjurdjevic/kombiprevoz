@@ -73,6 +73,10 @@ export default {
         //return console.log('Novi Tour :', tour)
         return axios.post("", tour)
     },
+    updateTour(tour) {
+        //return console.log(tour)
+        return axios.put("", tour)
+    },
 
     //------------------------------- USER -----------------------//
 
