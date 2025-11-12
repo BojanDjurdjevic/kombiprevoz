@@ -97,7 +97,7 @@ class Tour {
     public function getAll() 
     {
         $day = date('Y-m') . '%';
-        $sql = "SELECT * from tours WHERE deleted = 0";
+        $sql = "SELECT * from tours";
         $res = $this->db->query($sql);
         $num = $res->rowCount();
 
@@ -117,7 +117,8 @@ class Tour {
                     'time' => $row->time,
                     'duration' => $row->duration,
                     'price' => $row->price,
-                    'seats' => $row->seats
+                    'seats' => $row->seats,
+                    'deleted' => $row->deleted
                 ]);
             }
 
@@ -482,13 +483,14 @@ class Tour {
                 http_response_code(200);
                 echo json_encode([
                     'success' => true,
-                    'msg' => "Vožnja je uspešno izmenjena."
+                    'msg' => "Tura je uspešno izmenjena."
                 ], JSON_PRETTY_PRINT);
             }
         } catch (PDOException $e) {
             http_response_code(500);
             echo json_encode([
-                'error' => 'Došlo je do greške prilikom konekcije na bazu podataka!'
+                'error' => 'Došlo je do greške prilikom konekcije na bazu podataka!',
+                'msg' => $e->getMessage()
             ], JSON_PRETTY_PRINT);
         }
     }
@@ -502,10 +504,18 @@ class Tour {
         $this->from_city = htmlspecialchars(strip_tags($this->id));
         $stmt->bindParam(':id', $this->id);
 
-        if($stmt->execute()) {
-            echo json_encode(['msg' => "Vožnja je uspešno obrisana."], JSON_PRETTY_PRINT);
-        } else
-            echo json_encode(['msg' => "Trenutno nije moguće obrisati ovu vožnju."], JSON_PRETTY_PRINT);  
+        try {
+            if($stmt->execute()) {
+                http_response_code(200);
+                echo json_encode(['msg' => "Tura je uspešno deaktivirana."], JSON_PRETTY_PRINT);
+            }
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode([
+                'error' => "Trenutno nije moguće obrisati ovu turu.",
+                'msg' => $e->getMessage()
+            ], JSON_PRETTY_PRINT);  
+        }           
     }
 
     public function restore() 
@@ -517,10 +527,17 @@ class Tour {
         $this->from_city = htmlspecialchars(strip_tags($this->id));
         $stmt->bindParam(':id', $this->id);
 
-        if($stmt->execute()) {
-            echo json_encode(['msg' => "Vožnja je uspešno aktivirana."], JSON_PRETTY_PRINT);
-        } else
-            echo json_encode(['msg' => "Trenutno nije moguće aktivirati ovu vožnju."], JSON_PRETTY_PRINT);  
+        try {
+            if($stmt->execute()) {
+                echo json_encode(['msg' => "Tura je uspešno aktivirana."], JSON_PRETTY_PRINT);
+            }
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode([
+                'error' => "Trenutno nije moguće aktivirati ovu turu.",
+                'msg' => $e->getMessage()
+            ], JSON_PRETTY_PRINT);  
+        }  
     }
     public function restoreAll() 
     {
@@ -528,10 +545,41 @@ class Tour {
         deleted = 0 WHERE deleted = 1";
         $stmt = $this->db->prepare($sql);
 
-        if($stmt->execute()) {
-            echo json_encode(['msg' => "Sve neaktivne vožnje su uspešno aktivirane."], JSON_PRETTY_PRINT);
-        } else
-            echo json_encode(['msg' => "Trenutno nije moguće aktivirati sve neaktivne vožnje."], JSON_PRETTY_PRINT);  
+        try {
+            if($stmt->execute()) {
+                echo json_encode(['msg' => "Sve ture su uspešno aktivirane."], JSON_PRETTY_PRINT);
+            }
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode([
+                'error' => "Trenutno nije moguće aktivirati sve ture.",
+                'msg' => $e->getMessage()
+            ], JSON_PRETTY_PRINT);  
+        }
+    }
+
+    public function permanentDelete() 
+    {
+        $sql = "DELETE FROM tours WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+
+        $this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
+
+        $stmt->bindParam(':id', $this->id);
+
+        try {
+            $stmt->execute();
+            echo json_encode([
+                'success' => true,
+                'msg' => 'Tura je zauvek obrisana'
+            ], JSON_PRETTY_PRINT);
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode([
+                'error' => "Trenutno nije moguće zauvek obrisati ovu turu.",
+                'msg' => $e->getMessage()
+            ], JSON_PRETTY_PRINT);  
+        }
     }
 }
 

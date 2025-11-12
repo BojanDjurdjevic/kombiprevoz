@@ -78,6 +78,8 @@ class TourController {
                     $this->tour->restore();
                 } elseif(isset($this->data->tours->restoreAll)) {
                     $this->tour->restoreAll();
+                } elseif(isset($this->data->tours->permanentDelete)) {
+                    $this->tour->permanentDelete();
                 }
                 break;
         }   
