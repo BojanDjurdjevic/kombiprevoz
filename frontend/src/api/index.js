@@ -79,7 +79,7 @@ export default {
     },
     deleteTour(tours) {
         //return console.log(tours)
-        return axios.delete("", {params: tours}, {
+        return axios.delete("", {data: tours}, {
             headers: {
                 "Content-type": "application/json"
             }

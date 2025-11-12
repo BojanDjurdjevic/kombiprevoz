@@ -882,18 +882,55 @@ export const useAdminStore = defineStore("admin", () => {
       try {
         const res = await api.deleteTour(tours)
         console.log(res.data)
+        user.showSucc(res, 6000)
+        await actions.value.fetchAllTours()
       } catch (error) {
         console.log(error)
+        user.showErr(error, 6000)
       } finally {
         actions.value.clearTourEdit
         manageTourDialog.value = false
       }
     },
     restoreTour: async () => {
-
+      const tours = {
+        tours: {
+          id: selectedTour.value.id,
+          restore: true
+        }
+      }
+      try {
+        const res = await api.deleteTour(tours)
+        console.log(res.data)
+        user.showSucc(res, 6000)
+        await actions.value.fetchAllTours()
+      } catch (error) {
+        console.log(error)
+        user.showErr(error, 6000)
+      } finally {
+        actions.value.clearTourEdit
+        manageTourDialog.value = false
+      }
     },
     permanentDeleteTour: async () => {
-
+      const tours = {
+        tours: {
+          id: selectedTour.value.id,
+          permanentDelete: true
+        }
+      }
+      try {
+        const res = await api.deleteTour(tours)
+        console.log(res.data)
+        user.showSucc(res, 6000)
+        await actions.value.fetchAllTours()
+      } catch (error) {
+        console.log(error)
+        user.showErr(error, 6000)
+      } finally {
+        actions.value.clearTourEdit
+        manageTourDialog.value = false
+      }
     }
     
   });
