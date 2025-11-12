@@ -172,6 +172,15 @@ export const useAdminStore = defineStore("admin", () => {
   const usrEmail = ref(null);
 
   // TOURS
+  const tourDays = [
+    {id: 0, day: "Nedelja"},
+    {id: 1, day: "Ponedeljak"},
+    {id: 2, day: "Utorak"},
+    {id: 3, day: "Sreda"},
+    {id: 4, day: "Četvrtak"},
+    {id: 5, day: "Petak"},
+    {id: 6, day: "Subota"}
+  ]
   //filters
   const tourName = ref(null);
   const toursFrom = ref(null);
@@ -228,6 +237,19 @@ export const useAdminStore = defineStore("admin", () => {
   const changePrice = ref(null)
   const changeDeps = ref(null)
 
+  function fillDeps(str) {
+    str = str.split(',')
+    const deps = []
+    for(let s of str) {
+      tourDays.forEach(day => {
+        if(s == day.id) {
+          deps.push(day)
+        }
+      });
+    }
+    return deps
+  }
+
   async function showTour(tour) {
     selectedTour.value = tour
     console.log(selectedTour.value)
@@ -235,6 +257,7 @@ export const useAdminStore = defineStore("admin", () => {
     changeTourSeats.value = Number(selectedTour.value.seats) || 8
     changeDuration.value = Number(selectedTour.value.duration) || 0
     changePrice.value = Number(selectedTour.value.price) || 0
+    changeDeps.value = fillDeps(selectedTour.value.departures)
     setTimeout(() => {
       manageTourDialog.value = true
     }, 0)
@@ -807,6 +830,17 @@ export const useAdminStore = defineStore("admin", () => {
     },
     updateTour: async () => {
       let deps = filterDeps(changeDeps.value)
+      if(changeTime.value == selectedTour.value?.time && changeDuration.value == selectedTour.value?.duration &&
+        changePrice.value == selectedTour.value?.price && changeTourSeats.value == selectedTour.value?.seats &&
+        deps == selectedTour.value?.departures
+      ) {
+        manageTourDialog.value = false
+        displayError('Nije izmenjena nijedna stavka! Promenite bar jedno polje da biste zatražili promenu rute.')
+        setTimeout(() => {
+          manageTourDialog.value = true
+        }, 3900)
+        return
+      }
       const dto = {
         tours: {
           update: true,
@@ -837,6 +871,29 @@ export const useAdminStore = defineStore("admin", () => {
       changePrice.value = null
       changeTourSeats.value = null
       changeTime.value = null
+    },
+    removeTour: async () => {
+      const tours = {
+        tours: {
+          id: selectedTour.value.id,
+          delete: true
+        }
+      }
+      try {
+        const res = await api.deleteTour(tours)
+        console.log(res.data)
+      } catch (error) {
+        console.log(error)
+      } finally {
+        actions.value.clearTourEdit
+        manageTourDialog.value = false
+      }
+    },
+    restoreTour: async () => {
+
+    },
+    permanentDeleteTour: async () => {
+
     }
     
   });

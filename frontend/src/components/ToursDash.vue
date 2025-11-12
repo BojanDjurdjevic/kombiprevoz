@@ -75,9 +75,9 @@ const tourDays = [
                             <v-badge
                               v-if="item.raw.deleted == 1"
                               color="red-darken-3"
-                              content="Neaktivna"
+                              content="NEAKTIVNA"
                               bordered
-                              class="absolute top-2 right-2"
+                              class="absolute top-2 right-2 ml-3"
                             ></v-badge>
                             <v-card-title class="text-lg font-semibold">
                               {{ item.raw.from_city }} → {{ item.raw.to_city }}
@@ -141,25 +141,28 @@ const tourDays = [
                             <p><strong>Maksimum mesta:</strong> {{ admin.selectedTour?.seats }}</p>
                             <p><strong>Cena:</strong> {{ admin.selectedTour?.price }} €</p>
                             <div class="w-100 d-flex justify-space-around">
-                              <div class="text-center">
+                              <div class="text-center" v-if="admin.selectedTour?.deleted == 1">
                                 <h4>Aktiviraj turu</h4>
                                 <v-btn
                                   color="green-darken-3"
                                   icon="mdi-check-all"
+                                  @click="admin.actions.restoreTour"
                                 ></v-btn>
                               </div>
-                              <div class="text-center">
+                              <div class="text-center" v-if="admin.selectedTour?.deleted == 0">
                                 <h4>Deaktiviraj turu</h4>
                                 <v-btn
-                                  color="indigo-darken-3"
+                                  color="red-darken-3"
                                   icon="mdi-check-all"
+                                  @click="admin.actions.removeTour"
                                 ></v-btn>
                               </div>
-                              <div class="text-center">
+                              <div class="text-center" v-if="admin.selectedTour?.deleted == 1">
                                 <h4>Zauvek obriši</h4>
                                 <v-btn
                                   color="red-darken-3"
                                   icon="mdi-close-thick"
+                                  @click="admin.actions.permanentDeleteTour"
                                 ></v-btn>
                               </div>
                             </div>

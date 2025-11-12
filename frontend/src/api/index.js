@@ -77,6 +77,14 @@ export default {
         //return console.log(tour)
         return axios.put("", tour)
     },
+    deleteTour(tours) {
+        //return console.log(tours)
+        return axios.delete("", {params: tours}, {
+            headers: {
+                "Content-type": "application/json"
+            }
+        })
+    },
 
     //------------------------------- USER -----------------------//
 
@@ -116,7 +124,7 @@ export default {
    orderItemDelete(orders) {
         return axios.delete("", {data: orders}, {
             headers: {
-                "Content-type": "json/application"
+                "Content-type": "application/json"
             }
         })
    }
