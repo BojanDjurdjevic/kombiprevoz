@@ -3,6 +3,7 @@
 namespace Controllers;
 
 use Models\Tour;
+use Rules\Validator;
 
 class TourController {
     public $db;
@@ -41,6 +42,20 @@ class TourController {
                             $this->tour->requestedSeats = $this->data->tours->search->seats;
                             $this->tour->getBySearch();
                         } 
+                        if(isset($this->data->tours->byFilter)) {
+                            if(Validator::isSuper() || Validator::isAdmin()) {
+                                $this->tour->id = $this->data->tours->byFilter->id;
+                                $this->tour->from_city = $this->data->tours->byFilter->from_city;
+                                $this->tour->to_city = $this->data->tours->byFilter->to_city;
+
+                                $this->tour->getByFilters();
+                            } else {
+                                http_response_code(403);
+                                echo json_encode([
+                                    'error' => 'Niste autorizovani da pristupite svim turama'
+                                ], JSON_PRETTY_PRINT);
+                            }
+                        }
                     } 
                 }
                 break;

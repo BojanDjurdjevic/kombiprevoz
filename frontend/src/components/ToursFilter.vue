@@ -50,7 +50,8 @@ const admin = useAdminStore();
     </div>
     <div class="w-100 h-75 d-flex flex-column align-center justify-center">
       <v-btn class="w-75 ma-3" prepend-icon="mdi-magnify" color="green-darken-3"
-        >Traži</v-btn
+        @click="admin.actions.searchTour"
+      >Traži</v-btn
       >
       <v-btn
         class="w-75 ma-3"

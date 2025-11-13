@@ -52,7 +52,7 @@ class Tour {
     {
         if(empty($this->id)) {
             $sql = "SELECT id, seats from tours 
-                    WHERE from_city = :from_city AND to_city = :to_city and deleted = 0
+                    WHERE from_city = :from_city AND to_city = :to_city
             ";
             $stmt = $this->db->prepare($sql);
 
@@ -63,7 +63,7 @@ class Tour {
             $stmt->bindParam(':to_city', $this->to_city);
         } else {
             $sql = "SELECT id, seats from tours 
-                WHERE id = :id AND deleted = 0
+                WHERE id = :id 
             ";
             $stmt = $this->db->prepare($sql);
 
@@ -97,7 +97,7 @@ class Tour {
     public function getAll() 
     {
         $day = date('Y-m') . '%';
-        $sql = "SELECT * from tours";
+        $sql = "SELECT * from tours WHERE deleted IN (0, 1)";
         $res = $this->db->query($sql);
         $num = $res->rowCount();
 
@@ -158,16 +158,63 @@ class Tour {
                     "time" => $res->time,
                     "duration" => $res->duration,
                     "price" => $res->price,
-                    "seats" => $res->seats
+                    "seats" => $res->seats,
+                    "deleted" => $res->deleted
                 ]);
 
-                if($tour) return $tour;
-                else echo json_encode(['tour' => 'Nije pronađena nijedna vožnja!']);
+                if(count($tour) > 0) return $tour;
+                else {
+                    http_response_code(404);
+                    echo json_encode(['error' => 'Nije pronađena nijedna tura!']);
+                } 
             }
         } catch (PDOException $e) {
             echo json_encode([
                 'tour' => 'Došlo je do greške!', 
                 'msg' => $e->getMessage()    
+            ]);
+        }
+    }
+
+    public function getByFilters() {
+        if($this->id) {
+            http_response_code(200);
+            echo json_encode([
+                'tour' => $this->getByID()
+            ], JSON_PRETTY_PRINT);
+            exit();
+        }
+
+        $params = [
+            'from_city' => $this->from_city,
+            'to_city' => $this->to_city
+        ];
+
+        $params = array_filter($params, fn($p) => !empty($p));
+
+        $cleaned = Validator::cleanParams($params);
+
+        $sql = "SELECT * from tours WHERE deleted IN (0, 1)";
+
+        if(isset($cleaned['from_city'])) $sql .= " AND from_city = :from_city";
+        if(isset($cleaned['to_city'])) $sql .= " AND to_city = :to_city";
+
+        $stmt = $this->db->prepare($sql);
+        foreach($cleaned as $k => $v) {
+            $stmt->bindValue(':' . $k, $v);
+        }
+
+        try {
+            $stmt->execute();
+            $tours = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+            header('Content-Type: application/json');
+            echo json_encode(['tours' => $tours, 'has_tours' => !empty($tours)], JSON_PRETTY_PRINT);
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode([
+                'error' => 'Došlo je do greške pri konekciji na bazu!',
+                'msg' => $e->getMessage()
             ]);
         }
     }
@@ -560,7 +607,7 @@ class Tour {
 
     public function permanentDelete() 
     {
-        $sql = "DELETE FROM tours WHERE id = :id";
+        $sql = "UPDATE tours SET deleted = 2 WHERE id = :id";
         $stmt = $this->db->prepare($sql);
 
         $this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);

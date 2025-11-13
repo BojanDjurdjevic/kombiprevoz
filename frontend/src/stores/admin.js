@@ -725,13 +725,23 @@ export const useAdminStore = defineStore("admin", () => {
         console.log(error)
       }
     },
-    searchTour: () => {
+    searchTour: async () => {
       const dto = {
-        title: tourName.value,
-        t_from: toursFrom.value,
-        t_to: toursTo.value,
+        byFilter: {
+          id: tourName.value.id,
+          from_city: toursFrom.value,
+          to_city: toursTo.value,
+        }       
       };
+
       console.log(dto);
+
+      try {
+          const res = await api.getTours(dto)
+          console.log(res.data)
+      } catch (error) {
+          console.log(error)
+      }
     },
     clearTourFilters: () => {
       tourName.value = null
