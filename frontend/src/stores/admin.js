@@ -880,6 +880,7 @@ export const useAdminStore = defineStore("admin", () => {
         user.showSucc(res, 6000)
         console.log(res.data)
         actions.value.fetchAllTours()
+        if(tab_tours.value == "Pretraga") actions.value.searchTour()
       } catch (error) {
         console.log(error)
         user.showErr(error, 6000)
