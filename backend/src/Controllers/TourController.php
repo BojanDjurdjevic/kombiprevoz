@@ -44,10 +44,13 @@ class TourController {
                         } 
                         if(isset($this->data->tours->byFilter)) {
                             if(Validator::isSuper() || Validator::isAdmin()) {
-                                $this->tour->id = $this->data->tours->byFilter->id;
-                                $this->tour->from_city = $this->data->tours->byFilter->from_city;
-                                $this->tour->to_city = $this->data->tours->byFilter->to_city;
-
+                                if(isset($this->data->tours->byFilter->id)) $this->tour->id = $this->data->tours->byFilter->id;
+                                else $this->tour->id = null;
+                                if(isset($this->data->tours->byFilter->from_city)) $this->tour->from_city = $this->data->tours->byFilter->from_city;
+                                else $this->tour->from_city = null;
+                                if(isset($this->data->tours->byFilter->to_city)) $this->tour->to_city = $this->data->tours->byFilter->to_city;
+                                else $this->tour->to_city = null;
+                                
                                 $this->tour->getByFilters();
                             } else {
                                 http_response_code(403);

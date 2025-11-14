@@ -726,9 +726,10 @@ export const useAdminStore = defineStore("admin", () => {
       }
     },
     searchTour: async () => {
+      let id = tourName.value?.id || null
       const dto = {
         byFilter: {
-          id: tourName.value.id,
+          id: id,
           from_city: toursFrom.value,
           to_city: toursTo.value,
         }       

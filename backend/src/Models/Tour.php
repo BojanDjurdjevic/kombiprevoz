@@ -196,8 +196,13 @@ class Tour {
 
         $sql = "SELECT * from tours WHERE deleted IN (0, 1)";
 
-        if(isset($cleaned['from_city'])) $sql .= " AND from_city = :from_city";
-        if(isset($cleaned['to_city'])) $sql .= " AND to_city = :to_city";
+        if(isset($cleaned['from_city']) && isset($cleaned['to_city'])) {
+            $sql .= " AND (from_city = :from_city OR to_city = :to_city)";
+        } else {
+            if(isset($cleaned['from_city'])) $sql .= " AND from_city = :from_city";
+            if(isset($cleaned['to_city'])) $sql .= " AND to_city = :to_city";
+        }
+        
 
         $stmt = $this->db->prepare($sql);
         foreach($cleaned as $k => $v) {
