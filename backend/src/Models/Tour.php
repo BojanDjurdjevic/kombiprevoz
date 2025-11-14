@@ -178,9 +178,11 @@ class Tour {
 
     public function getByFilters() {
         if($this->id) {
+            $tours = $this->getByID();
             http_response_code(200);
             echo json_encode([
-                'tour' => $this->getByID()
+                'tours' => $tours,
+                'has_tours' => !empty($tours)
             ], JSON_PRETTY_PRINT);
             exit();
         }

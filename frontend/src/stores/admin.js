@@ -172,6 +172,14 @@ export const useAdminStore = defineStore("admin", () => {
   const usrEmail = ref(null);
 
   // TOURS
+  const tab_tours = ref(null)
+  const items_tours = [
+    "Postojeće rute",
+    "Dodaj novu rutu",
+    "Države i Gradovi",
+    "Pretraga"
+  ];
+
   const tourDays = [
     {id: 0, day: "Nedelja"},
     {id: 1, day: "Ponedeljak"},
@@ -185,6 +193,8 @@ export const useAdminStore = defineStore("admin", () => {
   const tourName = ref(null);
   const toursFrom = ref(null);
   const toursTo = ref(null);
+
+  const filteredTours = ref(null)
 
   // existing tours:
 
@@ -740,6 +750,8 @@ export const useAdminStore = defineStore("admin", () => {
       try {
           const res = await api.getTours(dto)
           console.log(res.data)
+          if(res.data.has_tours) filteredTours.value = res.data.tours
+          tab_tours.value = "Pretraga"
       } catch (error) {
           console.log(error)
       }
@@ -958,7 +970,7 @@ export const useAdminStore = defineStore("admin", () => {
     cityPreviewKey, countryFrom, countryTo, cityFrom, cityTo, tourTime, daysOfTour,
     pax, price, hours, tPageCount, tourPage, manageTourDialog, confirmTourManage,
     cancelTourDialog, restoreTourDialog, changeTime, changeTourSeats, changeDuration,
-    changePrice, changeDeps, selectedTour,
+    changePrice, changeDeps, selectedTour, tab_tours, items_tours, filteredTours,
 
     formatDate, showDetails, adminDateQuery, isDateAllowed, selectFlag, selectCityPics,
     clearCityPics, clearFlag, validateTime, disableTour, formatDepDays, showTour,
