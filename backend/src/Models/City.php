@@ -75,6 +75,17 @@ class City {
         } 
     }
 
+    public function getFullCitiesByCountryId()
+    {
+        $sql = "SELECT countries.*, cities.id as city_id, cities.name as city_name,
+                t_pics.id as photo_id, t_pics.file_path as city_photo_path, t_pics.deleted 
+                from countries
+                INNER JOIN cities ON cities.country_id = countries.id
+                INNER JOIN t_pics ON t_pics.city_id = cities.id
+                WHERE countries.id = :id AND t_pics.deleted = 0"
+        ;
+    }
+
     public function byID() {
         $sql = "SELECT cities.*, t_pics.id as pic_id, t_pics.file_path from cities
                 LEFT JOIN t_pics ON t_pics.city_id = cities.id
