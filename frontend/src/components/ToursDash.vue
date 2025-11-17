@@ -491,6 +491,21 @@ const tourDays = [
                 </v-expansion-panels>
               </div>
               <!-- Cities & Countries -->
+              <div v-if="admin.tab_tours == 'Države i Gradovi'">
+                <div class="w-100 d-flex justify-center">
+                  <v-autocomplete
+                    class="w-75 text-center"
+                    label="Izaberi postojeću državu"
+                    clearable
+                    :items="admin.dbCountries"
+                    item-title="name"
+                    item-value="id"
+                    return-object
+                    v-model="admin.myCountry"
+                    @update:model-value="admin.actions.searchByCountry"
+                  ></v-autocomplete>
+                </div>
+              </div> 
 
               <!--  Search by Filter  -->
               <div v-if="admin.tab_tours == 'Pretraga' && admin.filteredTours">

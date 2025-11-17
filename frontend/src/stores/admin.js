@@ -398,6 +398,9 @@ export const useAdminStore = defineStore("admin", () => {
     deps = deps.toString()
     return deps
   }
+
+  // Countries&Cities Managment:
+  const myCountry = ref(null)
   
 
   const actions = ref({
@@ -955,6 +958,13 @@ export const useAdminStore = defineStore("admin", () => {
         actions.value.clearTourEdit
         manageTourDialog.value = false
       }
+    },
+    searchByCountry: async () => {
+      if(!myCountry.value) return
+      const dto = {
+        country_id: myCountry.value
+      }
+      console.log(dto)
     }
     
   });
@@ -972,6 +982,7 @@ export const useAdminStore = defineStore("admin", () => {
     pax, price, hours, tPageCount, tourPage, manageTourDialog, confirmTourManage,
     cancelTourDialog, restoreTourDialog, changeTime, changeTourSeats, changeDuration,
     changePrice, changeDeps, selectedTour, tab_tours, items_tours, filteredTours,
+    myCountry,
 
     formatDate, showDetails, adminDateQuery, isDateAllowed, selectFlag, selectCityPics,
     clearCityPics, clearFlag, validateTime, disableTour, formatDepDays, showTour,
