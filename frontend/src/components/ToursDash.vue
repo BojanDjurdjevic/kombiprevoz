@@ -5,9 +5,11 @@ import europeCities from "@/data/country-city.json";
 import { VDateInput } from "vuetify/labs/VDateInput";
 import { VNumberInput } from "vuetify/labs/VNumberInput";
 import { useSearchStore } from '@/stores/search';
+import { useDestStore } from '@/stores/destinations';
 
 const admin = useAdminStore();
 const search = useSearchStore()
+const dest = useDestStore();
 
 onMounted(() => {
   admin.actions.fetchCountries() 
@@ -504,6 +506,27 @@ const tourDays = [
                     v-model="admin.myCountry"
                     @update:model-value="admin.actions.searchByCountry"
                   ></v-autocomplete>
+                </div>
+                <div v-if="admin.myCountry">
+                  <v-card class="w-100 d-flex justif-space-evenly" 
+                    color="indigo-darken-4"
+                  >
+                    <v-card-title> {{  admin.myCountry?.name  }} </v-card-title>
+                    <v-card-text>
+
+                    </v-card-text>
+                    <v-card-actions>
+                      <v-img
+                        class="align-end text-white"
+                        height="100%"
+                        cover
+                        :src="dest.getCountryImage(admin.myCountry)"
+                      ></v-img>
+                      <v-btn
+                      
+                      >Uredi</v-btn>
+                    </v-card-actions>
+                  </v-card>
                 </div>
               </div> 
 

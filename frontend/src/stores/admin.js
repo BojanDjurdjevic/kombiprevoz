@@ -967,7 +967,7 @@ export const useAdminStore = defineStore("admin", () => {
       const dto = {
         countryID: id
       }
-      console.log(dto)
+      console.log(myCountry.value)
 
       try {
         const res = await api.getCities(dto)
