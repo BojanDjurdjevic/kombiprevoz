@@ -77,13 +77,53 @@ class City {
 
     public function getFullCitiesByCountryId()
     {
-        $sql = "SELECT countries.*, cities.id as city_id, cities.name as city_name,
+        $sql = "SELECT cities.id as city_id, cities.name as city_name,
                 t_pics.id as photo_id, t_pics.file_path as city_photo_path, t_pics.deleted 
-                from countries
-                INNER JOIN cities ON cities.country_id = countries.id
+                from cities
                 INNER JOIN t_pics ON t_pics.city_id = cities.id
-                WHERE countries.id = :id AND t_pics.deleted = 0"
+                WHERE cities.country_id = :id AND t_pics.deleted = 0"
         ;
+
+        $stmt = $this->db->prepare($sql);
+        $this->country_id = htmlspecialchars(strip_tags($this->country_id), ENT_QUOTES);
+
+        $stmt->bindParam(':id', $this->country_id);
+
+        try {
+            $stmt->execute();
+
+            $rows = $stmt->fetchAll(PDO::FETCH_OBJ);
+            $cities = [];
+
+            foreach($rows as $row) {
+                $cId = $row->city_id;
+
+                if(!isset($cities[$cId])) {
+                    $cities[$cId] = [
+                        'city_id' => $row->city_id,
+                        'name' => $row->city_name,
+                        'pics' => []
+                    ];
+                }
+
+                $cities[$cId]['pics'][] = [
+                    'photo_id' => $row->photo_id,
+                    'photo_path' => $row->city_photo_path,
+                    'deleted' => $row->deleted
+                ]; 
+            }
+
+            echo json_encode([
+                'cities' => $cities,
+                'has_cities' => !empty($cities)
+            ], JSON_PRETTY_PRINT);
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode([
+                'error' => 'Došlo je do greške pri konekciji na bazu podataka!',
+                'msg' => $e->getMessage()
+            ], JSON_PRETTY_PRINT);
+        }
     }
 
     public function byID() {
