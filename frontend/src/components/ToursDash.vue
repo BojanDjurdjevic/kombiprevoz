@@ -309,8 +309,7 @@ const tourDays = [
                           <v-btn color="green-darken-3" class="mb-3"
                             @click="admin.actions.addCountry"
                             :disabled="!admin.flag || !admin.toAddCountry"
-                          >Dodaj Državu</v-btn
-                          >
+                          >Dodaj Državu</v-btn>
                         </div>
                         <div class="w-50 d-flex flex-column align-center">
                           <v-autocomplete
@@ -511,6 +510,7 @@ const tourDays = [
                   ></v-autocomplete>
                 </div>
                 <div v-if="admin.myCountry">
+                  <h3 class="text-center ma-3">{{  admin.myCountry?.name  }}</h3>
                   <v-card class="w-100 d-flex justif-space-evenly" 
                     
                     height="3rem"
@@ -527,35 +527,110 @@ const tourDays = [
                       elevated
                       color="indigo-darken-4"
                       height="100%"
+                      @click="admin.countryDialog = true"
                     >Uredi</v-btn>
                   </v-card>
                 </div>
-              </div> 
-              <v-spacer></v-spacer>
-              <div v-if="admin.citiesByCountry && admin.myCountry" 
-                v-for="c in admin.citiesByCountry.cities"
-                :key="c"
-                class="mt-6"
-              >
-                <v-card class="w-100 d-flex justif-space-evenly"
-                  height="3rem"
+                <v-spacer></v-spacer>
+                <h3 class="text-center mt-3"> Gradovi države: {{  admin.myCountry?.name  }} </h3>
+                <div v-if="admin.citiesByCountry && admin.myCountry" 
+                  v-for="c in admin.citiesByCountry.cities"
+                  :key="c"
+                  class="mt-3"
                 >
-                  <v-img
-                      class="align-start text-black"
-                      height="100%"
-                      :src="dest.getCityPrimaryImage(c)"
-                      cover
+                  <v-card class="w-100 d-flex justif-space-evenly"
+                    height="3rem"
                   >
-                      <v-card-title class="text-start"> {{ c.name }} </v-card-title>
-                  </v-img> 
-                  <v-btn
-                    elevated
-                    color="indigo-darken-4"
-                    height="100%"
-                  >Uredi</v-btn>
-                </v-card>
-              </div>
+                    <v-img
+                        class="align-start text-black"
+                        height="100%"
+                        :src="dest.getCityPrimaryImage(c)"
+                        cover
+                    >
+                        <v-card-title class="text-start"> {{ c.name }} </v-card-title>
+                    </v-img> 
+                    <v-btn
+                      elevated
+                      color="indigo-darken-4"
+                      height="100%"
+                    >Uredi</v-btn>
+                  </v-card>
+                </div>
 
+                <!--  DIALOG for COUNTRY managing  -->
+
+                <v-dialog v-model="admin.countryDialog" fullscreen transition="dialog-bottom-transition" persistent>
+                    <v-card>
+                      <!-- Header -->
+                      <v-toolbar color="indigo-darken-4">
+                        <v-btn icon @click="admin.countryDialog = false">
+                          <v-icon>mdi-arrow-left</v-icon>
+                        </v-btn>
+                        <v-toolbar-title>Država: {{ admin.myCountry?.name }}</v-toolbar-title>
+                        <v-spacer></v-spacer>
+                      </v-toolbar>
+
+                      <!-- MAIN CONTENT - COUNTRY DETAILS -->
+
+                      <!--  Details  -->
+                      <v-card-text class="pa-4 ">
+                        <h2 class="text-center">{{ admin.myCountry?.name }}</h2>
+                        <div class="w-100 h-100 pa-9 d-flex flex-column align-center">
+                          <v-card class="w-50 h-50">
+                            <v-img
+                              class="text-white d-flex justif-space-evenly"
+                              height="100%"
+                              cover
+                              :src="dest.getCountryImage(admin.myCountry)"
+                            >
+                            </v-img> 
+                          </v-card>
+                          <div class="w-50 pa-6 d-flex flex-column align-center">
+                            <p class="ma-3">Promeni zastavu:</p>
+                            <v-file-input
+                            v-model="admin.flag"
+                            clearable
+                            label="Dodaj zastavu"
+                            accept="image/*"
+                            class="w-100"
+                            @change="admin.selectFlag"
+                            @click:clear="admin.clearFlag"
+                          /> <!--
+                          <v-img
+                            v-if="admin.preview"
+                            :key="admin.preview"
+                            :src="admin.preview"
+                            max-height="250"
+                            max-width="250"
+                            class="mt-4 rounded-lg elevation-3"
+                            cover
+                          />-->
+                          <img
+                            v-if="admin.preview"
+                            :src="admin.preview"
+                            style="max-height:6rem; max-width:6rem; border-radius:50%; box-shadow:0 2px 8px rgba(0,0,0,0.3);"
+                          />
+                          <v-btn color="green-darken-3" class="mb-3"
+                            @click="admin.actions.updateCountry"
+                            :disabled="!admin.flag"
+                          >Promeni zastavu</v-btn>
+                          </div>
+                        </div>
+                        
+                        
+                      </v-card-text>
+
+                      <!-- Btn -->
+                      <v-card-actions>
+                        <v-btn block color="success" @click="admin.countryDialog = false">
+                          Zatvori
+                        </v-btn>
+                      </v-card-actions>
+                    </v-card>
+                  </v-dialog>
+
+              </div> 
+              
               <!--  Search by Filter  -->
               <div v-if="admin.tab_tours == 'Pretraga' && admin.filteredTours">
                 <v-data-iterator

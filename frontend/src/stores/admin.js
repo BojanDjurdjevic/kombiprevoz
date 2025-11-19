@@ -400,8 +400,13 @@ export const useAdminStore = defineStore("admin", () => {
   }
 
   // Countries&Cities Managment:
+
   const myCountry = ref(null)
   const citiesByCountry = ref(null)
+
+  // Country&City DIALOG
+  const countryDialog = ref(false)
+  const cityDialog = ref(false)
   
 
   const actions = ref({
@@ -783,6 +788,31 @@ export const useAdminStore = defineStore("admin", () => {
         clearCountryPic()
       }
     },
+    updateCountry: async () => {
+      let id = myCountry.value?.id || null
+      let name = myCountry.value?.name || ''
+      if(!id || name == '') return displayError('Došlo je do greške! Pokušajte ponovo!')
+      const formData = new FormData()
+      formData.append("flag", flag.value)
+      formData.append("country_id", id)
+      formData.append("country_name", name)
+      formData.append("country", "update")
+
+      try {
+        const res = await api.insertCountry(formData)
+        console.log(res.data)
+        actions.value.fetchCountries()
+        actions.value.searchByCountry()
+        
+        user.showSucc(res, 3000)
+      } catch (error) {
+        console.log(error)
+        user.showErr(error, 3000)
+      } finally {
+        clearCountryPic()
+        countryDialog.value = false
+      }
+    },
     fetchCountries: async () => {
       const dto = {
         country: {
@@ -993,7 +1023,7 @@ export const useAdminStore = defineStore("admin", () => {
     pax, price, hours, tPageCount, tourPage, manageTourDialog, confirmTourManage,
     cancelTourDialog, restoreTourDialog, changeTime, changeTourSeats, changeDuration,
     changePrice, changeDeps, selectedTour, tab_tours, items_tours, filteredTours,
-    myCountry, citiesByCountry,
+    myCountry, citiesByCountry, countryDialog, cityDialog,
 
     formatDate, showDetails, adminDateQuery, isDateAllowed, selectFlag, selectCityPics,
     clearCityPics, clearFlag, validateTime, disableTour, formatDepDays, showTour,

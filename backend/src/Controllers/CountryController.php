@@ -31,11 +31,20 @@ class CountryController {
                 $this->country->name = $this->data->country_name;
                 $this->country->flag = $this->data->flag;
                 $this->country->create();
+                exit();
+            }
+            if(isset($this->data->country) && $this->data->country == "update") {
+                $this->country->id = $this->data->country_id;
+                $this->country->name = $this->data->country_name;
+                $this->country->flag = $this->data->flag;
+                $this->country->update();
+                exit();
             }
         } elseif($request === 'PUT') {
-            if(isset($this->data->country->country_id) && !empty($this->data->country->country_id)) {
-                $this->country->id = $this->data->country->country_id;
-                $this->country->name = $this->data->country->country_name;
+            if(isset($this->data->country) && $this->data->country == "update") {
+                $this->country->id = $this->data->country_id;
+                $this->country->name = $this->data->country_name;
+                $this->country->flag = $this->data->flag;
                 $this->country->update();
             }
         } elseif($request === 'DELETE') {

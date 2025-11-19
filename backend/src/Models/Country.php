@@ -118,24 +118,65 @@ class Country {
     }
 
     public function update() {
-        $sql = "UPDATE countries 
-                SET name = :name
+        if(!isset($this->flag)) {
+            http_response_code(422);
+            echo json_encode(['error' => 'Slika nije poslata! Molimo Vas da pošaljete zastavu države.'], JSON_PRETTY_PRINT);
+            exit();
+        }
+
+        $file = $this->flag;
+
+        $allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!in_array($file->type, $allowed)) {
+            echo json_encode(['error' => 'Nepodržan tip fajla.']);
+            return;
+        }
+
+        if ($file->size > 5 * 1024 * 1024) { // max 5MB
+            echo json_encode(['error' => 'Fajl je prevelik! Molimo vas da smanjite sliku pre unosa.']);
+            return;
+        }
+
+        $targetDir = __DIR__ . '/../assets/img/countries/';
+        if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
+
+        $newName = $this->name . '.' . pathinfo($file->name, PATHINFO_EXTENSION);
+        $targetFile = $targetDir . $newName;
+        $flagPath = 'src/assets/img/countries/' . $newName;
+
+        if (move_uploaded_file($file->tmp_name, $targetFile)) {
+            $sql = "UPDATE countries 
+                SET file_path = :flag
                 WHERE id = :id"
-        ;
-        $stmt = $this->db->prepare($sql);
+            ;
+            $stmt = $this->db->prepare($sql);
 
-        $this->id = htmlspecialchars(strip_tags($this->id));
-        $this->name = htmlspecialchars(strip_tags($this->name));
-        
-        $stmt->bindParam(':id', $this->id);
-        $stmt->bindParam(':name', $this->name);
+            $this->id = htmlspecialchars(strip_tags($this->id));
+            $this->name = htmlspecialchars(strip_tags($this->name));
+            $stmt->bindParam(':id', $this->id);
+            $stmt->bindParam(':flag', $flagPath);
 
-        if($stmt->execute()) {
-            echo json_encode(
-                ['message' => 'Država je izmenjena.']
-            );
-        } else
-        json_encode(['message' => 'Trenutno nije moguće izmeniti ovu državu']);
+            try {
+                $stmt->execute();
+                http_response_code(200);
+                echo json_encode([
+                    'success' => true,
+                    'msg' => "Uspešno ste zamenili zastavu države: $this->name!",
+                    'file' => $newName,
+                    'path' => $flagPath
+                ], JSON_PRETTY_PRINT);
+                exit();
+
+            } catch (PDOException $e) {
+                echo json_encode([
+                    'error' => 'Došlo je do greške pri konekciji na bazu!',
+                    'msg' => $e->getMessage()
+                ], JSON_PRETTY_PRINT);
+            }
+        } else {
+            echo json_encode(['error' => 'Došlo je do greške pri snimanju fajla.'], JSON_PRETTY_PRINT);
+            return;
+        }
     }
 
     public function delete() {

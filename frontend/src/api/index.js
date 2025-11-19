@@ -19,12 +19,13 @@ export default {
         })
         
     },
-    updateCountry(data) {
-        console.log(data)
-        return axios.put("", data, {
+    updateCountry(formData) {
+        console.log(formData)
+        return axios.put("", formData, {
             headers: {
-                "Content-type": "json/application"
-            }
+                "Content-type": "multipart/form-data"
+            },
+            withCredentials: true
         })
         
     },
