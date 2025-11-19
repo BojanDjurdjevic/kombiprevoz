@@ -493,7 +493,10 @@ const tourDays = [
                 </v-expansion-panels>
               </div>
               <!-- Cities & Countries -->
-              <div v-if="admin.tab_tours == 'Države i Gradovi'">
+              <div v-if="admin.tab_tours == 'Države i Gradovi'"
+                class="d-flex flex-column justify-space-evenly"
+                min-height="33rem"
+              >
                 <div class="w-100 d-flex justify-center">
                   <v-autocomplete
                     class="w-75 text-center"
@@ -509,26 +512,49 @@ const tourDays = [
                 </div>
                 <div v-if="admin.myCountry">
                   <v-card class="w-100 d-flex justif-space-evenly" 
-                    color="indigo-darken-4"
+                    
+                    height="3rem"
                   >
-                    <v-card-title> {{  admin.myCountry?.name  }} </v-card-title>
-                    <v-card-text>
-
-                    </v-card-text>
-                    <v-card-actions>
-                      <v-img
-                        class="align-end text-white"
-                        height="100%"
-                        cover
-                        :src="dest.getCountryImage(admin.myCountry)"
-                      ></v-img>
-                      <v-btn
-                      
-                      >Uredi</v-btn>
-                    </v-card-actions>
+                    <v-img
+                      class="text-white d-flex justif-space-evenly"
+                      height="100%"
+                      cover
+                      :src="dest.getCountryImage(admin.myCountry)"
+                    >
+                      <v-card-title> {{  admin.myCountry?.name  }} </v-card-title>
+                    </v-img>
+                    <v-btn
+                      elevated
+                      color="indigo-darken-4"
+                      height="100%"
+                    >Uredi</v-btn>
                   </v-card>
                 </div>
               </div> 
+              <v-spacer></v-spacer>
+              <div v-if="admin.citiesByCountry && admin.myCountry" 
+                v-for="c in admin.citiesByCountry.cities"
+                :key="c"
+                class="mt-6"
+              >
+                <v-card class="w-100 d-flex justif-space-evenly"
+                  height="3rem"
+                >
+                  <v-img
+                      class="align-start text-black"
+                      height="100%"
+                      :src="dest.getCityPrimaryImage(c)"
+                      cover
+                  >
+                      <v-card-title class="text-start"> {{ c.name }} </v-card-title>
+                  </v-img> 
+                  <v-btn
+                    elevated
+                    color="indigo-darken-4"
+                    height="100%"
+                  >Uredi</v-btn>
+                </v-card>
+              </div>
 
               <!--  Search by Filter  -->
               <div v-if="admin.tab_tours == 'Pretraga' && admin.filteredTours">

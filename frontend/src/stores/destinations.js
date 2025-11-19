@@ -37,7 +37,7 @@ export const useDestStore = defineStore('dest', () => {
       if (!n.file_path || n.file_path === '') {
         return 'https://cdn.vuetifyjs.com/images/cards/docks.jpg'
       }
-      
+      //console.log('http://localhost:8080/' + n.file_path)
       return 'http://localhost:8080/' + n.file_path
     }
     function getCityPrimaryImage(n) {

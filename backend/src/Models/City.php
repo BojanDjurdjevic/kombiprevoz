@@ -102,13 +102,13 @@ class City {
                     $cities[$cId] = [
                         'city_id' => $row->city_id,
                         'name' => $row->city_name,
-                        'pics' => []
+                        'pictures' => []
                     ];
                 }
 
-                $cities[$cId]['pics'][] = [
+                $cities[$cId]['pictures'][] = [
                     'photo_id' => $row->photo_id,
-                    'photo_path' => $row->city_photo_path,
+                    'file_path' => $row->city_photo_path,
                     'deleted' => $row->deleted
                 ]; 
             }
