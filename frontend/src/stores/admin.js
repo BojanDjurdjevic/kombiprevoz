@@ -415,11 +415,24 @@ export const useAdminStore = defineStore("admin", () => {
 
   function openCityDialog(city) {
     cityDialog.value = true
+    let arr = []
+    if(city.pictures.length > 0) {
+      city.pictures.forEach(p => {
+        let pic = dest.getCountryImage(p)
+        
+        arr.push(
+          {
+            photo_id: p.photo_id,
+            file_path: pic,
+            deleted: p.deleted 
+          }
+        )
+      });
+    }
     myCity.value = city
-    myCity.value?.pictures.forEach(p => {
-      p.file_path = dest.getCountryImage(p)
-    });
+    myCityPics.value = arr
     console.log(myCity.value)
+    console.log(myCityPics.value)
   }
 
   const selectedPictures = ref([])

@@ -660,7 +660,7 @@ const tourDays = [
                           >
                             
                               <v-item
-                                v-for="photo in admin.myCity?.pictures"
+                                v-for="photo in admin.myCityPics"
                                 :key="photo.photo_id"
                                 :value="photo.photo_id"
                               >
