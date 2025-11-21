@@ -6,10 +6,12 @@ import api from "@/api";
 import router from "@/router";
 import { useRoute } from "vue-router";
 import europeCities from "@/data/country-city.json";
+import { useDestStore } from "./destinations";
 
 export const useAdminStore = defineStore("admin", () => {
   const user = useUserStore();
   const search = useSearchStore();
+  const dest = useDestStore();
 
   const adminView = ref("Bookings");
   const loading = ref(false);
@@ -407,6 +409,20 @@ export const useAdminStore = defineStore("admin", () => {
   // Country&City DIALOG
   const countryDialog = ref(false)
   const cityDialog = ref(false)
+
+  const myCity = ref(null)
+  const myCityPics = ref(null)
+
+  function openCityDialog(city) {
+    cityDialog.value = true
+    myCity.value = city
+    myCity.value?.pictures.forEach(p => {
+      p.file_path = dest.getCountryImage(p)
+    });
+    console.log(myCity.value)
+  }
+
+  const selectedPictures = ref([])
   
 
   const actions = ref({
@@ -849,6 +865,32 @@ export const useAdminStore = defineStore("admin", () => {
         
       }
     },
+    removeCity: async () => {
+
+    },
+    // ADD-REMOVE city pictures - UPDATE
+    deleteSelected: async () => {
+      console.log(selectedPictures.value)
+    },
+    addCityPics: async () => {
+      const formData = new FormData()
+      formData.append("country_id", selectedCountry.value.id)
+      formData.append("name", selectedCity.value)
+      formData.append("cities", "update")
+      cityPics.value.forEach(file => formData.append('photos[]', file))
+
+      try { 
+        const res = await api.insertCity(formData)
+        console.log(res.data)
+        user.showSucc(res, 3000)
+      } catch (error) {
+        console.log(error)
+        user.showErr(error, 3000)
+      } finally {
+        clearCityPics()
+        
+      }
+    },
     clearTourForm: () => {
       countryFrom.value = null,
       countryTo.value = null,
@@ -1006,7 +1048,7 @@ export const useAdminStore = defineStore("admin", () => {
       } catch (error) {
         console.log(error)
       }
-    }
+    },
     
   });
 
@@ -1023,9 +1065,11 @@ export const useAdminStore = defineStore("admin", () => {
     pax, price, hours, tPageCount, tourPage, manageTourDialog, confirmTourManage,
     cancelTourDialog, restoreTourDialog, changeTime, changeTourSeats, changeDuration,
     changePrice, changeDeps, selectedTour, tab_tours, items_tours, filteredTours,
-    myCountry, citiesByCountry, countryDialog, cityDialog,
+    myCountry, citiesByCountry, countryDialog, cityDialog, myCity, selectedPictures,
+    myCityPics,
 
     formatDate, showDetails, adminDateQuery, isDateAllowed, selectFlag, selectCityPics,
     clearCityPics, clearFlag, validateTime, disableTour, formatDepDays, showTour,
+    openCityDialog,
   };
 });

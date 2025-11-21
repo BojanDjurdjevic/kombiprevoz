@@ -509,16 +509,16 @@ const tourDays = [
                     @update:model-value="admin.actions.searchByCountry"
                   ></v-autocomplete>
                 </div>
-                <div v-if="admin.myCountry">
-                  <h3 class="text-center ma-3">{{  admin.myCountry?.name  }}</h3>
-                  <v-card class="w-100 d-flex justif-space-evenly" 
+                <div v-if="admin.myCountry" class="d-flex flex-column align-center">
+                  
+                  <v-card class="w-100 d-flex justif-space-evenly align-center" 
                     
-                    height="3rem"
+                    height="6rem"
                   >
                     <v-img
-                      class="text-white d-flex justif-space-evenly"
+                      class="d-flex justif-space-evenly align-center"
                       height="100%"
-                      cover
+                      contain
                       :src="dest.getCountryImage(admin.myCountry)"
                     >
                       <v-card-title> {{  admin.myCountry?.name  }} </v-card-title>
@@ -526,13 +526,16 @@ const tourDays = [
                     <v-btn
                       elevated
                       color="indigo-darken-4"
-                      height="100%"
+                      
+                      icon="mdi-pencil"
                       @click="admin.countryDialog = true"
-                    >Uredi</v-btn>
+                    ></v-btn>
                   </v-card>
                 </div>
                 <v-spacer></v-spacer>
-                <h3 class="text-center mt-3"> Gradovi države: {{  admin.myCountry?.name  }} </h3>
+                <h3 class="text-center mt-3"
+                  v-if="admin.citiesByCountry && admin.myCountry"
+                > Gradovi države: {{  admin.myCountry?.name  }} </h3>
                 <div v-if="admin.citiesByCountry && admin.myCountry" 
                   v-for="c in admin.citiesByCountry.cities"
                   :key="c"
@@ -542,7 +545,7 @@ const tourDays = [
                     height="3rem"
                   >
                     <v-img
-                        class="align-start text-black"
+                        class="align-start"
                         height="100%"
                         :src="dest.getCityPrimaryImage(c)"
                         cover
@@ -553,7 +556,9 @@ const tourDays = [
                       elevated
                       color="indigo-darken-4"
                       height="100%"
-                    >Uredi</v-btn>
+                      icon="mdi-pencil"
+                      @click="admin.openCityDialog(c)"
+                    ></v-btn>
                   </v-card>
                 </div>
 
@@ -623,6 +628,120 @@ const tourDays = [
                       <!-- Btn -->
                       <v-card-actions>
                         <v-btn block color="success" @click="admin.countryDialog = false">
+                          Zatvori
+                        </v-btn>
+                      </v-card-actions>
+                    </v-card>
+                  </v-dialog>
+
+                  <!--  DIALOG for CITY managing  -->
+
+                  <v-dialog v-model="admin.cityDialog" fullscreen transition="dialog-bottom-transition" persistent>
+                    <v-card>
+                      <!-- Header -->
+                      <v-toolbar color="indigo-darken-4">
+                        <v-btn icon @click="admin.cityDialog = false">
+                          <v-icon>mdi-arrow-left</v-icon>
+                        </v-btn>
+                        <v-toolbar-title>Grad: {{ admin.myCity?.name }}</v-toolbar-title>
+                        <v-spacer></v-spacer>
+                      </v-toolbar>
+
+                      <!-- MAIN CONTENT - CITY DETAILS -->
+
+                      <!--  Details  -->
+                      <v-card-text class="pa-4 ">
+                        <h2 class="text-center">{{ admin.myCity?.name }}</h2>
+                        <div class="w-100 h-100 pa-9 d-flex flex-column align-center">
+                          <v-item-group
+                            v-model="admin.selectedPictures"
+                            multiple
+                            class="d-flex flex-wrap"
+                          >
+                            
+                              <v-item
+                                v-for="photo in admin.myCity?.pictures"
+                                :key="photo.photo_id"
+                                :value="photo.photo_id"
+                              >
+                                <template #default="{ isSelected, toggle }">
+                                  <div class="relative ma-2" @click="toggle" style="cursor: pointer">
+                                    
+                                    <v-img
+                                      :src="photo.file_path"
+                                      width="10rem"
+                                      height="10rem"
+                                      cover
+                                      class="rounded-lg"
+                                    >
+
+                                    
+                                      <div
+                                        v-if="isSelected"
+                                        class="position-absolute d-flex align-center justify-center"
+                                        style="
+                                          top: 0;
+                                          left: 0;
+                                          width: 100%;
+                                          height: 100%;
+                                          background: rgba(0,0,0,0.4);
+                                          border-radius: 12px;
+                                        "
+                                      >
+                                        <v-icon size="36" color="white">mdi-check-circle</v-icon>
+                                      </div>
+                                    </v-img>
+                                  </div>
+                                </template>
+                              </v-item>
+                            
+                          </v-item-group>
+
+                          <div>
+                            <v-btn
+                              color="red-darken-4"
+                              class="mt-4"
+                              :disabled="admin.selectedPictures.length === 0"
+                              @click="admin.actions.deleteSelected"
+                            >
+                              Obriši selektovane ({{ admin.selectedPictures.length }})
+                            </v-btn>
+                          </div>
+                          
+                          <div class="w-75 mt-6 d-flex flex-column align-center">
+                            <v-file-input
+                              v-model="admin.cityPics"
+                              clearable
+                              label="Dodaj nove slike"
+                              class="w-75 text-center"
+                              multiple
+                              chips
+                              @update:model-value="admin.selectCityPics"
+                              @click:clear="admin.clearCityPics"
+                            ></v-file-input>
+                            <div v-if="admin.cityPreview" :key="admin.cityPreviewKey">
+                              <img
+                                v-for="p, index in admin.cityPreview"
+                                :key="index"
+                                :src="p"
+                                style="max-height:6rem; max-width:6rem; border-radius:100%; box-shadow:0 2px 8px rgba(0,0,0,0.3);"
+                              />
+                            </div>
+                            
+                            <v-btn color="green-darken-3" class="mb-3"
+                              :disabled="!admin.selectedCity || !admin.selectedCountry || !admin.cityPics"
+                              @click="admin.actions.addCity"
+                              >Dodaj Slike</v-btn
+                            >
+                          </div>
+                        </div>
+                        
+                        
+                      </v-card-text>
+
+                      <!-- Btn -->
+                      <v-card-actions>
+                        <v-btn block color="success" @click="admin.cityDialog = false">
                           Zatvori
                         </v-btn>
                       </v-card-actions>

@@ -133,6 +133,7 @@ class Country {
         }
 
         if ($file->size > 5 * 1024 * 1024) { // max 5MB
+            http_response_code(422);
             echo json_encode(['error' => 'Fajl je prevelik! Molimo vas da smanjite sliku pre unosa.']);
             return;
         }
