@@ -10,6 +10,7 @@ class City {
     public $country_id;
     public $name;
     public $photos;
+    public $photo_id;
     private $db;
 
     public function __construct($db) 
@@ -247,24 +248,114 @@ class City {
 
     public function update() 
     {
-        $sql = "UPDATE cities
-                SET name = :name, country_id = :country_id
-                WHERE id = :id
-        ";
+        if(!empty($this->photos) && is_array($this->photos)) {
+            foreach($this->photos as $file) {
+
+                if($file->error == UPLOAD_ERR_OK) {
+                    $extension = pathinfo($file->name, PATHINFO_EXTENSION);
+                    $fileName = uniqid('city_', true) . '.' . $extension;
+                    $path = __DIR__ . '/../assets/img/cities/' . $fileName;
+                    $picture_path = 'src/assets/img/cities/' . $fileName;
+                }
+
+                if ($file->size > 6 * 1024 * 1024) { 
+                    http_response_code(422);
+                    echo json_encode([
+                        'error' => 'Fajl je prevelik! Molimo vas da smanjite sliku pre unosa.',
+                        'file' => $file
+                    ], JSON_PRETTY_PRINT);
+                    return;
+                }
+
+                if(move_uploaded_file($file->tmp_name, $path)) {
+                    $picSql = "INSERT INTO t_pics SET file_path = :file_path, city_id = :city_id, deleted = 0";
+                    $stmtPic = $this->db->prepare($picSql);
+                    $stmtPic->bindParam(':file_path', $picture_path);
+                    $stmtPic->bindParam(':city_id', $this->id, PDO::PARAM_INT);
+                    $stmtPic->execute();
+                    
+                } else {
+                    http_response_code(422);
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'Došlo je do greške prilikom podizanja slika!'
+                    ], JSON_PRETTY_PRINT);
+                }
+            }
+            echo json_encode([
+                'success' => true,
+                'msg' => 'Uspešno ste dodali novi grad!'
+            ], JSON_PRETTY_PRINT);
+        }
+    }
+
+    public function deleteCityPicture($id) 
+    {
+        $sql = "UPDATE t_pics SET deleted = 1 WHERE id = :id";
+        
         $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(":id", $id, PDO::PARAM_INT);
 
-        $this->id = htmlspecialchars(strip_tags($this->id));
-        $this->name = htmlspecialchars(strip_tags($this->name));
-        $this->country_id = htmlspecialchars(strip_tags($this->country_id));
+        try {
+            $stmt->execute();
 
-        $stmt->bindParam(':id', $this->id);
-        $stmt->bindParam(':name', $this->name);
-        $stmt->bindParam(':country_id', $this->country_id);
+            if ($stmt->rowCount() > 0) {
+                return true;
+            } else {
+                return false;
+            }
 
-        if($stmt->execute()) {
-            echo json_encode(['msg' => 'Grad je uspešno izmenjen.']);
-        } else
-        echo json_encode(['msg' => 'Trenutno nije moguže izmeniti grad.']);
+        } catch (PDOException $e) {
+            error_log("Database error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function deleteCityPics()
+    {     
+        $picNum = count($this->photos);
+        
+        if ($picNum === 0) {
+            http_response_code(422);
+            echo json_encode([
+                'error' => 'Nije poslata nijedna slika za brisanje!'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $deletedCount = 0;
+        $failedIds = [];
+
+        foreach ($this->photos as $photo) {
+            if ($this->deleteCityPicture($photo)) {
+                $deletedCount++;
+            } else {
+                $failedIds[] = $photo;
+            }
+        }
+
+        if ($deletedCount === $picNum) {
+            if ($picNum == 1) {
+                $pic = 'fotografiju';
+            } elseif ($picNum >= 2 && $picNum <= 4) {
+                $pic = 'fotografije';
+            } else {
+                $pic = 'fotografija';
+            }
+
+            echo json_encode([
+                'success' => true,
+                'msg' => "Uspešno ste obrisali $picNum $pic grada $this->name"
+            ], JSON_UNESCAPED_UNICODE);
+            
+        } else {
+            http_response_code(500);
+            echo json_encode([
+                'error' => 'Neke slike nisu obrisane',
+                'deleted' => $deletedCount,
+                'failed' => $failedIds
+            ], JSON_UNESCAPED_UNICODE);
+        }
     }
 
     public function delete() {

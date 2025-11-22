@@ -45,6 +45,12 @@ class CityController {
                     $this->city->photos = $this->data->photos;
                     $this->city->create();
                 }
+                if(isset($this->data->cities) && $this->data->cities == "update") {
+                    $this->city->name = $this->data->name;
+                    $this->city->id = $this->data->city_id;
+                    $this->city->photos = $this->data->photos;
+                    $this->city->update();
+                }
                 break;
             case 'PUT':
                 if(isset($this->data->cities->id)) {

@@ -884,11 +884,25 @@ export const useAdminStore = defineStore("admin", () => {
     // ADD-REMOVE city pictures - UPDATE
     deleteSelected: async () => {
       console.log(selectedPictures.value)
+      if(selectedPictures.value?.length < 1) return displayError('Nije selektovana nijedna fotografija!')
+      let dto = {
+        ids: selectedPictures.value
+      }
+      try {
+        const res = await api.updateCity(dto)
+        if(res.data.success) user.showSucc(res, 6000)
+        console.log(res.data)
+      } catch (error) {
+        console.log(error)
+      }
     },
     addCityPics: async () => {
+      let id = myCity.value?.city_id || null
+      let name = myCity.value?.name || null
+      if(!id || !name) return displayError('Došlo je do greške! Nepoznat ID i ime grada.')
       const formData = new FormData()
-      formData.append("country_id", selectedCountry.value.id)
-      formData.append("name", selectedCity.value)
+      formData.append("city_id", id)
+      formData.append("name", name)
       formData.append("cities", "update")
       cityPics.value.forEach(file => formData.append('photos[]', file))
 
@@ -896,12 +910,13 @@ export const useAdminStore = defineStore("admin", () => {
         const res = await api.insertCity(formData)
         console.log(res.data)
         user.showSucc(res, 3000)
+        actions.value.searchByCountry()
       } catch (error) {
         console.log(error)
         user.showErr(error, 3000)
       } finally {
         clearCityPics()
-        
+        cityDialog.value = false
       }
     },
     clearTourForm: () => {

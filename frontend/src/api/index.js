@@ -59,6 +59,14 @@ export default {
             withCredentials: true
         })
     },
+    updateCity(data) {
+        return axios.put("", data, {
+            headers: {
+                "Content-type": "json/application"
+            },
+            withCredentials: true
+        })
+    },
 
     //---------------------------- TOURS ---------------------//
 
