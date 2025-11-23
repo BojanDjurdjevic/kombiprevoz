@@ -1003,7 +1003,8 @@ export const useAdminStore = defineStore("admin", () => {
     removeTour: async () => {
       const tours = {
         tours: {
-          id: selectedTour.value.id,
+          id: selectedTour.value?.id,
+          to_city: selectedTour.value?.to_city,
           delete: true
         }
       }

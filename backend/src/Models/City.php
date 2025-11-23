@@ -78,7 +78,7 @@ class City {
 
     public function getFullCitiesByCountryId()
     {
-        $sql = "SELECT cities.id as city_id, cities.name as city_name,
+        $sql = "SELECT cities.id as city_id, cities.name as city_name, cities.deleted as deleted_city,
                 t_pics.id as photo_id, t_pics.file_path as city_photo_path, t_pics.deleted 
                 from cities
                 LEFT JOIN t_pics ON cities.id = t_pics.city_id AND t_pics.deleted = 0
@@ -103,6 +103,7 @@ class City {
                     $cities[$cId] = [
                         'city_id' => $row->city_id,
                         'name' => $row->city_name,
+                        'deleted_city' => $row->deleted_city,
                         'pictures' => []
                     ];
                 }
@@ -128,8 +129,8 @@ class City {
     }
 
     public function byID() {
-        $sql = "SELECT cities.*, t_pics.id as pic_id, t_pics.file_path from cities
-                LEFT JOIN t_pics ON t_pics.city_id = cities.id
+        $sql = "SELECT cities.*, cities.deleted as deleted_city, t_pics.id as pic_id, t_pics.file_path from cities
+                LEFT JOIN t_pics ON t_pics.city_id = cities.id AND t_pics.deleted = 0
                 WHERE cities.country_id = '$this->country_id'
         ";
         $res = $this->db->query($sql);
@@ -147,6 +148,7 @@ class City {
                         'id' => $row->id,
                         'name' => $row->name,
                         'country_id' => $row->country_id,
+                        'deleted_city' => $row->deleted_city,
                         'pictures' => [] 
                     ];
                 }
@@ -359,18 +361,41 @@ class City {
     }
 
     public function delete() {
-        $sql = "DELETE from cities WHERE cities.id = :id";
+        $sql = "UPDATE cities SET deleted = 0 WHERE cities.id = :id";
         $stmt = $this->db->prepare($sql);
 
-        $this->id = htmlspecialchars(strip_tags($this->id));
-        $stmt->bindParam(':id', $this->id);
+        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
 
-        if($stmt->execute()) {
-            echo json_encode(
-                ['msg' => 'Grad je obrisan.']
-            );
-        } else
-        json_encode(['msg' => 'Trenutno nije moguće obrisati ovaj grad.']);
+        try {
+            $stmt->execute(); 
+            http_response_code(200);
+            echo json_encode([
+                'success'=> true,
+                'msg' => 'Grad je uspešno deaktiviran.'
+            ], JSON_UNESCAPED_UNICODE);
+        } catch (PDOException $e) {
+            http_response_code(500);
+            json_encode(['error' => 'Trenutno nije moguće obrisati ovaj grad.']);
+        }  
+    }
+
+    public function restore() {
+        $sql = "UPDATE cities SET deleted = 1 WHERE cities.id = :id";
+        $stmt = $this->db->prepare($sql);
+
+        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
+
+        try {
+            $stmt->execute(); 
+            http_response_code(200);
+            echo json_encode([
+                'success'=> true,
+                'msg' => 'Grad je uspešno aktiviran.'
+            ], JSON_UNESCAPED_UNICODE);
+        } catch (PDOException $e) {
+            http_response_code(500);
+            json_encode(['error' => 'Trenutno nije moguće obrisati ovaj grad.']);
+        }  
     }
 }
 

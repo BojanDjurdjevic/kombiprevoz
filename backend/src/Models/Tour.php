@@ -362,9 +362,9 @@ class Tour {
             $this->to_city = htmlspecialchars(strip_tags($this->to_city));
             $this->date = htmlspecialchars(strip_tags($this->date)); */
         } else {
+            http_response_code(401);
             echo json_encode([
-                http_response_code(401),
-                "msg"=> "Sva polja su obavezna."
+                "error"=> "Sva polja su obavezna."
             ]);
             exit();
         }
@@ -494,6 +494,16 @@ class Tour {
 
         try {
             if($stmt->execute()) {
+                $citiSql = "UPDATE cities 
+                            SET deleted = 0 
+                            WHERE name = :name
+                            "
+                ;
+                $stmt = $this->db->prepare($citiSql);
+                $stmt->bindParam(":name", $this->to_city, PDO::PARAM_STR);
+
+                $stmt->execute();
+
                 http_response_code(200);
                 echo json_encode(['msg' => "Vožnja od $this->from_city do $this->to_city je uspešno dodata."], JSON_PRETTY_PRINT);
             } 
@@ -555,11 +565,28 @@ class Tour {
         deleted = 1 WHERE id = :id";
         $stmt = $this->db->prepare($sql);
 
-        $this->from_city = htmlspecialchars(strip_tags($this->id));
-        $stmt->bindParam(':id', $this->id);
+        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
 
         try {
             if($stmt->execute()) {
+                $citiSql = "UPDATE cities 
+                            SET deleted = 1 
+                            WHERE name = (
+                                SELECT to_city FROM tours WHERE id = :tour_id
+                            )
+                            AND NOT EXISTS (
+                                SELECT 1 
+                                FROM tours 
+                                WHERE to_city = (SELECT to_city FROM tours WHERE id = :tour_id)
+                                AND deleted = 0
+                                AND id != :tour_id
+                            );"
+                ;
+                $stmt = $this->db->prepare($citiSql);
+                $stmt->bindParam(":tour_id", $this->id, PDO::PARAM_INT);
+
+                $stmt->execute();
+
                 http_response_code(200);
                 echo json_encode(['msg' => "Tura je uspešno deaktivirana."], JSON_PRETTY_PRINT);
             }
@@ -578,12 +605,26 @@ class Tour {
         deleted = 0 WHERE id = :id";
         $stmt = $this->db->prepare($sql);
 
-        $this->from_city = htmlspecialchars(strip_tags($this->id));
         $stmt->bindParam(':id', $this->id);
 
         try {
             if($stmt->execute()) {
-                echo json_encode(['msg' => "Tura je uspešno aktivirana."], JSON_PRETTY_PRINT);
+                $citiSql = "UPDATE cities 
+                            SET deleted = 0 
+                            WHERE name = (
+                                SELECT to_city FROM tours WHERE id = :tour_id
+                            )"
+                ;
+                $stmt = $this->db->prepare($citiSql);
+                $stmt->bindParam(":tour_id", $this->id, PDO::PARAM_INT);
+
+                $stmt->execute();
+
+                http_response_code(200);
+                echo json_encode([
+                    'success' => true,
+                    'msg' => "Tura je uspešno aktivirana."
+                ], JSON_PRETTY_PRINT);
             }
         } catch (PDOException $e) {
             http_response_code(500);

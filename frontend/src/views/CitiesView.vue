@@ -20,7 +20,7 @@
                 md="6"
                 lg="3"
             >
-                <v-card height="18rem" width="18rem" elevation="9" to="grad" @click="dest.takeCity(n)">
+                <v-card height="18rem" width="18rem" elevation="9" to="grad" @click="dest.takeCity(n)" v-if="!n.deleted_city">
                     <v-img
                         class="align-center text-white"
                         height="100%"

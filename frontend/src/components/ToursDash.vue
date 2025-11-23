@@ -549,8 +549,15 @@ const tourDays = [
                         height="100%"
                         :src="dest.getCityPrimaryImage(c)"
                         cover
+                        position="relative"
                     >
                         <v-card-title class="text-start"> {{ c.name }} </v-card-title>
+                          <v-badge
+                            v-if="c.deleted_city == 1"
+                            color="red-darken-3"
+                            content="NEAKTIVAN"
+                            bordered
+                          ></v-badge>
                     </v-img> 
                     <v-btn
                       elevated
@@ -729,8 +736,8 @@ const tourDays = [
                             </div>
                             
                             <v-btn color="green-darken-3" class="mb-3"
-                              :disabled="!admin.selectedCity || !admin.selectedCountry || !admin.cityPics"
-                              @click="admin.actions.addCity"
+                              :disabled="!admin.cityPics"
+                              @click="admin.actions.addCityPics"
                               >Dodaj Slike</v-btn
                             >
                           </div>
