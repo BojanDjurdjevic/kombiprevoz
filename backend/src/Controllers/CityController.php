@@ -53,11 +53,9 @@ class CityController {
                 }
                 break;
             case 'PUT':
-                if(isset($this->data->cities->id)) {
-                    $this->city->id = $this->data->cities->id;
-                    $this->city->name = $this->data->cities->name;
-                    $this->city->country_id = $this->data->cities->country_id;
-                    $this->city->update();
+                if(isset($this->data->cities->ids)) {
+                    $this->city->photos = $this->data->cities->ids;
+                    $this->city->deleteCityPics();
                 }
                 break;
             case 'DELETE':

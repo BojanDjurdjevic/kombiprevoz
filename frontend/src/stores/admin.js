@@ -435,7 +435,15 @@ export const useAdminStore = defineStore("admin", () => {
     console.log(myCityPics.value)
   }
 
+  function closeCityDialog() {
+    myCity.value = null
+    myCityPics.value = null
+    cityDialog.value = false
+  }
+
   const selectedPictures = ref([])
+
+  // -------------------------------------------- ALL API CALLS --------------------------------- //
   
 
   const actions = ref({
@@ -886,14 +894,20 @@ export const useAdminStore = defineStore("admin", () => {
       console.log(selectedPictures.value)
       if(selectedPictures.value?.length < 1) return displayError('Nije selektovana nijedna fotografija!')
       let dto = {
-        ids: selectedPictures.value
+        cities: {
+          ids: selectedPictures.value
+        }
       }
       try {
         const res = await api.updateCity(dto)
         if(res.data.success) user.showSucc(res, 6000)
         console.log(res.data)
+        selectedPictures.value = []
+        actions.value.searchByCountry()
       } catch (error) {
         console.log(error)
+      } finally {
+        closeCityDialog()
       }
     },
     addCityPics: async () => {
