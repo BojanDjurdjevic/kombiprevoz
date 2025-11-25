@@ -420,23 +420,25 @@ export const useAdminStore = defineStore("admin", () => {
     let arr_deleted = []
     if(city.pictures.length > 0) {
       city.pictures.forEach(p => {
-        let pic = dest.getCountryImage(p)
-        if(p.deleted === 0) {
-          arr.push(
-            {
-              photo_id: p.photo_id,
-              file_path: pic,
-              deleted: p.deleted 
-            }
-          )
-        } else {
-          arr_deleted.push(
-            {
-              photo_id: p.photo_id,
-              file_path: pic,
-              deleted: p.deleted 
-            }
-          )
+        let pic = dest.adminCountryImage(p)
+        if(pic) {
+          if(p.deleted === 0) {
+            arr.push(
+              {
+                photo_id: p.photo_id,
+                file_path: pic,
+                deleted: p.deleted 
+              }
+            )
+          } else {
+            arr_deleted.push(
+              {
+                photo_id: p.photo_id,
+                file_path: pic,
+                deleted: p.deleted 
+              }
+            )
+          }
         }
       });
     }
@@ -453,6 +455,8 @@ export const useAdminStore = defineStore("admin", () => {
     myCity.value = null
     myCityPics.value = []
     cityDeletedPics.value = []
+    selectedPictures.value = []
+    unSelectedPictures.value = []
     cityDialog.value = false
   }
 
@@ -919,8 +923,6 @@ export const useAdminStore = defineStore("admin", () => {
         if(res.data.success) user.showSucc(res, 6000)
         console.log(res.data)
         closeCityDialog()
-        selectedPictures.value = []
-        unSelectedPictures.value = []
         actions.value.searchByCountry()
       } catch (error) {
         console.log(error)
@@ -930,6 +932,23 @@ export const useAdminStore = defineStore("admin", () => {
     },
     restoreSelected: async () => {
       console.log(unSelectedPictures.value)
+      if(unSelectedPictures.value?.length < 1) return displayError('Nije selektovana nijedna fotografija!')
+      let dto = {
+        cities: {
+          ids_restore: unSelectedPictures.value
+        }
+      }
+      try {
+        const res = await api.updateCity(dto)
+        if(res.data.success) user.showSucc(res, 6000)
+        console.log(res.data)
+        
+        actions.value.searchByCountry()
+      } catch (error) {
+        console.log(error)
+      } finally {
+        closeCityDialog()
+      }
     },
     addCityPics: async () => {
       let id = myCity.value?.city_id || null

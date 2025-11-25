@@ -290,12 +290,15 @@ class City {
         }
     }
 
-    public function deleteCityPicture($id) 
+    public function deleteCityPicture($id, $delete) 
     {
-        $sql = "UPDATE t_pics SET deleted = 1 WHERE id = :id";
+        $sql = "UPDATE t_pics SET deleted = :deleted WHERE id = :id";
+
+        $deletedValue = $delete ? 1:0;
         
         $stmt = $this->db->prepare($sql);
         $stmt->bindParam(":id", $id, PDO::PARAM_INT);
+        $stmt->bindParam(":deleted", $deletedValue, PDO::PARAM_INT);
 
         try {
             $stmt->execute();
@@ -312,7 +315,7 @@ class City {
         }
     }
 
-    public function deleteCityPics()
+    public function deleteCityPics($delete)
     {     
         $picNum = count($this->photos);
         
@@ -328,7 +331,7 @@ class City {
         $failedIds = [];
 
         foreach ($this->photos as $photo) {
-            if ($this->deleteCityPicture($photo)) {
+            if ($this->deleteCityPicture($photo, $delete)) {
                 $deletedCount++;
             } else {
                 $failedIds[] = $photo;
@@ -344,9 +347,11 @@ class City {
                 $pic = 'fotografija';
             }
 
+            $action = $delete ? 'obrisali':'aktivirali';
+
             echo json_encode([
                 'success' => true,
-                'msg' => "Uspešno ste obrisali $picNum $pic grada $this->name"
+                'msg' => "Uspešno ste $action $picNum $pic grada $this->name"
             ], JSON_UNESCAPED_UNICODE);
             
         } else {

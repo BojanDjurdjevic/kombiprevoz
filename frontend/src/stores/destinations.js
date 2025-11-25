@@ -33,6 +33,13 @@ export const useDestStore = defineStore('dest', () => {
         cityPics.value = getCityImages(n.pictures)
     } 
 
+    function adminCountryImage(n) {
+      if (!n.file_path || n.file_path === '') {
+        return null
+      }
+      return 'http://localhost:8080/' + n.file_path
+    }
+
     function getCountryImage(n) {
       if (!n.file_path || n.file_path === '') {
         return 'https://cdn.vuetifyjs.com/images/cards/docks.jpg'
@@ -99,5 +106,6 @@ export const useDestStore = defineStore('dest', () => {
         cities, country, city, destinations, actions, selectedCountryID, cityPics,
 
         takeCountry, takeCity, getCountryImage, getCityPrimaryImage, getCityImages,
+        adminCountryImage,
     }
 })

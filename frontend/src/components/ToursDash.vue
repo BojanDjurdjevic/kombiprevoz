@@ -716,6 +716,10 @@ const tourDays = [
                             </v-btn>
                           </div>
 
+                          <div v-if="admin.myCityPics.length <= 0">
+                            <p>Trenutno nema slika za ovaj grad</p>
+                          </div>
+
                           <!--     NEAKTIVNE SLIKE     -->
                           <h3 v-if="admin.cityDeletedPics.length > 0">Neaktivne slike</h3>
                           <v-item-group
