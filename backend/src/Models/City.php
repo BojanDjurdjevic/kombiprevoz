@@ -81,14 +81,13 @@ class City {
         $sql = "SELECT cities.id as city_id, cities.name as city_name, cities.deleted as deleted_city,
                 t_pics.id as photo_id, t_pics.file_path as city_photo_path, t_pics.deleted 
                 from cities
-                LEFT JOIN t_pics ON cities.id = t_pics.city_id AND t_pics.deleted = 0
+                LEFT JOIN t_pics ON cities.id = t_pics.city_id
                 WHERE cities.country_id = :id"
         ;
 
         $stmt = $this->db->prepare($sql);
-        $this->country_id = htmlspecialchars(strip_tags($this->country_id), ENT_QUOTES);
 
-        $stmt->bindParam(':id', $this->country_id);
+        $stmt->bindParam(':id', $this->country_id, PDO::PARAM_INT);
 
         try {
             $stmt->execute();

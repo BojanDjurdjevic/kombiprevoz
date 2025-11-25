@@ -647,7 +647,7 @@ const tourDays = [
                     <v-card>
                       <!-- Header -->
                       <v-toolbar color="indigo-darken-4">
-                        <v-btn icon @click="admin.cityDialog = false">
+                        <v-btn icon @click="admin.closeCityDialog">
                           <v-icon>mdi-arrow-left</v-icon>
                         </v-btn>
                         <v-toolbar-title>Grad: {{ admin.myCity?.name }}</v-toolbar-title>
@@ -660,6 +660,7 @@ const tourDays = [
                       <v-card-text class="pa-4 ">
                         <h2 class="text-center">{{ admin.myCity?.name }}</h2>
                         <div class="w-100 h-100 pa-9 d-flex flex-column align-center">
+                          <h3 v-if="admin.myCityPics.length > 0">Aktivne slike</h3>
                           <v-item-group
                             v-model="admin.selectedPictures"
                             multiple
@@ -704,7 +705,7 @@ const tourDays = [
                             
                           </v-item-group>
 
-                          <div>
+                          <div v-if="admin.myCityPics.length > 0">
                             <v-btn
                               color="red-darken-4"
                               class="mt-4"
@@ -712,6 +713,63 @@ const tourDays = [
                               @click="admin.actions.deleteSelected"
                             >
                               Obriši selektovane ({{ admin.selectedPictures.length }})
+                            </v-btn>
+                          </div>
+
+                          <!--     NEAKTIVNE SLIKE     -->
+                          <h3 v-if="admin.cityDeletedPics.length > 0">Neaktivne slike</h3>
+                          <v-item-group
+                            v-model="admin.unSelectedPictures"
+                            multiple
+                            class="d-flex flex-wrap"
+                          >
+                            
+                              <v-item
+                                v-for="photo in admin.cityDeletedPics"
+                                :key="photo.photo_id"
+                                :value="photo.photo_id"
+                              >
+                                <template #default="{ isSelected, toggle }">
+                                  <div class="relative ma-2" @click="toggle" style="cursor: pointer">
+                                    
+                                    <v-img
+                                      :src="photo.file_path"
+                                      width="10rem"
+                                      height="10rem"
+                                      cover
+                                      class="rounded-lg"
+                                    >
+
+                                    
+                                      <div
+                                        v-if="isSelected"
+                                        class="position-absolute d-flex align-center justify-center"
+                                        style="
+                                          top: 0;
+                                          left: 0;
+                                          width: 100%;
+                                          height: 100%;
+                                          background: rgba(0,0,0,0.4);
+                                          border-radius: 12px;
+                                        "
+                                      >
+                                        <v-icon size="36" color="white">mdi-check-circle</v-icon>
+                                      </div>
+                                    </v-img>
+                                  </div>
+                                </template>
+                              </v-item>
+                            
+                          </v-item-group>
+
+                          <div v-if="admin.cityDeletedPics.length > 0">
+                            <v-btn
+                              color="red-darken-4"
+                              class="mt-4"
+                              :disabled="admin.unSelectedPictures.length === 0"
+                              @click="admin.actions.restoreSelected"
+                            >
+                              Aktiviraj selektovane ({{ admin.unSelectedPictures.length }})
                             </v-btn>
                           </div>
                           
@@ -748,7 +806,7 @@ const tourDays = [
 
                       <!-- Btn -->
                       <v-card-actions>
-                        <v-btn block color="success" @click="admin.cityDialog = false">
+                        <v-btn block color="success" @click="admin.closeCityDialog">
                           Zatvori
                         </v-btn>
                       </v-card-actions>

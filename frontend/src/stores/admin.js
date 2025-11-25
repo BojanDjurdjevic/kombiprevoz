@@ -412,36 +412,52 @@ export const useAdminStore = defineStore("admin", () => {
 
   const myCity = ref(null)
   const myCityPics = ref(null)
+  const cityDeletedPics = ref(null)
 
   function openCityDialog(city) {
     cityDialog.value = true
     let arr = []
+    let arr_deleted = []
     if(city.pictures.length > 0) {
       city.pictures.forEach(p => {
         let pic = dest.getCountryImage(p)
-        
-        arr.push(
-          {
-            photo_id: p.photo_id,
-            file_path: pic,
-            deleted: p.deleted 
-          }
-        )
+        if(p.deleted === 0) {
+          arr.push(
+            {
+              photo_id: p.photo_id,
+              file_path: pic,
+              deleted: p.deleted 
+            }
+          )
+        } else {
+          arr_deleted.push(
+            {
+              photo_id: p.photo_id,
+              file_path: pic,
+              deleted: p.deleted 
+            }
+          )
+        }
       });
     }
     myCity.value = city
     myCityPics.value = arr
+    cityDeletedPics.value = arr_deleted
     console.log(myCity.value)
     console.log(myCityPics.value)
+    console.log(cityDeletedPics.value)
+    console.log("Aktivne fotke: " + myCityPics.value.length + "\n" + "Neaktivne fotke: " + cityDeletedPics.value.length)
   }
 
   function closeCityDialog() {
     myCity.value = null
-    myCityPics.value = null
+    myCityPics.value = []
+    cityDeletedPics.value = []
     cityDialog.value = false
   }
 
   const selectedPictures = ref([])
+  const unSelectedPictures = ref([]) // to restore removed images
 
   // -------------------------------------------- ALL API CALLS --------------------------------- //
   
@@ -902,13 +918,18 @@ export const useAdminStore = defineStore("admin", () => {
         const res = await api.updateCity(dto)
         if(res.data.success) user.showSucc(res, 6000)
         console.log(res.data)
+        closeCityDialog()
         selectedPictures.value = []
+        unSelectedPictures.value = []
         actions.value.searchByCountry()
       } catch (error) {
         console.log(error)
       } finally {
         closeCityDialog()
       }
+    },
+    restoreSelected: async () => {
+      console.log(unSelectedPictures.value)
     },
     addCityPics: async () => {
       let id = myCity.value?.city_id || null
@@ -1109,10 +1130,10 @@ export const useAdminStore = defineStore("admin", () => {
     cancelTourDialog, restoreTourDialog, changeTime, changeTourSeats, changeDuration,
     changePrice, changeDeps, selectedTour, tab_tours, items_tours, filteredTours,
     myCountry, citiesByCountry, countryDialog, cityDialog, myCity, selectedPictures,
-    myCityPics,
+    myCityPics, cityDeletedPics, unSelectedPictures,
 
     formatDate, showDetails, adminDateQuery, isDateAllowed, selectFlag, selectCityPics,
     clearCityPics, clearFlag, validateTime, disableTour, formatDepDays, showTour,
-    openCityDialog,
+    openCityDialog, closeCityDialog,
   };
 });
