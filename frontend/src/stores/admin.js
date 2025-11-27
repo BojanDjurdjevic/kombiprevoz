@@ -463,6 +463,14 @@ export const useAdminStore = defineStore("admin", () => {
   const selectedPictures = ref([])
   const unSelectedPictures = ref([]) // to restore removed images
 
+  // USERS
+
+  const tab_users = ref(null);
+
+  const items_users = ["Kreiraj novog korisnika", "Pretraga"];
+
+  const usr_email = ref(null)
+
   // -------------------------------------------- ALL API CALLS --------------------------------- //
   
 
@@ -784,6 +792,7 @@ export const useAdminStore = defineStore("admin", () => {
         email: usrEmail.value,
       };
       console.log(dto)
+      tab_users.value = 'Pretraga'
     },
     // ------------------ TOURS ---------------------//
     fetchAllTours: async () => {
@@ -1149,7 +1158,7 @@ export const useAdminStore = defineStore("admin", () => {
     cancelTourDialog, restoreTourDialog, changeTime, changeTourSeats, changeDuration,
     changePrice, changeDeps, selectedTour, tab_tours, items_tours, filteredTours,
     myCountry, citiesByCountry, countryDialog, cityDialog, myCity, selectedPictures,
-    myCityPics, cityDeletedPics, unSelectedPictures,
+    myCityPics, cityDeletedPics, unSelectedPictures, tab_users, items_users,
 
     formatDate, showDetails, adminDateQuery, isDateAllowed, selectFlag, selectCityPics,
     clearCityPics, clearFlag, validateTime, disableTour, formatDepDays, showTour,

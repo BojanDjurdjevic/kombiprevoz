@@ -25,6 +25,7 @@ const admin = useAdminStore();
       class="w-100 h-25 d-flex flex-column align-center justify-space-evenly"
     >
       <v-btn class="w-75" prepend-icon="mdi-magnify" color="green-darken-3"
+      @click="admin.actions.searchUser"
         >Traži</v-btn
       >
       <v-btn
