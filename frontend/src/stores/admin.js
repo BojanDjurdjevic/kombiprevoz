@@ -287,6 +287,14 @@ export const useAdminStore = defineStore("admin", () => {
     );
     return countryData ? countryData.cities : [];
   });
+  const userOptions = ref([])
+  function userCityOptions(val) {
+    if (!val) return [];
+    const countryData = europeCities.find(
+      (c) => c.country === val.name
+    );
+    userOptions.value = countryData ? countryData.cities : [];
+  }
   //countries
   const preview = ref(null)
   const previewKey = ref(Date.now())
@@ -794,6 +802,9 @@ export const useAdminStore = defineStore("admin", () => {
       console.log(dto)
       tab_users.value = 'Pretraga'
     },
+    createUser: async (user) => {
+      console.log(user)
+    },
     // ------------------ TOURS ---------------------//
     fetchAllTours: async () => {
       const dto = {
@@ -1159,9 +1170,10 @@ export const useAdminStore = defineStore("admin", () => {
     changePrice, changeDeps, selectedTour, tab_tours, items_tours, filteredTours,
     myCountry, citiesByCountry, countryDialog, cityDialog, myCity, selectedPictures,
     myCityPics, cityDeletedPics, unSelectedPictures, tab_users, items_users,
+    userOptions,
 
     formatDate, showDetails, adminDateQuery, isDateAllowed, selectFlag, selectCityPics,
     clearCityPics, clearFlag, validateTime, disableTour, formatDepDays, showTour,
-    openCityDialog, closeCityDialog,
+    openCityDialog, closeCityDialog, userCityOptions,
   };
 });
