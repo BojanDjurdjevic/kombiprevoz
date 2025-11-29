@@ -163,6 +163,10 @@ class User {
 
         $mail->setFrom("noreply-kombiprevoz@gmail.com", "Bojan");
         $mail->addAddress($this->email, $this->name);
+
+        $mail->CharSet = 'UTF-8';
+        $mail->Encoding = 'base64';
+
         $mail->isHTML(true);
         $mail->Subject = $subject;
         $mail->setLanguage('sr');
@@ -544,7 +548,7 @@ class User {
                             $arr = [];
                             
                             foreach($splited as $s) {
-                                array_push($arr, strtoupper($s[0]));
+                                array_push($arr, mb_strtoupper(mb_substr($s, 0,1, "UTF-8")));
                             }
                             
                             $initials = implode("", $arr);

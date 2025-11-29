@@ -555,6 +555,10 @@ class Order {
 
         $mail->setFrom("noreply-kombiprevoz@gmail.com", "Bojan");
         $mail->addAddress($email, $name);
+
+        $mail->CharSet = 'UTF-8';
+        $mail->Encoding = 'base64';
+
         $mail->isHTML(true);
         $mail->addAttachment($path, "Kombiprevoz - rezervacija: ". $new_code);
         $mail->Subject = "Potvrda Rezervacije";
@@ -638,6 +642,10 @@ class Order {
 
         $mail->setFrom("noreply-kombiprevoz@gmail.com", "Bojan");
         $mail->addAddress($email, $name);
+
+        $mail->CharSet = 'UTF-8';
+        $mail->Encoding = 'base64';
+
         $mail->isHTML(true);
         $mail->addAttachment($path, "Kombiprevoz - rezervacija: ". $new_code);
         $mail->Subject = "Potvrda Rezervacije";
