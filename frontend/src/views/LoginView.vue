@@ -59,7 +59,7 @@ function clsData() {
                     prepend-icon="mdi-key"
                     label="Lozinka"
                     hint="Unesite lozinku"
-                    :rules="[user.rules.required, user.rules.password]"
+                    :rules="[user.rules.required]"
                     type="password"
                     clearable
                 ></v-text-field>

@@ -121,7 +121,7 @@ function submitPass() {
                         prepend-icon="mdi-key"
                         label="Trenutna Lozinka"
                         hint="Unesite trenutnu lozinku"
-                        :rules="[user.rules.required, user.rules.password]"
+                        :rules="[user.rules.required]"
                         type="password"
                         clearable
                     ></v-text-field>

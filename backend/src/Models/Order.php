@@ -1151,12 +1151,7 @@ class Order {
                     'success' => true,
                     'orders' => array_values($orders)
                 ], JSON_PRETTY_PRINT);
-            } else {
-                echo json_encode([
-                    'success' => false,
-                    'msg' => 'Nema rezervacija od ovog korisnika.'
-                ], JSON_PRETTY_PRINT);
-            } 
+            }
         } catch (PDOException $e) {
             http_response_code(500);
             echo json_encode([

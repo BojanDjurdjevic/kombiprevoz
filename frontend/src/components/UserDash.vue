@@ -9,12 +9,11 @@ const newUser = ref({
   users: {
       name: '',
       email: '',
-      pass: '',
       city: '',
       address: '',
       phone: '',
       status: '',
-      create: true
+      byAdmin: true
   }
    
 })
@@ -36,12 +35,12 @@ const { handleSubmit, handleReset } = useForm({
         if (/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/i.test(value)) return true
 
         return 'Molimo Vas unesite validan e-mail.'
-      },
+      }, /*
       pass (value) {
         if (/(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9])(?!.*\s).{8,20}/i.test(value)) return true
 
         return 'Lozinka mora imati minimum 8 karaktera, 1 malo/veliko slovo i jedan specijalni karakter.'
-      },
+      }, */
       country (value) {
         if (value) return true
 
@@ -67,7 +66,7 @@ const { handleSubmit, handleReset } = useForm({
   const name = useField('name')
   const phone = useField('phone')
   const email = useField('email')
-  const pass = useField('pass')
+  //const pass = useField('pass')
   const country = useField('country')
   const city = useField('city')
   const address = useField('address')
@@ -75,9 +74,7 @@ const { handleSubmit, handleReset } = useForm({
 
   const submit = handleSubmit(values => {
     newUser.value.users = values
-    newUser.value.users.create = true
-    //newUser.value.users.status = status.value
-    //console.log(newUser.value)
+    newUser.value.users.byAdmin = true
 
     admin.actions.createUser(newUser.value)
   })
@@ -118,7 +115,7 @@ const { handleSubmit, handleReset } = useForm({
                       >
                           <v-text-field
                           v-model="name.value.value"
-                          :counter="10"
+                          :counter="24"
                           :error-messages="name.errorMessage.value"
                           label="Ime"
                           clearable
@@ -131,12 +128,7 @@ const { handleSubmit, handleReset } = useForm({
                           clearable
                           ></v-text-field>
 
-                          <v-text-field
-                          v-model="pass.value.value"
-                          :error-messages="pass.errorMessage.value"
-                          label="Lozinka"
-                          clearable
-                          ></v-text-field>
+                          
 
                           <v-text-field
                           v-model="phone.value.value"

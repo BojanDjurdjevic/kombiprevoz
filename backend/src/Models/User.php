@@ -174,18 +174,19 @@ class User {
 
         try {
             $mail->send();
-            //http_response_code(200);
+            http_response_code(200);
             echo json_encode([
                         'success' => true,
                         'msg' => $output
-                    ], JSON_PRETTY_PRINT);
+                    ], JSON_UNESCAPED_UNICODE);
         } catch (Exception $e) {
+            http_response_code(500);
             echo json_encode([
-                'user' => 'Došlo je do greške!',
+                'error' => 'Došlo je do greške!',
                 'msg' => $mail->ErrorInfo
             ]);
         }
-        //return $mail; // sbps uiqu hdmt besz
+        //return $mail; 
     
     }
 
@@ -449,7 +450,7 @@ class User {
                             city = :city, address = :address, phone = :phone"
                     ;
                     $stmt = $this->db->prepare($sql);
-
+                    /*
                     $this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
                     $this->name = htmlspecialchars(strip_tags($this->name), ENT_QUOTES);
                     $this->email = htmlspecialchars(strip_tags($this->email), ENT_QUOTES);
@@ -458,18 +459,18 @@ class User {
                     $this->city = htmlspecialchars(strip_tags($this->city), ENT_QUOTES);
                     $this->address = htmlspecialchars(strip_tags($this->address), ENT_QUOTES);
                     $this->phone = htmlspecialchars(strip_tags($this->phone), ENT_QUOTES);
-
+                    */
                     $generated = bin2hex(random_bytes(6));
 
                     $hashed = password_hash($generated, PASSWORD_DEFAULT);
 
-                    $stmt->bindParam(':name', $this->name);
+                    $stmt->bindParam(':name', $this->name, PDO::PARAM_STR);
                     $stmt->bindParam(':email', $this->email);
                     $stmt->bindParam(':pass', $hashed);
-                    $stmt->bindParam(':status', $this->status);
-                    $stmt->bindParam(':city', $this->city);
-                    $stmt->bindParam(':address', $this->address);
-                    $stmt->bindParam(':phone', $this->phone);
+                    $stmt->bindParam(':status', $this->status, PDO::PARAM_STR);
+                    $stmt->bindParam(':city', $this->city, PDO::PARAM_STR);
+                    $stmt->bindParam(':address', $this->address, PDO::PARAM_STR);
+                    $stmt->bindParam(':phone', $this->phone, PDO::PARAM_STR);
 
                     
                     try {
@@ -485,29 +486,38 @@ class User {
                                 <br><br>
                                 <p>Srdačan pozdrav od KombiPrevoz tima!</p>
                             ";
-                            $this->sendEmail($html, $generated, $this->name, 'Kreiran Nalog', 'Email sa kredencijalima je poslat!');
+                            $this->sendEmail($html, $generated, $this->name, 'Kreiran Nalog',
+                            "Email sa kredencijalima je poslat novom korisniku po imenu: $this->name !");
+                            /*
                             echo json_encode(['user' => [
                                 'msg' => 'Novi korisnik je uspešno kreiran.',
                                 'user_id' => $this->db->lastInsertId()
                                 ]
-                            ]);
+                            ]); */
                         }
                     } catch (PDOException $e) {
+                        http_response_code(500);
                         if($e->getCode() == 23000) {
                             echo json_encode([
-                                "user" => 'Email nije dostupan! Molimo Vas da probate sa drugim.'
+                                "error" => 'Email nije dostupan! Molimo Vas da probate sa drugim.'
                             ]);
                         } else 
                         echo json_encode([
-                            'status' => 500,
-                            "user" => 'Nije moguće kreirati novog korisnika.'
+                            "error" => 'Nije moguće kreirati novog korisnika.'
                         ]); 
                     }
-                } else echo json_encode(['user' => 'Korisnik može imati samo jednu od 3 uloge!']);
-            } else echo json_encode(['user' => 'Molimo Vas da pravilno unesete podatke!']);
+                } else {
+                    http_response_code(403);
+                    echo json_encode(['error' => 'Korisnik može imati samo jednu od 3 uloge!']);
+                } 
+            } else {
+                http_response_code(422);
+                echo json_encode(['error' => 'Molimo Vas da pravilno unesete podatke!']);
+            } 
             
         } else {
-            echo json_encode(['user' => 'Molimo Vas da pravilno unesete podatke!']);
+            http_response_code(422);
+            echo json_encode(['error' => 'Molimo Vas da pravilno unesete podatke!']);
         }
         
     }
@@ -517,23 +527,28 @@ class User {
         $find = "SELECT * FROM users WHERE email = :email AND deleted = 0";
         $stmt = $this->db->prepare($find);
         if(filter_var($this->email, FILTER_VALIDATE_EMAIL)) {
-            $this->email = htmlspecialchars(strip_tags($this->email));
+            //$this->email = htmlspecialchars(strip_tags($this->email));
             $stmt->bindParam(':email', $this->email);
 
             try {
+                
                 if($stmt->execute()) {
                     $user = $stmt->fetch(PDO::FETCH_OBJ);
-
+                    
                     if($user) {
                         if(password_verify($this->pass, $user->pass)) {
+                            
                             session_regenerate_id();
 
                             $splited = explode(" ", $user->name);
                             $arr = [];
+                            
                             foreach($splited as $s) {
                                 array_push($arr, strtoupper($s[0]));
                             }
+                            
                             $initials = implode("", $arr);
+                            
 
                             $_SESSION['user'] = [
                                 'id' => $user->id,
@@ -576,12 +591,18 @@ class User {
                             'error' => 'Pogrešan email ili lozinka!'
                         ], JSON_PRETTY_PRINT);
                     }
+                } else {
+                    http_response_code(500);
+                    echo json_encode([
+                        'error' => 'Došlo je do greške pri konektovanju na bazu!'
+                    ], JSON_UNESCAPED_UNICODE);
                 }
             } catch (PDOException $e) {
+                http_response_code(500);
                 echo json_encode([
                     'error' => 'Došlo je do greške pri konektovanju na bazu!',
                     'msg' => $e->getMessage()
-                ], JSON_PRETTY_PRINT);
+                ], JSON_UNESCAPED_UNICODE);
             }
         } else {
             http_response_code(401);

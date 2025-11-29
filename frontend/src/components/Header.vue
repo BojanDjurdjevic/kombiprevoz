@@ -98,10 +98,10 @@ if(localStorage.getItem('myCart')) {
         </v-row>
 
         <v-spacer></v-spacer>
-
+        <div >
         <v-btn variant="outlined" to="/admin" v-if="user.admin == false" @click="user.admin = true">Admin</v-btn>
         <v-btn variant="outlined" to="/" v-if="user.admin == true" @click="user.admin = false">User</v-btn>
-
+        </div>
         <v-btn
           @click="changeTheme"
         >

@@ -160,7 +160,7 @@ export const useUserStore = defineStore('user', () => {
             }
         },
         handleLogin: async (users) => {
-            loading.value = true
+            console.log(users)
             try {
                 const res = await api.logUser(users)
                 if(res.data.success) {

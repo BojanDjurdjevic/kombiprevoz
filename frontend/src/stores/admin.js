@@ -802,8 +802,23 @@ export const useAdminStore = defineStore("admin", () => {
       console.log(dto)
       tab_users.value = 'Pretraga'
     },
-    createUser: async (user) => {
-      console.log(user)
+    createUser: async (users) => {
+      console.log(users)
+      try {
+          const res = await api.logUser(users)
+          if(res.data.success) {
+              user.showSucc(res, 6000)
+          } else {
+              console.log(res.data)
+          }
+      } catch (error) {
+          console.dir(error, {depth: null})
+          if(error.response.data.error) {
+              user.showErr(error, 6000)
+          } else {
+              console.log('pogrešno dohvatanje')
+          }
+      }
     },
     // ------------------ TOURS ---------------------//
     fetchAllTours: async () => {
