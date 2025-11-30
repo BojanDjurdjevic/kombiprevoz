@@ -479,6 +479,21 @@ export const useAdminStore = defineStore("admin", () => {
 
   const userByAdmin = ref(null)
 
+  const userEditDialog = ref(false)
+  const userContactDialog = ref(false)
+
+  const editedUser = ref({
+    updateByAdmin: false,
+    users: {
+      id: null,
+      name: '',
+      address: '',
+      city: '',
+      phone: '',
+      status: null
+    } 
+  })
+
   // -------------------------------------------- ALL API CALLS --------------------------------- //
   
 
@@ -811,7 +826,7 @@ export const useAdminStore = defineStore("admin", () => {
         tab_users.value = 'Pretraga'
       } 
     },
-    // ---------------------- USER CREATE by ADMIN ----------------------- //
+    // ---------------------- USER MANAGE by ADMIN ----------------------- //
     createUser: async (users) => {
       console.log(users)
       try {
@@ -829,6 +844,30 @@ export const useAdminStore = defineStore("admin", () => {
               console.log('pogrešno dohvatanje')
           }
       }
+    },
+    openUserEditDialog: () => {
+      userEditDialog.value = true
+      editedUser.value.users = userByAdmin.value
+      editedUser.value.updateByAdmin = true
+    },
+    closeUserEditDialog: () => {
+      userEditDialog.value = false
+      actions.value.resetUserEdit 
+      editedUser.value.updateByAdmin = false
+    },
+    resetUserEdit: () => {
+      let id = userByAdmin.value?.id ?? null
+      editedUser.value.users = {
+        id: id,
+        name: '',
+        address: '',
+        city: '',
+        phone: '',
+        status: null
+      } 
+    },
+    confirmEditUser: async () => {
+      console.log(editedUser.value)
     },
     // ------------------ TOURS ---------------------//
     fetchAllTours: async () => {
@@ -1195,7 +1234,8 @@ export const useAdminStore = defineStore("admin", () => {
     changePrice, changeDeps, selectedTour, tab_tours, items_tours, filteredTours,
     myCountry, citiesByCountry, countryDialog, cityDialog, myCity, selectedPictures,
     myCityPics, cityDeletedPics, unSelectedPictures, tab_users, items_users,
-    userOptions, userByAdmin,
+    userOptions, userByAdmin, userEditDialog, userContactDialog, editedUser,
+
 
     formatDate, showDetails, adminDateQuery, isDateAllowed, selectFlag, selectCityPics,
     clearCityPics, clearFlag, validateTime, disableTour, formatDepDays, showTour,

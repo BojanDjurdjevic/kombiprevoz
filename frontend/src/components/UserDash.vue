@@ -1,9 +1,11 @@
 <script setup>
 import { useAdminStore } from "@/stores/admin";
+import { useUserStore } from "@/stores/user";
 import { useField, useForm } from 'vee-validate';
 import { ref } from "vue";
 
 const admin = useAdminStore();
+const user = useUserStore();
 
 const newUser = ref({
   users: {
@@ -105,7 +107,7 @@ const { handleSubmit, handleReset } = useForm({
             <v-card-text>
               <div v-if="item == 'Pretraga'">
                 <v-card v-if="admin.userByAdmin"
-                  class="w-100 h-75 mt-3"
+                  class="w-100 h-75 mt-3 pa-3"
                 >
                   <v-card-title class="text-center pa-3">Korisnik: {{ admin.userByAdmin?.name }} </v-card-title>
                   <v-card-subtitle class="text-center pa-3">Status korisnika: {{ admin.userByAdmin?.status }} </v-card-subtitle>
@@ -121,6 +123,7 @@ const { handleSubmit, handleReset } = useForm({
                     <v-btn
                       color="indigo-darken-4"
                       variant="elevated"
+                      @click="admin.actions.openUserEditDialog"
                     >
                       Uredi
                     </v-btn>
@@ -132,6 +135,119 @@ const { handleSubmit, handleReset } = useForm({
                     </v-btn>
                   </v-card-actions>
                 </v-card> 
+
+                <!--   EDIT USER DIALOG   -->
+
+                <v-dialog v-model="admin.userEditDialog" fullscreen transition="dialog-bottom-transition" persistent>
+                  <v-card>
+                    <!-- Header -->
+                    <v-toolbar color="indigo-darken-4">
+                      <v-btn icon @click="admin.actions.closeUserEditDialog">
+                        <v-icon>mdi-arrow-left</v-icon>
+                      </v-btn>
+                      <v-toolbar-title>Korisnik: {{ admin.userByAdmin?.name }}</v-toolbar-title>
+                      <v-spacer></v-spacer>
+                    </v-toolbar>
+
+                    <!-- MAIN CONTENT - USER DETAILS -->
+
+                    <!--  Details  -->
+                    <v-card-text class="pa-4 ">
+                      <h3 class="text-center">Podaci korisnika</h3>
+                      <div class="w-100 h-100 d-flex">
+                        <div class="w-50 h-100 pa-3 d-flex flex-column justify-space-evenly">
+                          <p><strong>Ime:</strong> {{ admin.userByAdmin?.name }}</p>
+                          <p><strong>Status:</strong> {{ admin.userByAdmin?.status }}</p>
+                          <p><strong>Grad:</strong> {{ userByAdmin?.city }}</p>
+                          <p><strong>Adresa:</strong> {{ admin.userByAdmin?.address }}</p>
+                          <p><strong>Email:</strong> {{ admin.userByAdmin?.email }}</p>
+                          <p><strong>Telefon:</strong> {{ admin.userByAdmin?.phone }}</p>
+                        </div>
+
+                        <!--  ACTIONS - booking managing by admin  -->
+                        <!--  Update  -->
+                        <div class="w-50 h-100 pa-6 mt-3 d-flex flex-column justify-space-around">
+                          <div class="h-75 d-flex flex-column justify-space-evenly">
+                            <div>
+                              <v-text-field
+                                v-model="admin.editedUser.users.name"
+                                prepend-icon="mdi-map-marker"
+                                label="Unesi novo ime korisnika"
+                                clearable 
+                                class="w-75"
+                                :rules="[user.rules.required]"
+                              ></v-text-field>
+                              <v-autocomplete
+                                v-model="admin.editedUser.users.status"
+                                prepend-icon="mdi-map-marker"
+                                label="Izmeni status korisnika"
+                                clearable 
+                                class="w-75"
+                                :items="['Admin', 'Driver', 'User']"
+                                :rules="[user.rules.required]"
+                              ></v-autocomplete>
+                              <v-text-field
+                                v-model="admin.editedUser.users.city"
+                                prepend-icon="mdi-map-marker"
+                                label="Unesi novi grad korisnika"
+                                clearable 
+                                class="w-75"
+                                :rules="[user.rules.required]"
+                              ></v-text-field>
+                              <v-text-field
+                                v-model="admin.editedUser.users.address"
+                                prepend-icon="mdi-map-marker"
+                                label="Unesi novu adresu korisnika"
+                                clearable 
+                                class="w-75"
+                                :rules="[user.rules.required]"
+                              ></v-text-field>
+                              <v-text-field
+                                v-model="admin.editedUser.users.email"
+                                prepend-icon="mdi-map-marker"
+                                label="Unesi novi email korisnika"
+                                clearable 
+                                class="w-75"
+                                :rules="[user.rules.required, user.rules.email]"
+                              ></v-text-field>
+                              <v-text-field
+                                v-model="admin.editedUser.users.phone"
+                                prepend-icon="mdi-map-marker"
+                                label="Unesi novi broj telefona korisnika"
+                                clearable 
+                                class="w-75"
+                                :rules="[user.rules.required]"
+                              ></v-text-field>
+                              
+                            </div>
+                            <div class="w-75 d-flex justify-space-around">
+                              <v-btn 
+                                variant="elevated" 
+                                color="green-darken-4"
+                                @click="admin.actions.confirmEditUser"
+                              >Potvrdi</v-btn>
+                              <v-btn color="red-darken-3"
+                                @click="admin.actions.resetUserEdit"
+                              >Poništi</v-btn>
+                            </div>
+                          
+                          </div>
+                          
+                        </div>
+                      </div>
+                    </v-card-text>
+
+                    <!-- Btn -->
+                    <v-card-actions>
+                      <v-btn block color="success" @click="admin.actions.closeUserEditDialog">
+                        Zatvori
+                      </v-btn>
+                    </v-card-actions>
+                  </v-card>
+                </v-dialog>
+
+
+                <!--   CONTACT USER DIALOG   -->
               </div>
               <div v-if="item == 'Kreiraj novog korisnika'">
                 <v-container class="d-flex justify-center align-center" height="95%">
@@ -141,57 +257,55 @@ const { handleSubmit, handleReset } = useForm({
                           class="w-75"
                       >
                           <v-text-field
-                          v-model="name.value.value"
-                          :counter="24"
-                          :error-messages="name.errorMessage.value"
-                          label="Ime"
-                          clearable
+                            v-model="name.value.value"
+                            :counter="24"
+                            :error-messages="name.errorMessage.value"
+                            label="Ime"
+                            clearable
                           ></v-text-field>
 
                           <v-text-field
-                          v-model="email.value.value"
-                          :error-messages="email.errorMessage.value"
-                          label="E-mail"
-                          clearable
+                            v-model="email.value.value"
+                            :error-messages="email.errorMessage.value"
+                            label="E-mail"
+                            clearable
                           ></v-text-field>
 
-                          
-
                           <v-text-field
-                          v-model="phone.value.value"
-                          :counter="7"
-                          :error-messages="phone.errorMessage.value"
-                          label="Broj telefona"
-                          clearable
+                            v-model="phone.value.value"
+                            :counter="7"
+                            :error-messages="phone.errorMessage.value"
+                            label="Broj telefona"
+                            clearable
                           ></v-text-field>
 
                           <v-autocomplete
-                          v-model="country.value.value"
-                          :error-messages="country.errorMessage.value"
-                          :items="admin.dbCountries"
-                          item-title="name"
-                          item-value="id"
-                          label="Država"
-                          clearable
-                          return-object
-                          @update:model-value="admin.userCityOptions(country.value.value)"
+                            v-model="country.value.value"
+                            :error-messages="country.errorMessage.value"
+                            :items="admin.dbCountries"
+                            item-title="name"
+                            item-value="id"
+                            label="Država"
+                            clearable
+                            return-object
+                            @update:model-value="admin.userCityOptions(country.value.value)"
                           ></v-autocomplete>
 
                           <v-autocomplete
-                          v-model="city.value.value"
-                          :error-messages="city.errorMessage.value"
-                          :items="admin.userOptions"
-                          label="Grad"
-                          :disabled="!admin.userOptions"
-                          clearable
+                            v-model="city.value.value"
+                            :error-messages="city.errorMessage.value"
+                            :items="admin.userOptions"
+                            label="Grad"
+                            :disabled="!admin.userOptions"
+                            clearable
                           ></v-autocomplete>
 
                           <v-combobox
-                          v-model="address.value.value"
-                          :error-messages="address.errorMessage.value"
-                          :items="items"
-                          label="Adresa"
-                          clearable
+                            v-model="address.value.value"
+                            :error-messages="address.errorMessage.value"
+                            :items="items"
+                            label="Adresa"
+                            clearable
                           
                           ></v-combobox>
                           <v-autocomplete
