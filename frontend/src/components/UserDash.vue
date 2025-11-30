@@ -104,7 +104,34 @@ const { handleSubmit, handleReset } = useForm({
           <v-card flat>
             <v-card-text>
               <div v-if="item == 'Pretraga'">
-                Pretraga 
+                <v-card v-if="admin.userByAdmin"
+                  class="w-100 h-75 mt-3"
+                >
+                  <v-card-title class="text-center pa-3">Korisnik: {{ admin.userByAdmin?.name }} </v-card-title>
+                  <v-card-subtitle class="text-center pa-3">Status korisnika: {{ admin.userByAdmin?.status }} </v-card-subtitle>
+                  <v-card-text class="h-75">
+                    <p class="ma-3 pa-1">Grad: {{ admin.userByAdmin?.city }} </p>
+                    <p class="ma-3 pa-1">Adresa: {{ admin.userByAdmin?.address }} </p>
+                    <p class="ma-3 pa-1">Email: {{ admin.userByAdmin?.email }}</p>
+                    <p class="ma-3 pa-1">Telefon: {{ admin.userByAdmin?.phone }}</p>
+                  </v-card-text>
+                  <v-card-actions 
+                    class="w-100 d-flex justify-space-between"
+                  >
+                    <v-btn
+                      color="indigo-darken-4"
+                      variant="elevated"
+                    >
+                      Uredi
+                    </v-btn>
+                    <v-btn
+                      color="red-darken-4"
+                      variant="elevated"
+                    >
+                      Pošalji email
+                    </v-btn>
+                  </v-card-actions>
+                </v-card> 
               </div>
               <div v-if="item == 'Kreiraj novog korisnika'">
                 <v-container class="d-flex justify-center align-center" height="95%">

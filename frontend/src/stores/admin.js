@@ -477,7 +477,7 @@ export const useAdminStore = defineStore("admin", () => {
 
   const items_users = ["Kreiraj novog korisnika", "Pretraga"];
 
-  const usr_email = ref(null)
+  const userByAdmin = ref(null)
 
   // -------------------------------------------- ALL API CALLS --------------------------------- //
   
@@ -800,16 +800,18 @@ export const useAdminStore = defineStore("admin", () => {
         email: usrEmail.value,
         byEmail: true
       };
-      console.log(dto)
       try {
         const res = await api.getUser(dto)
+        userByAdmin.value = res.data.user
         console.log(res.data)
+        console.log(res.data.user)
       } catch (error) {
         console.log(error)
       } finally {
         tab_users.value = 'Pretraga'
       } 
     },
+    // ---------------------- USER CREATE by ADMIN ----------------------- //
     createUser: async (users) => {
       console.log(users)
       try {
@@ -1193,7 +1195,7 @@ export const useAdminStore = defineStore("admin", () => {
     changePrice, changeDeps, selectedTour, tab_tours, items_tours, filteredTours,
     myCountry, citiesByCountry, countryDialog, cityDialog, myCity, selectedPictures,
     myCityPics, cityDeletedPics, unSelectedPictures, tab_users, items_users,
-    userOptions,
+    userOptions, userByAdmin,
 
     formatDate, showDetails, adminDateQuery, isDateAllowed, selectFlag, selectCityPics,
     clearCityPics, clearFlag, validateTime, disableTour, formatDepDays, showTour,
