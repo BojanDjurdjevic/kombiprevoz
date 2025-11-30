@@ -98,9 +98,9 @@ if(localStorage.getItem('myCart')) {
         </v-row>
 
         <v-spacer></v-spacer>
-        <div >
-        <v-btn variant="outlined" to="/admin" v-if="user.admin == false" @click="user.admin = true">Admin</v-btn>
-        <v-btn variant="outlined" to="/" v-if="user.admin == true" @click="user.admin = false">User</v-btn>
+        <div v-if="user.user && (user.user.status == 'Superadmin' || user.user.status == 'Admin')">
+          <v-btn v-if="!user.admin" variant="outlined" to="/admin"  @click="user.admin = true">Admin</v-btn>
+          <v-btn v-else variant="outlined" to="/" @click="user.admin = false" >User</v-btn>  
         </div>
         <v-btn
           @click="changeTheme"

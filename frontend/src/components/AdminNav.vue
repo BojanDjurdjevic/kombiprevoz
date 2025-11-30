@@ -24,7 +24,7 @@ const tours = useTourStore();
   <v-card class="h-100">
     <v-layout class="h-100">
       <v-navigation-drawer expand-on-hover permanent rail>
-        <v-list>
+        <v-list v-if="user.user">
           <v-list-item :subtitle="user.user.email" :title="user.user.name">
             <template v-slot:prepend>
               <v-avatar color="green-darken-3" size="38">

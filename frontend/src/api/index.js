@@ -97,6 +97,14 @@ export default {
 
     //------------------------------- USER -----------------------//
 
+    getUser(users) {
+        console.log(users)
+        return axios.get("", {params: {users}}, {
+            headers: {
+                "Content-type": "json/application"   
+            }
+        }) 
+    },
     isLogged(user) {
         return axios.post("", user)
     },

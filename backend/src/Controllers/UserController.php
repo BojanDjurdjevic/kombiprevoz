@@ -69,10 +69,7 @@ class UserController {
                         if(Validator::isAdmin() || Validator::isSuper()) $this->user->getByID();
                         else echo json_encode(['user' => 'Niste autorizovani da vidite druge korisnike!']);
                     }
-                    if(isset($this->data->byEmail) && !empty($this->data->byEmail)) {
-                        if(Validator::isAdmin() || Validator::isSuper()) $this->user->getByEmail();
-                        else echo json_encode(['user' => 'Niste autorizovani da vidite druge korisnike!']);
-                    }
+                    
                     if(isset($this->data->byName) && !empty($this->data->byName)) {
                         if(Validator::isAdmin() || Validator::isSuper()) $this->user->getByName();
                         else echo json_encode(['user' => 'Niste autorizovani da vidite druge korisnike!']);
@@ -82,9 +79,39 @@ class UserController {
                         else echo json_encode(['user' => 'Niste autorizovani da vidite druge korisnike!']);
                     }
                     if(isset($this->data->token) && !empty($this->data->token)) $this->user->checkToken($this->user->token);
-                } else {
-                    echo json_encode(["user" => 'Nije pronađen korisnik.'], JSON_PRETTY_PRINT);
-                    exit();
+                }
+                if(isset($this->data->users->byEmail) && !empty($this->data->users->byEmail)) {
+                    if(Validator::isAdmin() || Validator::isSuper()) {
+                        $result =  $this->user->getByEmail();
+
+                        if ($result['success']) {
+                            http_response_code(200);
+                            echo json_encode([
+                                'success' => true,
+                                'user' => $result['user']
+                            ], JSON_UNESCAPED_UNICODE);
+                            exit;
+
+                        } else {
+                            if ($result['error'] === 'invalid_email') {
+                                http_response_code(400);
+                            } elseif ($result['error'] === 'not_found') {
+                                http_response_code(404);
+                            } else {
+                                http_response_code(500);
+                            }
+
+                            echo json_encode([
+                                'error' => $result['message']
+                            ], JSON_UNESCAPED_UNICODE);
+                            exit;
+                        }
+                    } 
+                    else {
+                        http_response_code(403);
+                        echo json_encode(['error' => 'Niste autorizovani da vidite druge korisnike!']);
+                        exit;
+                    } 
                 }
                 break;
             case 'POST':

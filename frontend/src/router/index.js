@@ -109,10 +109,11 @@ const router = createRouter({
     {
       path: '/admin',
       name: 'admin',
-      component: AdminDashView, /*
+      component: AdminDashView, 
       meta: {
-        requireAuth: true
-      } */
+        requireAuth: true,
+        requiresRole: ['Superadmin', 'Admin']
+      } 
     },
   ],
 })
@@ -129,10 +130,24 @@ router.beforeEach((to, from, next) => {
       })
       user.errorMsg = null
     }, 1000);
-    
-  } else {
-    next()
+    return
   }
+
+  if (to.meta.requiresRole) {
+     const allowedRoles = to.meta.requiresRole
+     const userRole = user.user?.status
+
+     if (!allowedRoles.includes(userRole)) {
+       user.errorMsg = "Nemate dozvolu."
+       setTimeout(() => {
+         next({ path: '/' })
+         user.errorMsg = null
+       }, 1000)
+       return
+     }
+  }
+
+  next()
 })
 
 export default router

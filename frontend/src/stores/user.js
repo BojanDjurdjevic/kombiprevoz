@@ -130,14 +130,17 @@ export const useUserStore = defineStore('user', () => {
         },
         setUser: (userData) => {
             user.value = userData
+            console.log('User iz baze: ', user.value)
         }, 
         handleSignin: async (users) => {
             loading.value = true
             try {
                 const res = await api.logUser(users)
+                console.log('Data User-a: ', res.data)
                 if(res.data.success) {
                     //user.value = res.data.user
                     actions.value.setUser(res.data.user)
+                    
                     //successMsg.value = res.data.msg 
                     const redirectPath = route.query.redirect || '/'
                     router.push(redirectPath)
@@ -163,6 +166,7 @@ export const useUserStore = defineStore('user', () => {
             console.log(users)
             try {
                 const res = await api.logUser(users)
+                console.log('Data User-a: ', res.data)
                 if(res.data.success) {
                     //user.value = res.data.user
                     actions.value.setUser(res.data.user)

@@ -243,17 +243,43 @@ class User {
     // By EMAIL
     public function getByEmail() 
     {
-        $sql = "SELECT id, name, email, status, city, address, phone 
-        FROM users WHERE deleted = 0 and email = '$this->email'"
-        ;
-        $res = $this->db->query($sql);
-        $num = $res->rowCount();
-        if($num > 0) {
-            $user = $res->fetch(PDO::FETCH_OBJ);
-            echo json_encode(["user" => $user], JSON_PRETTY_PRINT);
-            return $user;
-        } else
-        echo json_encode(["user" => 'Nije pronađen korisnik.'], JSON_PRETTY_PRINT);
+        if(filter_var($this->email, FILTER_VALIDATE_EMAIL)) {
+            $sql = "SELECT id, name, email, status, city, address, phone 
+            FROM users WHERE deleted = 0 and email = :email"
+            ;
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindParam(":email", $this->email);
+            try {
+                $stmt->execute();
+                $user = $stmt->fetch(PDO::FETCH_OBJ);
+
+                if($user) {
+                    return [
+                        'success' => true,
+                        'user' => $user
+                    ];
+                } else {
+                    return [
+                        'success' => false,
+                        'error' => 'not_found',
+                        'message' => "Korisnik sa email-om $this->email nije pronađen"
+                    ];
+                }
+            } catch (PDOException $e) {
+                error_log("getByEmail() failed: " . $e->getMessage());
+                return [
+                    'success' => false,
+                    'error' => 'database_error',
+                    'message' => 'Greška pri pristupu bazi podataka'
+                ];
+            }
+        } else {
+            return [
+                'success' => false,
+                'error' => 'invalid_email',
+                'message' => 'Neispravan email format'
+            ];
+        }
     }
 
     // By NAME

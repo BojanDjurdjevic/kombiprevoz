@@ -795,12 +795,20 @@ export const useAdminStore = defineStore("admin", () => {
       }
     },
     // -------------- SEARCH BY FILTER - USER -----------------//
-    searchUser: () => {
+    searchUser: async () => {
       const dto = {
         email: usrEmail.value,
+        byEmail: true
       };
       console.log(dto)
-      tab_users.value = 'Pretraga'
+      try {
+        const res = await api.getUser(dto)
+        console.log(res.data)
+      } catch (error) {
+        console.log(error)
+      } finally {
+        tab_users.value = 'Pretraga'
+      } 
     },
     createUser: async (users) => {
       console.log(users)
