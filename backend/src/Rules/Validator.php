@@ -5,12 +5,15 @@ namespace Rules;
 class Validator {
     public static function validateString($str) 
     {
-        if(strlen($str) < 3) return false;
-        $forbiden = array("=", ")", "(", "+", "-", "*", "/", "|");
-        foreach($forbiden as $f) {
-            if(strpos($str, $f) !== false) return false; 
-            else return true;
+        if (mb_strlen($str, 'UTF-8') < 2 || mb_strlen($str, 'UTF-8') > 100) {
+            return false;
         }
+
+        if (!preg_match("/^[\p{L}\s'-]+$/u", $str)) {
+            return false;
+        }
+
+        return true;
     }
 
     public static function validateCode($code) {

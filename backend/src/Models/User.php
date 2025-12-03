@@ -667,14 +667,8 @@ class User {
             $stmt = $this->db->prepare($sql);
 
             if(filter_var($this->email, FILTER_VALIDATE_EMAIL) && Validator::validateString($this->name)) {
-                $this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
-                $this->name = htmlspecialchars(strip_tags($this->name), ENT_QUOTES);
-                $this->email = htmlspecialchars(strip_tags($this->email), ENT_QUOTES);
-                $this->city = htmlspecialchars(strip_tags($this->city), ENT_QUOTES);
-                $this->address = htmlspecialchars(strip_tags($this->address), ENT_QUOTES);
-                $this->phone = htmlspecialchars(strip_tags($this->phone), ENT_QUOTES);
 
-                $stmt->bindParam(':id', $this->id);
+                $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
                 $stmt->bindParam(':name', $this->name);
                 $stmt->bindParam(':email', $this->email);
                 $stmt->bindParam(':city', $this->city);
@@ -686,16 +680,9 @@ class User {
                         $splited = explode(" ", $this->name);
                         $arr = [];
                         foreach($splited as $s) {
-                            array_push($arr, strtoupper($s[0]));
+                            array_push($arr, mb_strtoupper(mb_substr($s, 0,1, "UTF-8")));
                         }
                         $initials = implode("", $arr);
-
-                        $_SESSION['user']['name'] = $this->name;
-                        $_SESSION['user']['email'] = $this->email;
-                        $_SESSION['user']['city'] = $this->city;
-                        $_SESSION['user']['address'] = $this->address;
-                        $_SESSION['user']['phone'] = $this->phone;
-                        $_SESSION['user']['initials'] = $initials;
 
                         $logedUser = [
                             'id' => $this->id,
@@ -707,6 +694,8 @@ class User {
                             'phone' => $this->phone,
                             'initials' => $initials
                         ];
+                        $_SESSION['user'] = $logedUser;
+
                         http_response_code(200);
                         echo json_encode([
                             'success' => true,
@@ -717,8 +706,7 @@ class User {
                 } catch(PDOException $e) {
                     http_response_code(500);
                     echo json_encode([
-                        'error' => 'Došlo je do greške prilikom ažuriranja. Molimo obratite se našoj podršci!', 
-                        'msg' => $e->getMessage()
+                        'error' => 'Došlo je do greške prilikom ažuriranja. Molimo obratite se našoj podršci!'
                     ]);
                 }
                 
@@ -875,6 +863,58 @@ class User {
                 ], JSON_PRETTY_PRINT);
             }
             
+        }
+    }
+
+    public function userUpdateByAdmin() 
+    {
+        if(!(Validator::isAdmin() || Validator::isSuper())) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Niste autorizovani da ažurirate profil!']);
+            return;
+        }
+        if (!filter_var($this->email, FILTER_VALIDATE_EMAIL)) {
+            http_response_code(422);
+            echo json_encode(['error' => 'Neispravan email']);
+            return;
+        }
+
+        if (!Validator::validateString($this->name)) {
+            http_response_code(422);
+            echo json_encode(['error' => 'Neispravno ime']);
+            return;
+        }
+        $sql = "UPDATE users SET name = :name, email = :email, city = :city, address = :address, 
+                phone = :phone, status = :status WHERE id = :id";
+
+        $stmt = $this->db->prepare($sql);
+
+        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
+        $stmt->bindParam(':name', $this->name);
+        $stmt->bindParam(':email', $this->email);
+        $stmt->bindParam(':city', $this->city);
+        $stmt->bindParam(':address', $this->address);
+        $stmt->bindParam(':phone', $this->phone);
+        $stmt->bindParam(':status', $this->status);
+
+        try {
+            $stmt->execute();
+
+            if ($stmt->rowCount() > 0) {
+                http_response_code(200);
+                echo json_encode([
+                    'success' => true,
+                    'msg' => "Korisnik $this->name je uspešno ažuriran"
+                ]);
+            } else {
+                http_response_code(404);
+                echo json_encode(['error' => 'Korisnik nije pronađen']);
+            }
+
+        } catch(PDOException $e) {
+            error_log("Admin update failed for user {$this->id}: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['error' => 'Greška pri ažuriranju']);
         }
     }
 
