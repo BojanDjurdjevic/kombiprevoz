@@ -884,6 +884,32 @@ class User {
             echo json_encode(['error' => 'Neispravno ime']);
             return;
         }
+        if ($this->status === 'Superadmin' && !Validator::isSuper()) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Samo Super Admin može da dodeljuje Super Admin status!']);
+            return;
+        }
+
+        $findSql = "SELECT * FROM users WHERE id = :id";
+
+        $stmtF = $this->db->prepare($findSql);
+        $stmtF->bindParam(':id', $this->id, PDO::PARAM_INT);
+        $stmtF->execute();
+
+        $currentUser = $stmtF->fetch(PDO::FETCH_OBJ);
+
+        if(!$currentUser) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Korisnik nije pronađen']);
+            return;
+        }
+
+        if($currentUser->status === 'Superadmin' && !Validator::isSuper()) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Niste autorizovani da ažurirate profil!']);
+            return;
+        }
+        
         $sql = "UPDATE users SET name = :name, email = :email, city = :city, address = :address, 
                 phone = :phone, status = :status WHERE id = :id";
 

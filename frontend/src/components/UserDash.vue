@@ -164,7 +164,7 @@ const { handleSubmit, handleReset } = useForm({
                           <p><strong>Telefon:</strong> {{ admin.userByAdmin?.phone }}</p>
                         </div>
 
-                        <!--  ACTIONS - booking managing by admin  -->
+                        <!--  ACTIONS - profile managing by admin  -->
                         <!--  Update  -->
                         <div class="w-50 h-100 pa-6 mt-3 d-flex flex-column justify-space-around">
                           <div class="h-75 d-flex flex-column justify-space-evenly">

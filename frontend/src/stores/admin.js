@@ -868,6 +868,17 @@ export const useAdminStore = defineStore("admin", () => {
     },
     confirmEditUser: async () => {
       console.log(editedUser.value)
+      if(!editedUser.value.users.id || !editedUser.value.users.name || !editedUser.value.users.address 
+        || !editedUser.value.users.city || !editedUser.value.users.phone || !editedUser.value.users.status
+      ) {
+        return displayError('Molimo vas da popunite sva polja ukoliko želite da ažurirate profil!')
+      }
+      try {
+        const res = await api.logUser(editedUser.value)
+        console.log(res.data)
+      } catch (error) {
+        console.log(error)
+      }
     },
     // ------------------ TOURS ---------------------//
     fetchAllTours: async () => {
