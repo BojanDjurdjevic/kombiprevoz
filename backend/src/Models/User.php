@@ -2,6 +2,7 @@
 
 namespace Models;
 
+use Helpers\Logger;
 use PDO;
 use PDOException;
 use PHPMailer\PHPMailer\PHPMailer;
@@ -660,6 +661,20 @@ class User {
     // Update User general data:
     public function update() 
     {   
+        $findSql = "SELECT * FROM users WHERE id = :id";
+
+        $stmtF = $this->db->prepare($findSql);
+        $stmtF->bindParam(':id', $this->id, PDO::PARAM_INT);
+        $stmtF->execute();
+
+        $currentUser = $stmtF->fetch(PDO::FETCH_OBJ);
+
+        if(!$currentUser) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Korisnik nije pronađen']);
+            return;
+        }
+
         if($this->isOwner() || Validator::isSuper() || Validator::isAdmin()) {
             $sql = "UPDATE users SET name = :name, email = :email, city = :city, address = :address, phone = :phone
                     WHERE id = :id and deleted = 0"
@@ -677,6 +692,31 @@ class User {
 
                 try {
                     if($stmt->execute()) {
+
+                        $logger = new Logger($this->db);
+
+                        if ($currentUser->name !== $this->name) {
+                            $logger->logUserChange($this->id, $_SESSION['user']['id'],
+                            'update', 'name', $currentUser->name, $this->name);
+                        }
+                        if ($currentUser->email !== $this->email) {
+                            $logger->logUserChange($this->id, $_SESSION['user']['id'], 
+                            'update', 'email', $currentUser->email, $this->email);
+                        }
+
+                        if ($currentUser->city !== $this->city) {
+                            $logger->logUserChange($this->id, $_SESSION['user']['id'],
+                            'update', 'city', $currentUser->name, $this->name);
+                        }
+                        if ($currentUser->address !== $this->address) {
+                            $logger->logUserChange($this->id, $_SESSION['user']['id'], 
+                            'update', 'address', $currentUser->email, $this->email);
+                        }
+                        if ($currentUser->phone !== $this->phone) {
+                            $logger->logUserChange($this->id, $_SESSION['user']['id'], 
+                            'status_change', 'status', $currentUser->status, $this->status);
+                        }
+
                         $splited = explode(" ", $this->name);
                         $arr = [];
                         foreach($splited as $s) {
@@ -884,11 +924,6 @@ class User {
             echo json_encode(['error' => 'Neispravno ime']);
             return;
         }
-        if ($this->status === 'Superadmin' && !Validator::isSuper()) {
-            http_response_code(403);
-            echo json_encode(['error' => 'Samo Super Admin može da dodeljuje Super Admin status!']);
-            return;
-        }
 
         $findSql = "SELECT * FROM users WHERE id = :id";
 
@@ -904,9 +939,33 @@ class User {
             return;
         }
 
+        if ($currentUser->id == $_SESSION['user']['id'] && $this->status !== $currentUser->status) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Ne možete menjati svoj status!'], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
         if($currentUser->status === 'Superadmin' && !Validator::isSuper()) {
             http_response_code(403);
             echo json_encode(['error' => 'Niste autorizovani da ažurirate profil!']);
+            return;
+        }
+
+        if ($this->status === 'Superadmin' && $currentUser->status !== 'Superadmin' && !Validator::isSuper()) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Samo Super Admin može da dodeljuje Super Admin status!'], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $emailCheckSql = "SELECT id FROM users WHERE email = :email AND id != :id AND deleted = 0";
+        $stmtEmail = $this->db->prepare($emailCheckSql);
+        $stmtEmail->bindParam(':email', $this->email);
+        $stmtEmail->bindParam(':id', $this->id, PDO::PARAM_INT);
+        $stmtEmail->execute();
+
+        if ($stmtEmail->fetch()) {
+            http_response_code(422);
+            echo json_encode(['error' => 'Email adresa je već zauzeta'], JSON_UNESCAPED_UNICODE);
             return;
         }
         
@@ -927,20 +986,49 @@ class User {
             $stmt->execute();
 
             if ($stmt->rowCount() > 0) {
+
+                $logger = new Logger($this->db);
+
+                if ($currentUser->name !== $this->name) {
+                    $logger->logUserChange($this->id, $_SESSION['user']['id'],
+                    'update', 'name', $currentUser->name, $this->name);
+                }
+                if ($currentUser->email !== $this->email) {
+                    $logger->logUserChange($this->id, $_SESSION['user']['id'], 
+                    'update', 'email', $currentUser->email, $this->email);
+                }
+                if ($currentUser->status !== $this->status) {
+                    $logger->logUserChange($this->id, $_SESSION['user']['id'], 
+                    'status_change', 'status', $currentUser->status, $this->status);
+                }
+
+                if ($currentUser->city !== $this->city) {
+                    $logger->logUserChange($this->id, $_SESSION['user']['id'],
+                    'update', 'city', $currentUser->name, $this->name);
+                }
+                if ($currentUser->address !== $this->address) {
+                    $logger->logUserChange($this->id, $_SESSION['user']['id'], 
+                    'update', 'address', $currentUser->email, $this->email);
+                }
+                if ($currentUser->phone !== $this->phone) {
+                    $logger->logUserChange($this->id, $_SESSION['user']['id'], 
+                    'status_change', 'status', $currentUser->status, $this->status);
+                }
+
                 http_response_code(200);
                 echo json_encode([
                     'success' => true,
                     'msg' => "Korisnik $this->name je uspešno ažuriran"
-                ]);
+                ], JSON_UNESCAPED_UNICODE);
             } else {
                 http_response_code(404);
-                echo json_encode(['error' => 'Korisnik nije pronađen']);
+                echo json_encode(['error' => 'Korisnik nije pronađen'], JSON_UNESCAPED_UNICODE);
             }
 
         } catch(PDOException $e) {
             error_log("Admin update failed for user {$this->id}: " . $e->getMessage());
             http_response_code(500);
-            echo json_encode(['error' => 'Greška pri ažuriranju']);
+            echo json_encode(['error' => 'Greška pri ažuriranju'], JSON_UNESCAPED_UNICODE);
         }
     }
 
