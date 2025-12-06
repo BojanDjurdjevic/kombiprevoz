@@ -9,11 +9,102 @@ use Rules\Validator;
 class Logger 
 {
     private $db;
+    private static $logDir = __DIR__ . "/../Logs/";
 
     public function __construct($db) 
     {
         $this->db = $db;
+
+        if (!is_dir(self::$logDir)) {
+            if (!mkdir(self::$logDir, 0755, true)) {
+                die("Failed to create log directory: " . self::$logDir);
+            }
+        }
+
+        if (!is_writable(self::$logDir)) {
+            die("Log directory is not writable: " . self::$logDir);
+        }
     }
+
+    // LOG Events:
+    private static function writeLog($filename, $message, $level = 'INFO') 
+    {
+        $timestamp = date('Y-m-d H:i:s');
+        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
+        
+        $logMessage = sprintf(
+            "[%s] [%s] [IP: %s] %s | User-Agent: %s\n",
+            $timestamp,
+            $level,
+            $ip,
+            $message,
+            $userAgent
+        );
+        
+        $filepath = self::$logDir . $filename;
+        file_put_contents($filepath, $logMessage, FILE_APPEND | LOCK_EX);
+    }
+
+    // LOG Errors
+    public static function error($message, $context = []) 
+    {
+        $contextStr = !empty($context) ? ' | Context: ' . json_encode($context) : '';
+        self::writeLog('errors.log', $message . $contextStr, 'ERROR');
+    }
+
+   // LOG Security issues
+    public static function security($message, $severity = 'MEDIUM') 
+    {
+        self::writeLog('security.log', $message, "SECURITY-$severity");
+    }
+
+    // LOG Admin actions
+    public static function audit($message, $userId = null) 
+    {
+        $user = $userId ?? ($_SESSION['user']['id'] ?? 'unknown');
+        self::writeLog('audit.log', "[User: $user] $message", 'AUDIT');
+    }
+
+    // LOG Infos 
+    public static function info($message) 
+    {
+        self::writeLog('info.log', $message, 'INFO');
+    }
+
+    // Rotate - Store and Remove log files
+
+    public static function rotateLog($filename, $maxSizeMB = 10) 
+    {
+        $filepath = self::$logDir . $filename;
+        
+        if (!file_exists($filepath)) return;
+        
+        $fileSizeMB = filesize($filepath) / 1024 / 1024;
+        
+        if ($fileSizeMB > $maxSizeMB) {
+            $archiveName = $filename . '.' . date('Y-m-d_His') . '.bak';
+            rename($filepath, self::$logDir . $archiveName);
+            
+            touch($filepath);
+            
+            self::cleanOldArchives($filename, 30);
+        }
+    }
+
+    private static function cleanOldArchives($filename, $days) 
+    {
+        $files = glob(self::$logDir . $filename . '.*.bak');
+        $now = time();
+        
+        foreach ($files as $file) {
+            if ($now - filemtime($file) >= 60 * 60 * 24 * $days) {
+                unlink($file);
+            }
+        }
+    }
+
+    // LOG VARIOUS Changes to DB
 
     public function logUserChange($userId, $changedBy, $action, $fieldChanged = null, $oldValue = null, $newValue = null) 
     {
@@ -40,6 +131,8 @@ class Logger
         
         try {
             $stmt->execute();
+
+            self::audit("User $userId changed by $changedBy: $action ($fieldChanged)", $changedBy);
         } catch (PDOException $e) {
             error_log("Failed to log user change: " . $e->getMessage());
         }

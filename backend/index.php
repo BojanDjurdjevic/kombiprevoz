@@ -10,6 +10,7 @@ use Controllers\DepartureController;
 use Controllers\OrderController;
 use Controllers\TourController;
 use Controllers\UserController;
+use Helpers\Logger;
 use Models\User;
 use Rules\Validator;
 use Rules\Input;
@@ -51,6 +52,10 @@ $departures = new DepartureController($db, $data);
 if(isset($data->user) && !empty($data->user)) 
 $isLoged = User::isLoged( $db);
 else $isLoged = false;
+
+Logger::rotateLog('errors.log', 10);
+Logger::rotateLog('security.log', 10);
+Logger::rotateLog('audit.log', 50);
 
 
 if(isset($data->users) && !empty($data->users)) {

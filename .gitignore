@@ -1,6 +1,11 @@
 frontend/node_modules
 backend/.env
 backend/vendor
+backend/src/Logs/*.log 
+backend/src/Logs/.gitkeep
+
+
+
 backend/src/assets/img/cities/city_6904c82bb6c261.19116123.jpg
 backend/src/assets/img/cities/city_6904c82bc3df18.52967560.jpg
 backend/src/assets/img/cities/city_6904c82c2f8436.57030649.jpg

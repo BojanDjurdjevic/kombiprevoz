@@ -1026,7 +1026,15 @@ class User {
             }
 
         } catch(PDOException $e) {
-            error_log("Admin update failed for user {$this->id}: " . $e->getMessage());
+            //error_log("Admin update failed for user {$this->id}: " . $e->getMessage());
+
+            Logger::error("Database error in userUpdateByAdmin()", [
+                'user_id' => $this->id,
+                'error' => $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+
             http_response_code(500);
             echo json_encode(['error' => 'Greška pri ažuriranju'], JSON_UNESCAPED_UNICODE);
         }
