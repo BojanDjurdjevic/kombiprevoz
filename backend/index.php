@@ -1,4 +1,5 @@
 <?php
+define('APP_ACCESS', true);
 ini_set('session.gc_maxlifetime', 3600);
 session_start();
 $sid = session_id();

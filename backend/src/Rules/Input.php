@@ -2,6 +2,11 @@
 
 namespace Rules;
 
+if (!defined('APP_ACCESS')) {
+    http_response_code(403);
+    die('Direct access forbidden');
+}
+
 class Input { /*
     public static function all(): object {
         $method = $_SERVER['REQUEST_METHOD'];

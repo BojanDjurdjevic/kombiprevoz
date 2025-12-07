@@ -6,6 +6,11 @@ use Models\Order;
 use PDOException;
 use Rules\Validator;
 
+if (!defined('APP_ACCESS')) {
+    http_response_code(403);
+    die('Direct access forbidden');
+}
+
 class OrderController {
     public $db;
     public $data;

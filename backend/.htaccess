@@ -1,0 +1,22 @@
+
+RewriteEngine On
+
+<FilesMatch "^\.env">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+<DirectoryMatch "^/.*/\.git/">
+    Order deny,allow
+    Deny from all
+</DirectoryMatch>
+
+<DirectoryMatch "^/.*/vendor/">
+    Order deny,allow
+    Deny from all
+</DirectoryMatch>
+
+<FilesMatch "composer\.(json|lock)">
+    Order allow,deny
+    Deny from all
+</FilesMatch>

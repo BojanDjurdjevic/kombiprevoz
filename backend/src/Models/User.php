@@ -10,6 +10,11 @@ use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
 use Rules\Validator;
 
+if (!defined('APP_ACCESS')) {
+    http_response_code(403);
+    die('Direct access forbidden');
+}
+
 class User {
     public $id;
     public $name;

@@ -14,6 +14,11 @@ use PHPMailer\PHPMailer\Exception;
 use stdClass;
 use tidy;
 
+if (!defined('APP_ACCESS')) {
+    http_response_code(403);
+    die('Direct access forbidden');
+}
+
 class Order {
     public $id;
     public $order_id;

@@ -5,6 +5,11 @@ namespace Models;
 use PDO;
 use PDOException;
 
+if (!defined('APP_ACCESS')) {
+    http_response_code(403);
+    die('Direct access forbidden');
+}
+
 class City {
     public $id;
     public $country_id;

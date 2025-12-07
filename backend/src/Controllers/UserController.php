@@ -5,6 +5,11 @@ namespace Controllers;
 use Models\User;
 use Rules\Validator;
 
+if (!defined('APP_ACCESS')) {
+    http_response_code(403);
+    die('Direct access forbidden');
+}
+
 class UserController {
     public $db;
     public $data;

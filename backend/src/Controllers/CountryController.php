@@ -5,6 +5,11 @@ namespace Controllers;
 //use Database;
 use Models\Country;
 
+if (!defined('APP_ACCESS')) {
+    http_response_code(403);
+    die('Direct access forbidden');
+}
+
 class CountryController {
     private $db;
     private $country;

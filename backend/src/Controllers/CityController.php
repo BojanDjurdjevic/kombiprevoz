@@ -4,6 +4,11 @@ namespace Controllers;
 
 use Models\City;
 
+if (!defined('APP_ACCESS')) {
+    http_response_code(403);
+    die('Direct access forbidden');
+}
+
 class CityController {
     private $db;
     private $data;

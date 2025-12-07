@@ -6,6 +6,11 @@ use PDO;
 use PDOException;
 use Rules\Validator;
 
+if (!defined('APP_ACCESS')) {
+    http_response_code(403);
+    die('Direct access forbidden');
+}
+
 class Tour {
     public $id;
     public $from_city;
