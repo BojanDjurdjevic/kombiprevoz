@@ -871,13 +871,18 @@ export const useAdminStore = defineStore("admin", () => {
       if(!editedUser.value.users.id || !editedUser.value.users.name || !editedUser.value.users.address 
         || !editedUser.value.users.city || !editedUser.value.users.phone || !editedUser.value.users.status
       ) {
+        userEditDialog.value = false
         return displayError('Molimo vas da popunite sva polja ukoliko želite da ažurirate profil!')
-      }
+      } 
       try {
-        const res = await api.logUser(editedUser.value)
+        const res = await api.requestReset(editedUser.value)
         console.log(res.data)
+        user.showSucc(res, 6000)
       } catch (error) {
         console.log(error)
+        user.showErr(error, 6000)
+      } finally {
+        actions.value.closeUserEditDialog()
       }
     },
     // ------------------ TOURS ---------------------//

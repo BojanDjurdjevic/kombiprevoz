@@ -1009,15 +1009,15 @@ class User {
 
                 if ($currentUser->city !== $this->city) {
                     $logger->logUserChange($this->id, $_SESSION['user']['id'],
-                    'update', 'city', $currentUser->name, $this->name);
+                    'update', 'city', $currentUser->city, $this->city);
                 }
                 if ($currentUser->address !== $this->address) {
                     $logger->logUserChange($this->id, $_SESSION['user']['id'], 
-                    'update', 'address', $currentUser->email, $this->email);
+                    'update', 'address', $currentUser->address, $this->address);
                 }
                 if ($currentUser->phone !== $this->phone) {
                     $logger->logUserChange($this->id, $_SESSION['user']['id'], 
-                    'status_change', 'status', $currentUser->status, $this->status);
+                    'update', 'phone', $currentUser->phone, $this->phone);
                 }
 
                 http_response_code(200);

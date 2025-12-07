@@ -2,6 +2,7 @@
 
 namespace Controllers;
 
+use Helpers\Logger;
 use Models\User;
 use Rules\Validator;
 
@@ -163,6 +164,7 @@ class UserController {
                 if(isset($this->data->updateProfile) && !empty($this->data->updateProfile)) {
                     if($this->user->isOwner() || Validator::isAdmin() || Validator::isSuper()) $this->user->update();
                     else echo json_encode(['user' => 'Niste autorizovani da vršite izmene!']);
+                    return;
                 }
                 if(isset($this->data->updatePass) && !empty($this->data->updatePass)) {
                     if($this->user->isOwner()) $this->user->updatePassword();
@@ -170,16 +172,24 @@ class UserController {
                         http_response_code(401);
                         echo json_encode(['error' => 'Niste autorizovani da vršite izmene!']);
                     } 
+                    return;
                 }
                 if(isset($this->data->resetPass) && !empty($this->data->resetPass)) {
                     $this->user->resetPassword();
+                    return;
                 }
                 if(isset($this->data->token) && !empty($this->data->token)) {
                     $this->user->processResetPassword();
+                    return;
                 }
-                if(isset($this->data->role) && !empty($this->data->role)) {
-                    if(Validator::isSuper()) $this->user->changeRole();
-                    else echo json_encode(['user' => 'Niste autorizovani da vršite izmene!']);
+                if(isset($this->data->updateByAdmin) && !empty($this->data->updateByAdmin)) {
+                    if(Validator::isSuper() || Validator::isAdmin()) $this->user->userUpdateByAdmin();
+                    else {
+                        http_response_code(403);
+                        echo json_encode(['error' => 'Niste autorizovani da vršite izmene!']);
+                        Logger::audit('Neautorizovani pokušaj promene statusa korisnika u userUpdateByAdmin()', $this->user->id);
+                    } 
+                    return;
                 }
                 break;
             case 'DELETE':
