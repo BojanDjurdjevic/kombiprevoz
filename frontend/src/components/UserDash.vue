@@ -171,7 +171,7 @@ const { handleSubmit, handleReset } = useForm({
                             <div>
                               <v-text-field
                                 v-model="admin.editedUser.users.name"
-                                prepend-icon="mdi-map-marker"
+                                prepend-icon="mdi-text-account"
                                 label="Unesi novo ime korisnika"
                                 clearable 
                                 class="w-75"
@@ -179,7 +179,7 @@ const { handleSubmit, handleReset } = useForm({
                               ></v-text-field>
                               <v-autocomplete
                                 v-model="admin.editedUser.users.status"
-                                prepend-icon="mdi-map-marker"
+                                prepend-icon="mdi-account-multiple"
                                 label="Izmeni status korisnika"
                                 clearable 
                                 class="w-75"
@@ -188,7 +188,7 @@ const { handleSubmit, handleReset } = useForm({
                               ></v-autocomplete>
                               <v-text-field
                                 v-model="admin.editedUser.users.city"
-                                prepend-icon="mdi-map-marker"
+                                prepend-icon="mdi-home-city"
                                 label="Unesi novi grad korisnika"
                                 clearable 
                                 class="w-75"
@@ -204,7 +204,7 @@ const { handleSubmit, handleReset } = useForm({
                               ></v-text-field>
                               <v-text-field
                                 v-model="admin.editedUser.users.email"
-                                prepend-icon="mdi-map-marker"
+                                prepend-icon="mdi-email"
                                 label="Unesi novi email korisnika"
                                 clearable 
                                 class="w-75"
@@ -212,7 +212,7 @@ const { handleSubmit, handleReset } = useForm({
                               ></v-text-field>
                               <v-text-field
                                 v-model="admin.editedUser.users.phone"
-                                prepend-icon="mdi-map-marker"
+                                prepend-icon="mdi-phone-in-talk"
                                 label="Unesi novi broj telefona korisnika"
                                 clearable 
                                 class="w-75"
@@ -257,6 +257,7 @@ const { handleSubmit, handleReset } = useForm({
                           class="w-75"
                       >
                           <v-text-field
+                            prepend-icon="mdi-text-account"
                             v-model="name.value.value"
                             :counter="24"
                             :error-messages="name.errorMessage.value"
@@ -265,6 +266,7 @@ const { handleSubmit, handleReset } = useForm({
                           ></v-text-field>
 
                           <v-text-field
+                            prepend-icon="mdi-email"
                             v-model="email.value.value"
                             :error-messages="email.errorMessage.value"
                             label="E-mail"
@@ -272,6 +274,7 @@ const { handleSubmit, handleReset } = useForm({
                           ></v-text-field>
 
                           <v-text-field
+                            prepend-icon="mdi-phone-in-talk"
                             v-model="phone.value.value"
                             :counter="7"
                             :error-messages="phone.errorMessage.value"
@@ -280,6 +283,7 @@ const { handleSubmit, handleReset } = useForm({
                           ></v-text-field>
 
                           <v-autocomplete
+                            prepend-icon="mdi-image-filter-hdr"
                             v-model="country.value.value"
                             :error-messages="country.errorMessage.value"
                             :items="admin.dbCountries"
@@ -292,6 +296,7 @@ const { handleSubmit, handleReset } = useForm({
                           ></v-autocomplete>
 
                           <v-autocomplete
+                            prepend-icon="mdi-home-city"
                             v-model="city.value.value"
                             :error-messages="city.errorMessage.value"
                             :items="admin.userOptions"
@@ -301,6 +306,7 @@ const { handleSubmit, handleReset } = useForm({
                           ></v-autocomplete>
 
                           <v-combobox
+                            prepend-icon="mdi-map-marker"
                             v-model="address.value.value"
                             :error-messages="address.errorMessage.value"
                             :items="items"
@@ -309,6 +315,7 @@ const { handleSubmit, handleReset } = useForm({
                           
                           ></v-combobox>
                           <v-autocomplete
+                            prepend-icon="mdi-account-multiple"
                             v-model="status.value.value"
                             :error-messages="address.errorMessage.value"
                             :items="['User', 'Driver', 'Admin']"

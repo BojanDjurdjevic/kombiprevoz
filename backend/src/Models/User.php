@@ -74,10 +74,15 @@ class User {
                     }
                 }
             } catch (PDOException $e) {
-                echo json_encode([
-                    'error' => $e->getMessage(),
-                    'msg' => 'Došlo je do greške pri konekcidji na bazu!'
-                ], JSON_PRETTY_PRINT);
+                Logger::error("Database error in userUpdateByAdmin()", [
+                            'user_id' => 'unknown',
+                            'error' => $e->getMessage(),
+                            'file' => __FILE__,
+                            'line' => __LINE__
+                        ]);
+
+                http_response_code(500);
+                echo json_encode(['error' => 'Došlo je do greške pri ažuriranju!'], JSON_UNESCAPED_UNICODE);
             }
         }
         
@@ -145,10 +150,15 @@ class User {
                 return true;
             }
         } catch (PDOException $e) {
-            echo json_encode([
-                'user' => 'Došlo je do greške!',
-                'msg' => $e->getMessage()
-            ], JSON_PRETTY_PRINT);
+            Logger::error("Database error in userUpdateByAdmin()", [
+                            'user_id' => $this->id,
+                            'error' => $e->getMessage(),
+                            'file' => __FILE__,
+                            'line' => __LINE__
+                        ]);
+
+            http_response_code(500);
+            echo json_encode(['error' => 'Došlo je do greške pri ažuriranju!'], JSON_UNESCAPED_UNICODE);
         }
     }
 
@@ -272,7 +282,12 @@ class User {
                     ];
                 }
             } catch (PDOException $e) {
-                error_log("getByEmail() failed: " . $e->getMessage());
+                Logger::error("Database error in userUpdateByAdmin()", [
+                            'user_id' => $this->id,
+                            'error' => $e->getMessage(),
+                            'file' => __FILE__,
+                            'line' => __LINE__
+                ]);
                 return [
                     'success' => false,
                     'error' => 'database_error',
@@ -344,10 +359,15 @@ class User {
                 return $drivers;
             }
         } catch (PDOException $e) {
-            echo json_encode([
-                'drivers' => 'Došlo je do greške u sistemu!',
-                'msg' => $e->getMessage()
-            ], JSON_PRETTY_PRINT);
+            Logger::error("Database error in userUpdateByAdmin()", [
+                            'user_id' => $this->id,
+                            'error' => $e->getMessage(),
+                            'file' => __FILE__,
+                            'line' => __LINE__
+            ]);
+
+            http_response_code(500);
+            echo json_encode(['error' => 'Došlo je do greške pri ažuriranju!'], JSON_UNESCAPED_UNICODE);
         }
     }
 
@@ -438,12 +458,15 @@ class User {
                             }
                         }
                     } catch (PDOException $e) {
+                        Logger::error("Database error in userUpdateByAdmin()", [
+                            'user_id' => '',
+                            'error' => $e->getMessage(),
+                            'file' => __FILE__,
+                            'line' => __LINE__
+                        ]);
+
                         http_response_code(500);
-                        echo json_encode([
-                            'status' => 500,
-                            "error" => 'Molimo Vas da se ulogujete.',
-                            'msg' => $e->getMessage()
-                        ]); 
+                        echo json_encode(['error' => 'Došlo je do greške pri ažuriranju!'], JSON_UNESCAPED_UNICODE);
                     }
 
                     
@@ -455,11 +478,15 @@ class User {
                         "error" => 'Email nije dostupan! Molimo Vas da probate sa drugim.'
                     ]);
                 } else {
-                    http_response_code(422);
-                    echo json_encode([
-                        'status' => 422,
-                        "error" => 'Nije moguće kreirati novog korisnika.'
-                    ]); 
+                    Logger::error("Database error in User -> create()", [
+                            'user_id' => $this->id,
+                            'error' => $e->getMessage(),
+                            'file' => __FILE__,
+                            'line' => __LINE__
+                    ]);
+
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Došlo je do greške pri kreiranju novog korisnika!'], JSON_UNESCAPED_UNICODE);
                 }
             }
             
@@ -537,10 +564,17 @@ class User {
                             echo json_encode([
                                 "error" => 'Email nije dostupan! Molimo Vas da probate sa drugim.'
                             ]);
-                        } else 
-                        echo json_encode([
-                            "error" => 'Nije moguće kreirati novog korisnika.'
-                        ]); 
+                        } else {
+                            Logger::error("Database error in User -> createByAdmin()", [
+                                'user_id' => '',
+                                'error' => $e->getMessage(),
+                                'file' => __FILE__,
+                                'line' => __LINE__
+                            ]);
+
+                            http_response_code(500);
+                            echo json_encode(['error' => 'Došlo je do greške pri ažuriranju!'], JSON_UNESCAPED_UNICODE);
+                        }
                     }
                 } else {
                     http_response_code(403);
@@ -618,6 +652,7 @@ class User {
                                 'success' => false,
                                 'error' => 'Pogrešan email ili lozinka!'
                             ], JSON_PRETTY_PRINT);
+                            Logger::security("Wrong email or password - failed login at login() [ User Email: $this->email ]", 'HIGH');
                         }
                         
                     } else {
@@ -634,11 +669,15 @@ class User {
                     ], JSON_UNESCAPED_UNICODE);
                 }
             } catch (PDOException $e) {
-                http_response_code(500);
-                echo json_encode([
-                    'error' => 'Došlo je do greške pri konektovanju na bazu!',
-                    'msg' => $e->getMessage()
-                ], JSON_UNESCAPED_UNICODE);
+                Logger::error("Database error in User -> login()", [
+                            'user_id' => $this->id,
+                            'error' => $e->getMessage(),
+                            'file' => __FILE__,
+                            'line' => __LINE__
+                        ]);
+
+                        http_response_code(500);
+                        echo json_encode(['error' => 'Došlo je do greške pri ažuriranju!'], JSON_UNESCAPED_UNICODE);
             }
         } else {
             http_response_code(401);
@@ -711,15 +750,15 @@ class User {
 
                         if ($currentUser->city !== $this->city) {
                             $logger->logUserChange($this->id, $_SESSION['user']['id'],
-                            'update', 'city', $currentUser->name, $this->name);
+                            'update', 'city', $currentUser->city, $this->name);
                         }
                         if ($currentUser->address !== $this->address) {
                             $logger->logUserChange($this->id, $_SESSION['user']['id'], 
-                            'update', 'address', $currentUser->email, $this->email);
+                            'update', 'address', $currentUser->address, $this->email);
                         }
                         if ($currentUser->phone !== $this->phone) {
                             $logger->logUserChange($this->id, $_SESSION['user']['id'], 
-                            'status_change', 'status', $currentUser->status, $this->status);
+                            'update', 'phone', $currentUser->phone, $this->status);
                         }
 
                         $splited = explode(" ", $this->name);
@@ -749,6 +788,13 @@ class User {
                         ]);
                     }
                 } catch(PDOException $e) {
+                    Logger::error("Database error in User update()", [
+                        'user_id' => $this->id,
+                        'error' => $e->getMessage(),
+                        'file' => __FILE__,
+                        'line' => __LINE__
+                    ]);
+
                     http_response_code(500);
                     echo json_encode([
                         'error' => 'Došlo je do greške prilikom ažuriranja. Molimo obratite se našoj podršci!'
@@ -794,11 +840,16 @@ class User {
                                 ]);
                             }
                         } catch (PDOException $e) {
-                            echo json_encode([
-                                'user' => 'Došlo je do greške! Lozinka nije izmenjena.',
-                                'msg' => $e->getMessage()
-                            ], JSON_PRETTY_PRINT);
-                        }
+                            Logger::error("Database error in User updatePassword()", [
+                                'user_id' => $this->id,
+                                'error' => $e->getMessage(),
+                                'file' => __FILE__,
+                                'line' => __LINE__
+                            ]);
+
+                            http_response_code(500);
+                            echo json_encode(['error' => 'Došlo je do greške pri ažuriranju!'], JSON_UNESCAPED_UNICODE);
+                            }
                     } else {
                         http_response_code(401);
                         echo json_encode([
@@ -859,10 +910,15 @@ class User {
                 
             }
         } catch (PDOException $e) {
-            echo json_encode([
-                'user' => 'Došlo je do greške! Link nije poslat.',
-                'msg' => $e->getMessage()
-            ], JSON_PRETTY_PRINT);
+            Logger::error("Database error in User resetPassword()", [
+                            'user_id' => $this->id,
+                            'error' => $e->getMessage(),
+                            'file' => __FILE__,
+                            'line' => __LINE__
+            ]);
+
+            http_response_code(500);
+            echo json_encode(['error' => 'Došlo je do greške pri ažuriranju!'], JSON_UNESCAPED_UNICODE);
         }
     }
 
@@ -888,10 +944,15 @@ class User {
                             ], JSON_PRETTY_PRINT);
                         }
                     } catch (PDOException $e) {
-                        echo json_encode([
-                        'user' => 'Došlo je do greške pri konekciji.',
-                        'msg' => $e->getMessage()
-                    ], JSON_PRETTY_PRINT);
+                        Logger::error("Database error in User processResetPassword()", [
+                            'user_id' => $this->id,
+                            'error' => $e->getMessage(),
+                            'file' => __FILE__,
+                            'line' => __LINE__
+                        ]);
+
+                        http_response_code(500);
+                        echo json_encode(['error' => 'Došlo je do greške pri ažuriranju!'], JSON_UNESCAPED_UNICODE);
                     }
                 } else {
                     http_response_code(401);
@@ -1086,10 +1147,15 @@ class User {
                 echo json_encode(['user' => 'Korisnik je uspešno obrisan']);
             }
         } catch (PDOException $e) {
-            echo json_encode([
-                'user' => 'Došlo je do greške! Korisnik nije obrisan.',
-                'msg' => $e->getMessage()
+            Logger::error("Database error in User delete()", [
+                            'user_id' => $this->id,
+                            'error' => $e->getMessage(),
+                            'file' => __FILE__,
+                            'line' => __LINE__
             ]);
+
+            http_response_code(500);
+            echo json_encode(['error' => 'Došlo je do greške pri ažuriranju!'], JSON_UNESCAPED_UNICODE);
         }
         
      }
@@ -1108,10 +1174,15 @@ class User {
                 echo json_encode(['user' => 'Korisnik je uspešno aktiviran']);
             }
         } catch (PDOException $e) {
-            echo json_encode([
-                'user' => 'Došlo je do greške! Korisnik nije aktiviran, molimo Vas da se obratite podršci.',
-                'msg' => $e->getMessage()
+            Logger::error("Database error in userUpdateByAdmin()", [
+                            'user_id' => $this->id,
+                            'error' => $e->getMessage(),
+                            'file' => __FILE__,
+                            'line' => __LINE__
             ]);
+
+            http_response_code(500);
+            echo json_encode(['error' => 'Došlo je do greške pri ažuriranju!'], JSON_UNESCAPED_UNICODE);
         }
         
      }

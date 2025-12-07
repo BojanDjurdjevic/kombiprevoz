@@ -187,7 +187,7 @@ class UserController {
                     else {
                         http_response_code(403);
                         echo json_encode(['error' => 'Niste autorizovani da vršite izmene!']);
-                        Logger::audit('Neautorizovani pokušaj promene statusa korisnika u userUpdateByAdmin()', $this->user->id);
+                        Logger::audit('Neautorizovani pokušaj promene statusa korisnika u userUpdateByAdmin()', $_SESSION['user']['id']);
                     } 
                     return;
                 }
