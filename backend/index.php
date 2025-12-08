@@ -5,6 +5,7 @@ session_start();
 $sid = session_id();
 date_default_timezone_set("Europe/Belgrade");
 
+use Controllers\ChatController;
 use Controllers\CityController;
 use Controllers\CountryController;
 use Controllers\DepartureController;
@@ -49,6 +50,7 @@ $cities = new CityController($db, $data);
 $tours = new TourController($db, $data);
 $orders = new OrderController($db, $data, $sid);
 $departures = new DepartureController($db, $data);
+$chats = new ChatController($db, $data); 
 
 if(isset($data->user) && !empty($data->user)) 
 $isLoged = User::isLoged( $db);
@@ -88,5 +90,9 @@ if(isset($data->departure) && !empty($data->departure)) {
             'msg' => 'Vaša sesija je istekla, ili niste autorizovani da pristupite!'
         ], JSON_PRETTY_PRINT);
     }
+}
+
+if(isset($data->create_ticket) && !empty($data->create_ticket)) {
+    $chats->handleRequest();
 }
 ?>
