@@ -115,7 +115,7 @@ class Chat {
                 return $this->error('Ime i email korisnika su obavezni za početak konverzacije!', 400);
             }
 
-            if(!filter_var($this->customer_name, FILTER_VALIDATE_EMAIL)) {
+            if(!filter_var($this->customer_email, FILTER_VALIDATE_EMAIL)) {
                 return $this->error('Nevažeća email adresa!', 400);
             }
 
@@ -129,20 +129,21 @@ class Chat {
 
             $reservationNum = (isset($this->reservation_nummber) && mb_strtoupper($this->reservation_number) !== 'NO'
                                 && !empty($this->reservation_number)) ? $this->reservation_number : null;
+            $my_status = 'open'; 
 
             $stmt->bindParam(":ticket_number", $ticketNumber, PDO::PARAM_INT);
             $stmt->bindParam(":reservation_number", $reservationNum, PDO::PARAM_INT);
             $stmt->bindParam(":customer_name", $this->customer_name);
             $stmt->bindParam(":customer_email", $this->customer_email);
             $stmt->bindParam(":customer_phone", $this->customer_phone);
-            $stmt->bindParam(":status", 'open');
+            $stmt->bindParam(":status", $my_status);
 
             $stmt->execute();
 
             $ticketID = $this->db->lastInsertId();
 
             if(!empty($this->initial_message)) {
-                $this->addMessage($this->ticket_id, 'customer', null, $this->initial_message);
+                $this->addMessage($ticketID, 'customer', null, $this->initial_message);
             }
 
             $this->logger->info("Chat ticket created: $ticketNumber (ID: $ticketID) by {$this->customer_email}");
@@ -209,7 +210,7 @@ class Chat {
     public function pollMessages() 
     {
         $ticketID = $this->ticket_id ?? 0;
-        $lastMessageID = $this->lastMessageID ?? 0;
+        $lastMessageID = $this->last_message_id ?? 0;
         $timeout = 30;
         $start = time();
 
@@ -317,7 +318,7 @@ class Chat {
             $where = ['1=1'];
             $params = [];
 
-            if (!empty($input->status)) {
+            if (!empty($this->status)) {
                 $where[] = "t.status = ?";
                 $params[] = $this->ticket_status;
             }
