@@ -52,10 +52,163 @@ class ChatController {
 
         switch ($request) {
             case 'GET':
-                # code...
+                if ($this->data->chat->poll_messages) {
+                    $res = $this->chat->pollMessages();
+                    if($res['code'] !== 200) {
+                        http_response_code($res['code']);
+                        echo json_encode($res['error'], JSON_UNESCAPED_UNICODE);
+                        exit;
+                    }
+                    echo json_encode($res, JSON_UNESCAPED_UNICODE);
+                    exit;
+                }
+                if ($this->data->chat->messages) {
+                    $res = $this->chat->getTicketMessages();
+                    if($res['code'] !== 200) {
+                        http_response_code($res['code']);
+                        echo json_encode($res['error'], JSON_UNESCAPED_UNICODE);
+                        exit;
+                    }
+                    echo json_encode($res, JSON_UNESCAPED_UNICODE);
+                    exit;
+                }
+                if ($this->data->chat->get_typing) {
+                    $res = $this->chat->getTyping();
+                    if($res['code'] !== 200) {
+                        http_response_code($res['code']);
+                        echo json_encode($res['error'], JSON_UNESCAPED_UNICODE);
+                        exit;
+                    }
+                    echo json_encode($res, JSON_UNESCAPED_UNICODE);
+                    exit;
+                }
+                if ($this->data->chat->admin->tickets) {
+                    if (!Validator::isAdmin() && !Validator::isSuper()) {
+                        http_response_code(403);
+                        echo json_encode(['success' => false, 'error' => 'Niste autorizovani da preuzmete', 'code' => 403], JSON_UNESCAPED_UNICODE);
+                        exit;
+                    }
+
+                    $res = $this->chat->getAllTickets();
+                    if($res['code'] !== 200) {
+                        http_response_code($res['code']);
+                        echo json_encode($res['error'], JSON_UNESCAPED_UNICODE);
+                        exit;
+                    }
+                    echo json_encode($res, JSON_UNESCAPED_UNICODE);
+                    exit;
+                }
+                if ($this->data->chat->admin->poll_tickets) {
+                    if (!Validator::isAdmin() && !Validator::isSuper()) {
+                        http_response_code(403);
+                        echo json_encode(['success' => false, 'error' => 'Niste autorizovani da preuzmete', 'code' => 403], JSON_UNESCAPED_UNICODE);
+                        exit;
+                    }
+
+                    $res = $this->chat->pollNewTickets();
+                    if($res['code'] !== 200) {
+                        http_response_code($res['code']);
+                        echo json_encode($res['error'], JSON_UNESCAPED_UNICODE);
+                        exit;
+                    }
+                    echo json_encode($res, JSON_UNESCAPED_UNICODE);
+                    exit;
+                }
                 break;
             case 'POST':
+                if ($this->data->chat->create_ticket) {
+                    $res = $this->chat->createTicket();
+                    if($res['code'] !== 200) {
+                        http_response_code($res['code']);
+                        echo json_encode($res['error'], JSON_UNESCAPED_UNICODE);
+                        exit;
+                    }
+                    echo json_encode($res, JSON_UNESCAPED_UNICODE);
+                    exit;
+                }
+                if ($this->data->chat->send_message) {
+                    $res = $this->chat->sendMessage();
+                    if($res['code'] !== 200) {
+                        http_response_code($res['code']);
+                        echo json_encode($res['error'], JSON_UNESCAPED_UNICODE);
+                        exit;
+                    }
+                    echo json_encode($res, JSON_UNESCAPED_UNICODE);
+                    exit;
+                }
+                if ($this->data->chat->typing) {
+                    $res = $this->chat->updateTyping();
+                    if($res['code'] !== 200) {
+                        http_response_code($res['code']);
+                        echo json_encode($res['error'], JSON_UNESCAPED_UNICODE);
+                        exit;
+                    }
+                    echo json_encode($res, JSON_UNESCAPED_UNICODE);
+                    exit;
+                }
+                if ($this->data->chat->mark_read) {
+                    $res = $this->chat->markAsRead();
+                    if($res['code'] !== 200) {
+                        http_response_code($res['code']);
+                        echo json_encode($res['error'], JSON_UNESCAPED_UNICODE);
+                        exit;
+                    }
+                    echo json_encode($res, JSON_UNESCAPED_UNICODE);
+                    exit;
+                }
+                if ($this->data->chat->admin->assign) {
+                    if (!Validator::isAdmin() && !Validator::isSuper()) {
+                        http_response_code(403);
+                        echo json_encode(['success' => false, 'error' => 'Niste autorizovani da preuzmete', 'code' => 403], JSON_UNESCAPED_UNICODE);
+                        exit;
+                    }
 
+                    $res = $this->chat->assignTicket();
+                    if($res['code'] !== 200) {
+                        http_response_code($res['code']);
+                        echo json_encode($res['error'], JSON_UNESCAPED_UNICODE);
+                        exit;
+                    }
+                    echo json_encode($res, JSON_UNESCAPED_UNICODE);
+                    exit;
+                }
+                if ($this->data->chat->admin->close) {
+                    if (!Validator::isAdmin() && !Validator::isSuper()) {
+                        http_response_code(403);
+                        echo json_encode(['success' => false, 'error' => 'Niste autorizovani da preuzmete', 'code' => 403], JSON_UNESCAPED_UNICODE);
+                        exit;
+                    }
+
+                    $res = $this->chat->closeTicket();
+                    if($res['code'] !== 200) {
+                        http_response_code($res['code']);
+                        echo json_encode($res['error'], JSON_UNESCAPED_UNICODE);
+                        exit;
+                    }
+                    echo json_encode($res, JSON_UNESCAPED_UNICODE);
+                    exit;
+                }
+                if ($this->data->chat->admin->reopen) {
+                    if (!Validator::isAdmin() && !Validator::isSuper()) {
+                        http_response_code(403);
+                        echo json_encode(['success' => false, 'error' => 'Niste autorizovani da preuzmete', 'code' => 403], JSON_UNESCAPED_UNICODE);
+                        exit;
+                    }
+
+                    try {
+                        $ticketId = $this->chat->ticket_id ?? 0;
+                        $stmt = $this->db->prepare("UPDATE chat_tickets SET status = 'in_progress', updated_at = NOW() WHERE id = ?");
+                        $stmt->execute([$ticketId]);
+                        
+                        Logger::audit("Chat ticket ID $ticketId reopened", $_SESSION['user']['id'] ?? null);
+                        
+                        echo json_encode(['success' => true, 'data' => ['reopened' => true]], JSON_UNESCAPED_UNICODE);
+                    } catch (PDOException $e) {
+                        Logger::error("Failed to reopen ticket by Admin: " . $e->getMessage());
+                        http_response_code(500);
+                        echo json_encode(['success' => false, 'error' => 'Greška pri ponovnom otvaranju tiketa', 'code' => 500], JSON_UNESCAPED_UNICODE);
+                    }
+                }
                 break;
 
             case 'PUT':
