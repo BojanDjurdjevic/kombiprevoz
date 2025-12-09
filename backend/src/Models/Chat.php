@@ -50,6 +50,8 @@ class Chat {
         $this->logger = new Logger($this->db);
     }
 
+    // CHAT HELPERS:
+
     private function generateTicketNumber(): string 
     {
         return 'TKT-' . strtoupper(substr(uniqid(), -8));
@@ -104,6 +106,8 @@ class Chat {
         return ['success' => false, 'error' => $message, 'code' => $code];
     }
 
+    // CREATE NEW TICKET
+
     public function createTicket() 
     {
         try {
@@ -155,6 +159,54 @@ class Chat {
             ]);
             return $this->error('Greška pri kreiranju tiketa!', 500);
         }
+    }
+
+    // SEND MESSAGE
+
+    public function sendMessage() 
+    {
+        try {
+            if(empty($this->ticket_id) || empty($this->sender_type) || empty($this->message)) {
+                return $this->error('Nedostaju obavezni parametri',400);
+            }
+
+            $ticket = $this->getTicket($this->ticket_id);
+            if(!$ticket) {
+                return $this->error('Tiket ne postoji ili nije otvoren',404);
+            }
+            if($ticket->status == 'closed') {
+                $this->error('Tiket je zatvoren', 403);
+            }
+
+            $messageID = $this->addMessage($this->ticket_id, $this->sender_type, $this->sender_id, $this->message);
+
+            $sql = "UPDATE chat_tickets
+                    SET last_message_at = NOW(), updated_at = NOW()
+                    WHERE id = :id"
+            ;
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindParam(":id", $this->ticket_id);
+            $stmt->execute();
+
+            if($this->sender_type == "admin" && $ticket->status == "open") {
+                $this->updateTicketStatus($this->ticket_id, 'in_progress', $this->sender_id);
+            }
+
+            Logger::info("Message sent in ticket #{$ticket->ticket_number} by $this->sender_type");
+
+            return $this->success([
+                "message_id"=> (int)$messageID,
+                "created_at" => date("Y-m-d H:i:s")
+            ]);
+        } catch (PDOException $e) {
+            $this->logger->error("Sending message failed: " . $e->getMessage());
+            return $this->error("Greška pri slanju poruke!",500);
+        }
+    }
+
+    public function pollMessages() 
+    {
+        
     }
 }
 
