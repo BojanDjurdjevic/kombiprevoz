@@ -10,13 +10,33 @@ import BookingDash from "./BookingDash.vue";
 import BookingFilter from "./BookingFilter.vue";
 import UserDash from "./UserDash.vue";
 import ToursDash from "./ToursDash.vue";
+import ChatDash from "./ChatDash.vue";
 import DriversDash from "./DriversDash.vue";
 import DriversFilter from "./DriversFilter.vue";
 import ToursFilter from "./ToursFilter.vue";
 import UserFilter from "./UserFilter.vue";
+import { useChatStore } from "@/stores/chat";
+
 const user = useUserStore();
 const admin = useAdminStore();
 const tours = useTourStore();
+const chat = useChatStore();
+
+let badgeInterval = null
+
+onMounted(() => {
+  chat.loadTickets()
+  
+  badgeInterval = setInterval(() => {
+    chat.loadTickets()
+  }, 30000);
+});
+
+onBeforeUnmount(() => {
+  if (badgeInterval) {
+    clearInterval(badgeInterval)
+  }
+});
 
 </script>
 
@@ -86,6 +106,9 @@ const tours = useTourStore();
 
           <!--  DRIVERS  -->
           <DriversDash />
+
+          <!--  CHAT -->
+          <ChatDash />
 
         </v-container>
         <v-divider vertical></v-divider>

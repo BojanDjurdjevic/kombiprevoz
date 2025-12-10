@@ -113,7 +113,20 @@ const router = createRouter({
       meta: {
         requireAuth: true,
         requiresRole: ['Superadmin', 'Admin']
-      } 
+      },
+      // pitanje da li je potrebno?
+      children: [
+        {
+          path: 'chat',
+          name: 'AdminChat',
+          component: () => import('@/views/admin/AdminChatTickets.vue'),
+          meta: { 
+            requiresAuth: true, 
+            requiresRole: true,
+            title: 'Chat Tiketi'
+          }
+        }
+      ] 
     },
   ],
 })
