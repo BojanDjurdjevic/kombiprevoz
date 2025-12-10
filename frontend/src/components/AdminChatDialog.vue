@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch, nextTick, onBeforeUnmount } from 'vue';
 import { useChatStore } from '@/stores/chat';
-import { useAuthStore } from '@/stores/auth'; // Tvoj auth store
+import { useUserStore } from '@/stores/user';
 
 const props = defineProps({
   modelValue: {
@@ -14,7 +14,7 @@ const emit = defineEmits(['update:modelValue', 'closed']);
 
 // Stores
 const chatStore = useChatStore();
-const authStore = useAuthStore();
+const user = useUserStore();
 
 // Refs
 const newMessage = ref('');
@@ -64,7 +64,7 @@ const handleAssignToMe = async () => {
 
   const result = await chatStore.assignTicket(
     chatStore.selectedTicket.id, 
-    authStore.user.id
+    user.user.id
   );
   
   if (result.success) {
@@ -85,7 +85,7 @@ const handleCloseTicket = async () => {
 
   const result = await chatStore.closeTicket(
     chatStore.selectedTicket.id,
-    authStore.user.id
+    user.user.id
   );
   
   if (result.success) {

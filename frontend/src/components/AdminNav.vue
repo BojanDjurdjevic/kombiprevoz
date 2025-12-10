@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { VDateInput } from "vuetify/labs/VDateInput";
 import { VNumberInput } from "vuetify/labs/VNumberInput";
 import { useUserStore } from "@/stores/user";
@@ -79,10 +79,18 @@ onBeforeUnmount(() => {
           ></v-list-item>
           <v-list-item
             prepend-icon="mdi-star"
+            title="Chat"
+            value="Chat"
+            @click="admin.adminView = 'Chat'"
+          ></v-list-item>
+          <!--
+          <v-list-item
+            prepend-icon="mdi-star"
             title="Vozači"
             value="Vozači"
             @click="admin.adminView = 'Drivers'"
           ></v-list-item>
+          -->
         </v-list>
       </v-navigation-drawer>
 
