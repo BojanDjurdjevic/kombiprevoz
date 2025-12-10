@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue';
+import CustomerChatWidget from '@/components/chat/CustomerChatWidget.vue';
 
 const chat = ref(false)
 
@@ -64,7 +65,7 @@ function sendMsg() {
                 </v-card>
             </template>
         </v-hover>
-
+        <!--
         <v-dialog
             v-model="chat"
             location="top center"
@@ -120,5 +121,8 @@ function sendMsg() {
                 ></v-text-field>
             </v-card>
         </v-dialog>
+        -->
+
+        <CustomerChatWidget />
     </v-container>
 </template>

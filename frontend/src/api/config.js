@@ -16,7 +16,7 @@ instance.interceptors.request.use(config => {
   return Promise.reject(error)
 })
 
-// Interceptor posle dobijenog odgovora
+// Interceptor after response
 instance.interceptors.response.use(response => {
   const user = useUserStore()
   user.loading = false

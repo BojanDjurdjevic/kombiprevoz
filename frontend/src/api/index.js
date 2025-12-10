@@ -144,5 +144,14 @@ export default {
                 "Content-type": "application/json"
             }
         })
+   },
+
+   //--------------------------------- CHAT ---------------------------------//
+
+   getChat(config) {
+        return axios.get("", config)
+   },
+   sendChat(data) {
+    return axios.post("", data)
    }
 }
