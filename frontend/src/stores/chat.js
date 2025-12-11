@@ -76,10 +76,15 @@ export const useChatStore = defineStore('chat', () => {
   };
   
   const createTicket = async (initialMessage = '') => {
+    console.log('createTicket STARTED');
+    console.log('Customer Info:', customerInfo.value);
+    console.log('Initial Message:', initialMessage);
     creating.value = true;
     
+    
     try {
-      const response = await api.sendChat({
+      console.log('Sending API request...');
+      const dto = {
         chat: {
           create_ticket: true,
           customer_name: customerInfo.value.name,
@@ -88,9 +93,15 @@ export const useChatStore = defineStore('chat', () => {
           reservation_number: customerInfo.value.reservation,
           initial_message: initialMessage
         }
-      });
+      }
+      console.log('dto :', dto)
+      const response = await api.sendChat(dto);
+
+      console.log('API Response:', response);
+      console.log('Response Data:', response.data);
 
       if (response.data.success) {
+        console.log('Success! Ticket created:', response.data.data);
         ticketId.value = response.data.data.ticket_id;
         ticketNumber.value = response.data.data.ticket_number;
         
@@ -102,12 +113,18 @@ export const useChatStore = defineStore('chat', () => {
         
         return { success: true };
       } else {
+        console.log('API returned success=false:', response.data);
         return { success: false, error: response.data.error };
       }
     } catch (error) {
+      console.error('ERROR in createTicket:', error);
+      console.error('Error message:', error.message);
+      console.error('Error response:', error.response);
+      console.error('Error response data:', error.response?.data);
       console.error('Error creating ticket:', error);
       return { success: false, error: 'Greška pri kreiranju tiketa' };
     } finally {
+      console.log('createTicket FINISHED');
       creating.value = false;
     }
   };

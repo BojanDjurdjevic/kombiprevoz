@@ -52,14 +52,25 @@ const closeChat = () => {
 };
 
 const handleCreateTicket = async () => {
-  if (!formValid.value) return;
+  console.log('handleCreateTicket STARTED');
+  console.log('Form valid:', formValid.value);
+  console.log('Customer Info:', chatStore.customerInfo);
 
+  if (!formValid.value) {
+    console.log('Form not valid, aborting');
+    return;
+  } 
+  console.log('Calling chatStore.createTicket...');
   const result = await chatStore.createTicket(initialMessage.value);
+
+  console.log('Result from store:', result);
   
   if (result.success) {
+    console.log('Success! Clearing form...');
     initialMessage.value = '';
     nextTick(() => scrollToBottom());
   } else {
+    console.log('Failed:', result.error);
     alert(result.error || 'Greška pri kreiranju tiketa. Pokušajte ponovo.');
   }
 };

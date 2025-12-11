@@ -122,21 +122,21 @@ class Chat {
             $ticketNumber = $this->generateTicketNumber();
 
             $sql = "INSERT INTO chat_tickets SET ticket_number = :ticket_number, customer_name = :customer_name,
-                    customer_email = :customer_email, customer_phone = :customer_phone
+                    customer_email = :customer_email, customer_phone = :customer_phone,
                     reservation_number = :reservation_number, status = :status"
             ;
             $stmt = $this->db->prepare($sql);
 
-            $reservationNum = (isset($this->reservation_nummber) && mb_strtoupper($this->reservation_number) !== 'NO'
+            $reservationNum = (isset($this->reservation_number) && mb_strtoupper($this->reservation_number) !== 'NO'
                                 && !empty($this->reservation_number)) ? $this->reservation_number : null;
-            $my_status = 'open'; 
+            $my_status = "open"; 
 
-            $stmt->bindParam(":ticket_number", $ticketNumber, PDO::PARAM_INT);
+            $stmt->bindParam(":ticket_number", $ticketNumber);
             $stmt->bindParam(":reservation_number", $reservationNum, PDO::PARAM_INT);
             $stmt->bindParam(":customer_name", $this->customer_name);
             $stmt->bindParam(":customer_email", $this->customer_email);
             $stmt->bindParam(":customer_phone", $this->customer_phone);
-            $stmt->bindParam(":status", $my_status);
+            $stmt->bindParam(":status", $my_status, PDO::PARAM_STR);
 
             $stmt->execute();
 

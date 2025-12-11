@@ -92,7 +92,7 @@ if(isset($data->departure) && !empty($data->departure)) {
     }
 }
 
-if(isset($data->create_ticket) && !empty($data->create_ticket)) {
+if(isset($data->chat) && !empty($data->chat)) {
     $chats->handleRequest();
 }
 ?>

@@ -152,6 +152,15 @@ export default {
         return axios.get("", config)
    },
    sendChat(data) {
-    return axios.post("", data)
+    console.log('API sendChat called with:', data);
+    try {
+        const response = axios.post("", data);
+        console.log('Axios response:', response);
+        return response;
+    } catch (error) {
+        console.error('Axios error in sendChat:', error);
+        throw error;
+    }
+    //return axios.post("", data)
    }
 }
