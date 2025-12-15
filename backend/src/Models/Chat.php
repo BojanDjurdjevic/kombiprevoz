@@ -364,14 +364,19 @@ class Chat {
             $offset = $this->offset ?? 0;
 
             $stmt = $this->db->prepare(
-                "SELECT m.*, u.name as admin_name, u.role as admin_role
+                "SELECT m.*, u.name as admin_name, u.status as admin_role
                 FROM chat_messages m
                 LEFT JOIN users u ON m.sender_id = u.id
-                WHERE m.ticket_id = ?
+                WHERE m.ticket_id = :ticket_id
                 ORDER BY m.created_at ASC
-                LIMIT ? OFFSET ?"
+                LIMIT :limit OFFSET :offset"
             );
-            $stmt->execute([$ticketId, (int)$limit, (int)$offset]);
+
+            $stmt->bindParam(":ticket_id", $ticketId, PDO::PARAM_INT);
+            $stmt->bindParam(":limit", $limit, PDO::PARAM_INT);
+            $stmt->bindParam(":offset", $offset, PDO::PARAM_INT);
+
+            $stmt->execute();
 
             return $this->success([
                 'messages' => $stmt->fetchAll(PDO::FETCH_OBJ)

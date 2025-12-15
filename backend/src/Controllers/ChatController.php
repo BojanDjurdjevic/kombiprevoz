@@ -52,7 +52,7 @@ class ChatController {
 
         switch ($request) {
             case 'GET':
-                if ($this->data->chat->poll_messages) {
+                if (isset($this->data->chat->poll_messages) && $this->data->chat->poll_messages) {
                     $res = $this->chat->pollMessages();
                     if($res['code'] !== 200) {
                         http_response_code($res['code']);
@@ -62,7 +62,7 @@ class ChatController {
                     echo json_encode($res, JSON_UNESCAPED_UNICODE);
                     exit;
                 }
-                if ($this->data->chat->messages) {
+                if (isset($this->data->chat->messages) && $this->data->chat->messages) {
                     $res = $this->chat->getTicketMessages();
                     if($res['code'] !== 200) {
                         http_response_code($res['code']);
@@ -72,7 +72,7 @@ class ChatController {
                     echo json_encode($res, JSON_UNESCAPED_UNICODE);
                     exit;
                 }
-                if ($this->data->chat->get_typing) {
+                if (isset($this->data->chat->get_typing) && $this->data->chat->get_typing) {
                     $res = $this->chat->getTyping();
                     if($res['code'] !== 200) {
                         http_response_code($res['code']);
@@ -82,7 +82,7 @@ class ChatController {
                     echo json_encode($res, JSON_UNESCAPED_UNICODE);
                     exit;
                 }
-                if ($this->data->chat->admin->tickets) {
+                if (isset($this->data->chat->admin->tickets) && $this->data->chat->admin->tickets) {
                     if (!Validator::isAdmin() && !Validator::isSuper()) {
                         http_response_code(403);
                         echo json_encode(['success' => false, 'error' => 'Niste autorizovani da preuzmete', 'code' => 403], JSON_UNESCAPED_UNICODE);
@@ -98,7 +98,7 @@ class ChatController {
                     echo json_encode($res, JSON_UNESCAPED_UNICODE);
                     exit;
                 }
-                if ($this->data->chat->admin->poll_tickets) {
+                if (isset($this->data->chat->admin->poll_tickets) && $this->data->chat->admin->poll_tickets) {
                     if (!Validator::isAdmin() && !Validator::isSuper()) {
                         http_response_code(403);
                         echo json_encode(['success' => false, 'error' => 'Niste autorizovani da preuzmete', 'code' => 403], JSON_UNESCAPED_UNICODE);
@@ -116,7 +116,7 @@ class ChatController {
                 }
                 break;
             case 'POST':
-                if ($this->data->chat->create_ticket) {
+                if (isset($this->data->chat->create_ticket) && $this->data->chat->create_ticket) {
                     $res = $this->chat->createTicket();
                     if($res['code'] !== 200) {
                         http_response_code($res['code']);
@@ -126,7 +126,7 @@ class ChatController {
                     echo json_encode($res, JSON_UNESCAPED_UNICODE);
                     exit;
                 }
-                if ($this->data->chat->send_message) {
+                if (isset($this->data->chat->send_message) && $this->data->chat->send_message) {
                     $res = $this->chat->sendMessage();
                     if($res['code'] !== 200) {
                         http_response_code($res['code']);
@@ -136,7 +136,7 @@ class ChatController {
                     echo json_encode($res, JSON_UNESCAPED_UNICODE);
                     exit;
                 }
-                if ($this->data->chat->typing) {
+                if (isset($this->data->chat->typing) && $this->data->chat->typing) {
                     $res = $this->chat->updateTyping();
                     if($res['code'] !== 200) {
                         http_response_code($res['code']);
@@ -146,7 +146,7 @@ class ChatController {
                     echo json_encode($res, JSON_UNESCAPED_UNICODE);
                     exit;
                 }
-                if ($this->data->chat->mark_read) {
+                if (isset($this->data->chat->mark_read) && $this->data->chat->mark_read) {
                     $res = $this->chat->markAsRead();
                     if($res['code'] !== 200) {
                         http_response_code($res['code']);
@@ -156,7 +156,7 @@ class ChatController {
                     echo json_encode($res, JSON_UNESCAPED_UNICODE);
                     exit;
                 }
-                if ($this->data->chat->admin->assign) {
+                if (isset($this->data->chat->admin->assign) && $this->data->chat->admin->assign) {
                     if (!Validator::isAdmin() && !Validator::isSuper()) {
                         http_response_code(403);
                         echo json_encode(['success' => false, 'error' => 'Niste autorizovani da preuzmete', 'code' => 403], JSON_UNESCAPED_UNICODE);
@@ -172,7 +172,7 @@ class ChatController {
                     echo json_encode($res, JSON_UNESCAPED_UNICODE);
                     exit;
                 }
-                if ($this->data->chat->admin->close) {
+                if (isset($this->data->chat->admin->close) && $this->data->chat->admin->close) {
                     if (!Validator::isAdmin() && !Validator::isSuper()) {
                         http_response_code(403);
                         echo json_encode(['success' => false, 'error' => 'Niste autorizovani da preuzmete', 'code' => 403], JSON_UNESCAPED_UNICODE);
@@ -188,7 +188,7 @@ class ChatController {
                     echo json_encode($res, JSON_UNESCAPED_UNICODE);
                     exit;
                 }
-                if ($this->data->chat->admin->reopen) {
+                if (isset($this->data->chat->admin->reopen) && $this->data->chat->admin->reopen) {
                     if (!Validator::isAdmin() && !Validator::isSuper()) {
                         http_response_code(403);
                         echo json_encode(['success' => false, 'error' => 'Niste autorizovani da preuzmete', 'code' => 403], JSON_UNESCAPED_UNICODE);

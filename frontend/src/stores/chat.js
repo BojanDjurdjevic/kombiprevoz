@@ -140,7 +140,9 @@ export const useChatStore = defineStore('chat', () => {
           data: {
             chat: {
               messages: true,
-              ticket_id: ticketId.value
+              ticket_id: ticketId.value,
+              limit: 100,
+              offset: 0
             }
           }
         }
@@ -400,7 +402,9 @@ export const useChatStore = defineStore('chat', () => {
           data: {
             chat: {
               messages: true,
-              ticket_id: ticketIdParam
+              ticket_id: ticketIdParam,
+              limit: 100,
+              offset: 0  
             }
           }
         }

@@ -322,7 +322,7 @@ export const useAdminStore = defineStore("admin", () => {
   }
 
   //cities
-  const dbCountries = ref(null)
+  const dbCountries = ref([])
   const cityPics = ref(null)
   const cityPreview = ref(null)
   const cityPreviewKey = ref(null)

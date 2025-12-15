@@ -47,7 +47,7 @@ const handleSendMessage = async () => {
   const messageText = newMessage.value;
   newMessage.value = '';
 
-  const result = await chatStore.sendAdminMessage(messageText, authStore.user.id);
+  const result = await chatStore.sendAdminMessage(messageText, user.user.id);
   
   if (!result.success) {
     newMessage.value = messageText;
@@ -56,11 +56,11 @@ const handleSendMessage = async () => {
 };
 
 const handleTyping = () => {
-  chatStore.updateTyping('admin', authStore.user.id);
+  chatStore.updateTyping('admin', user.user.id);
 };
 
 const handleAssignToMe = async () => {
-  if (!chatStore.selectedTicket || !authStore.user) return;
+  if (!chatStore.selectedTicket || !user.user) return;
 
   const result = await chatStore.assignTicket(
     chatStore.selectedTicket.id, 
@@ -69,15 +69,15 @@ const handleAssignToMe = async () => {
   
   if (result.success) {
     // Lokalno ažuriranje
-    chatStore.selectedTicket.assigned_to = authStore.user.id;
-    chatStore.selectedTicket.assigned_admin_name = authStore.user.name;
+    chatStore.selectedTicket.assigned_to = user.user.id;
+    chatStore.selectedTicket.assigned_admin_name = user.user.name;
   } else {
     alert(result.error || 'Greška pri preuzimanju tiketa');
   }
 };
 
 const handleCloseTicket = async () => {
-  if (!chatStore.selectedTicket || !authStore.user) return;
+  if (!chatStore.selectedTicket || !user.user) return;
 
   if (!confirm('Da li ste sigurni da želite da zatvorite ovaj tiket?')) {
     return;
