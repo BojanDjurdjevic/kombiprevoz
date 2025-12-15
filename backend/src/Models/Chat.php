@@ -318,7 +318,7 @@ class Chat {
             $where = ['1=1'];
             $params = [];
 
-            if (!empty($this->status)) {
+            if (!empty($this->ticket_status)) {
                 $where[] = "t.status = ?";
                 $params[] = $this->ticket_status;
             }

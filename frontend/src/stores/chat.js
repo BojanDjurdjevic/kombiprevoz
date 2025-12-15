@@ -380,9 +380,14 @@ export const useChatStore = defineStore('chat', () => {
   };
   
   const stopTicketPolling = () => {
+    console.log('stopTicketPolling called');
+
     if (ticketPollingInterval) {
       clearTimeout(ticketPollingInterval);
       ticketPollingInterval = null;
+      console.log('Ticket polling stopped');
+    } else {
+      console.log('No polling interval to stop');
     }
   };
   

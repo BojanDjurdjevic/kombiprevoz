@@ -28,7 +28,7 @@ onMounted(() => {
   chat.loadTickets()
   
   badgeInterval = setInterval(() => {
-    chat.loadTickets()
+    if(admin.adminView !== 'Chat') chat.loadTickets()
   }, 30000);
 });
 
@@ -102,21 +102,21 @@ onBeforeUnmount(() => {
           </div>
           <!--  BOOKINGS  -->
 
-          <BookingDash />
+          <BookingDash v-if="admin.adminView === 'Bookings'" />
 
           <!--  USERS  -->
 
-          <UserDash />
+          <UserDash v-if="admin.adminView === 'Users'" />
 
           <!--   TOURS   -->
           
-          <ToursDash />
+          <ToursDash v-if="admin.adminView === 'Tours'" />
 
           <!--  DRIVERS  -->
-          <DriversDash />
+          <DriversDash v-if="admin.adminView === 'Drivers'" />
 
           <!--  CHAT -->
-          <ChatDash />
+          <ChatDash v-if="admin.adminView === 'Chat'" />
 
         </v-container>
         <v-divider vertical></v-divider>

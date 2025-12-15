@@ -24,13 +24,28 @@ const filteredTickets = computed(() => {
   return chat.tickets.filter(t => t.status === selectedStatus.value);
 });
 
+// Start POLL
+
 onMounted(() => {
+  console.log('ChatDash mounted - pokrenut polling');
   handleLoadTickets();
   chat.startTicketPolling();
 });
 
+// POLL STOP
+
 onBeforeUnmount(() => {
+  console.log('ChatDash unMount - zaustavljen polling');
   chat.stopTicketPolling();
+});
+
+// If no Chat sec => STOP POLL
+
+watch(() => admin.adminView, (newView) => {
+  if (newView !== 'Chat') {
+    console.log('Switched away from Chat: STOP polling');
+    chat.stopTicketPolling();
+  }
 });
 
 const handleLoadTickets = async () => {
