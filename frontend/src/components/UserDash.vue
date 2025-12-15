@@ -158,7 +158,7 @@ const { handleSubmit, handleReset } = useForm({
                         <div class="w-50 h-100 pa-3 d-flex flex-column justify-space-evenly">
                           <p><strong>Ime:</strong> {{ admin.userByAdmin?.name }}</p>
                           <p><strong>Status:</strong> {{ admin.userByAdmin?.status }}</p>
-                          <p><strong>Grad:</strong> {{ userByAdmin?.city }}</p>
+                          <p><strong>Grad:</strong> {{ admin.userByAdmin?.city }}</p>
                           <p><strong>Adresa:</strong> {{ admin.userByAdmin?.address }}</p>
                           <p><strong>Email:</strong> {{ admin.userByAdmin?.email }}</p>
                           <p><strong>Telefon:</strong> {{ admin.userByAdmin?.phone }}</p>
@@ -309,7 +309,7 @@ const { handleSubmit, handleReset } = useForm({
                             prepend-icon="mdi-map-marker"
                             v-model="address.value.value"
                             :error-messages="address.errorMessage.value"
-                            :items="items"
+                            
                             label="Adresa"
                             clearable
                           

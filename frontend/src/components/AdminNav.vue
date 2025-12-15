@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import { VDateInput } from "vuetify/labs/VDateInput";
 import { VNumberInput } from "vuetify/labs/VNumberInput";
 import { useUserStore } from "@/stores/user";
@@ -23,6 +23,7 @@ const tours = useTourStore();
 const chat = useChatStore();
 
 let badgeInterval = null
+//const chatWidth = ref('75%')
 
 onMounted(() => {
   chat.loadTickets()
@@ -37,6 +38,10 @@ onBeforeUnmount(() => {
     clearInterval(badgeInterval)
   }
 });
+/*
+const chatWidth = computed(() =>
+  admin.adminView === 'Chat' ? '100%' : '75%'
+) */
 
 </script>
 
@@ -95,7 +100,7 @@ onBeforeUnmount(() => {
       </v-navigation-drawer>
 
       <v-main class="d-flex">
-        <v-container class="h-100 w-75 pa-3 d-flex flex-column align-center">
+        <v-container class="h-100 w-75 pa-3 d-flex flex-column align-center" >
           <div class="w-100 text-center">
             <h1 class="mt-3">{{ admin.adminView }}</h1>
             <v-divider class="w-100"></v-divider>
@@ -119,18 +124,18 @@ onBeforeUnmount(() => {
           <ChatDash v-if="admin.adminView === 'Chat'" />
 
         </v-container>
-        <v-divider vertical></v-divider>
+        <v-divider vertical v-if="admin.adminView !== 'Chat'" ></v-divider>
 
         <!--   FILTERS   -->
 
         <v-container
           class="w-25 pa-3 d-flex flex-column justify-space-between align-center"
         >
-          <div class="w-100 text-center">
+          <div class="w-100 text-center" v-if="admin.adminView !== 'Chat'" >
             <h1 class="mt-3">Filters</h1>
             <v-divider class="w-100"></v-divider>
           </div>
-          <BookingFilter />
+          <BookingFilter v-if="admin.adminView !== 'Chat'" />
 
           <!--    USERS    -->
 
@@ -140,9 +145,9 @@ onBeforeUnmount(() => {
 
           <ToursFilter />
           
-          <!--    DRIVERS    -->
+          <!--    DRIVERS   <DriversFilter /> -->
 
-          <DriversFilter />
+          
           
         </v-container>
       </v-main>
