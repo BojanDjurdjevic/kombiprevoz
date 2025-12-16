@@ -128,7 +128,7 @@ const chatWidth = computed(() =>
 
         <!--   FILTERS   -->
 
-        <v-container
+        <v-container v-if="admin.adminView !== 'Chat'" 
           class="w-25 pa-3 d-flex flex-column justify-space-between align-center"
         >
           <div class="w-100 text-center" v-if="admin.adminView !== 'Chat'" >

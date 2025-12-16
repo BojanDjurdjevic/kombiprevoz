@@ -224,13 +224,20 @@ const scrollToBottom = () => {
             :key="msg.id"
             :class="['message', msg.sender_type === 'customer' ? 'message-own' : 'message-other']"
           >
-            <div class="message-bubble">
+            <div class="message-bubble" :class="{ 'message-sending': msg._temp }">
               <div v-if="msg.sender_type === 'admin'" class="message-sender">
                 {{ msg.admin_name || 'Admin' }}
               </div>
               <div class="message-text">{{ msg.message }}</div>
               <div class="message-time">
                 {{ chatStore.formatTime(msg.created_at) }}
+
+                <v-icon v-if="msg._temp" size="x-small" class="ml-1" color="grey">
+                  mdi-clock-outline
+                </v-icon>
+                <v-icon v-else-if="!msg._temp && msg.sender_type === 'customer'" size="x-small" class="ml-1">
+                  mdi-check
+                </v-icon>
               </div>
             </div>
           </div>
@@ -404,6 +411,10 @@ const scrollToBottom = () => {
 
 .typing-indicator span:nth-child(3) {
   animation-delay: 0.4s;
+}
+
+.message-sending {
+  opacity: 0.7;
 }
 
 @keyframes typing {

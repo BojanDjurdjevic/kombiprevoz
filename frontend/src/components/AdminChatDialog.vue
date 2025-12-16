@@ -47,7 +47,12 @@ const handleSendMessage = async () => {
   const messageText = newMessage.value;
   newMessage.value = '';
 
-  const result = await chatStore.sendAdminMessage(messageText, user.user.id);
+  const result = await chatStore.sendAdminMessage(
+    messageText, 
+    user.user.id,
+    user.user.name,
+    user.user.status
+  )
   
   if (!result.success) {
     newMessage.value = messageText;
@@ -231,13 +236,16 @@ const getStatusLabel = (status) => {
           :key="msg.id"
           :class="['message', msg.sender_type === 'admin' ? 'message-own' : 'message-other']"
         >
-          <div class="message-bubble">
+          <div class="message-bubble" :class="{ 'message-sending': msg._temp }">
             <div v-if="msg.sender_type === 'admin'" class="message-sender">
               {{ msg.admin_name }} ({{ msg.admin_role }})
             </div>
             <div class="message-text">{{ msg.message }}</div>
             <div class="message-time">
               {{ chatStore.formatTime(msg.created_at) }}
+              <v-icon v-if="msg._temp" size="x-small" class="ml-1" color="grey">
+                mdi-clock-outline
+              </v-icon>
               <v-icon v-if="msg.is_read && msg.sender_type === 'admin'" size="x-small" class="ml-1">
                 mdi-check-all
               </v-icon>
@@ -454,6 +462,10 @@ const getStatusLabel = (status) => {
   background-color: #999;
   border-radius: 50%;
   animation: typing 1.4s infinite;
+}
+
+.message-sending {
+  opacity: 0.7;
 }
 
 .typing-indicator span:nth-child(2) {

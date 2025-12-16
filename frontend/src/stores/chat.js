@@ -155,7 +155,20 @@ export const useChatStore = defineStore('chat', () => {
   const sendMessage = async (message) => {
     if (!message.trim() || !ticketId.value) return { success: false };
     
-    sending.value = true;
+    sending.value = true
+
+    const tempMessage = {
+      id: Date.now(), 
+      ticket_id: ticketId.value,
+      sender_type: 'customer',
+      sender_id: null,
+      message: message,
+      created_at: new Date().toISOString(),
+      is_read: false,
+      _temp: true 
+    };
+
+    messages.value.push(tempMessage)
     
     try {
       const response = await api.sendChat({
@@ -169,17 +182,41 @@ export const useChatStore = defineStore('chat', () => {
       });
 
       if (response.data.success) {
-        return { success: true };
+        const realMessageId = response.data.data.message_id
+        const tempIndex = messages.value.findIndex(m => m._temp && m.message === message)
+        
+        if (tempIndex >= 0) {
+          messages.value[tempIndex] = {
+            ...tempMessage,
+            id: realMessageId,
+            created_at: response.data.data.created_at,
+            _temp: false
+          }
+        }
+      
+      lastMessageId.value = realMessageId
+
+        return { success: true }
       } else {
-        return { success: false, error: response.data.error };
+        const tempIndex = messages.value.findIndex(m => m._temp && m.message === message)
+        if (tempIndex >= 0) {
+          messages.value.splice(tempIndex, 1)
+        }
+
+        return { success: false, error: response.data.error }
       }
     } catch (error) {
-      console.error('Error sending message:', error);
-      return { success: false, error: 'Greška pri slanju poruke' };
+      console.error('Error sending message:', error)
+      const tempIndex = messages.value.findIndex(m => m._temp && m.message === message)
+      if (tempIndex >= 0) {
+        messages.value.splice(tempIndex, 1)
+      }
+
+      return { success: false, error: 'Greška pri slanju poruke' }
     } finally {
-      sending.value = false;
+      sending.value = false
     }
-  };
+  }
   
   const pollMessages = async () => {
     // Stop active or without TKTid
@@ -211,18 +248,24 @@ export const useChatStore = defineStore('chat', () => {
         }
         
         if (data.messages && data.messages.length > 0) {
-          // only new msg
           data.messages.forEach(newMsg => {
-            const exists = messages.value.find(m => m.id === newMsg.id);
+            const exists = messages.value.find(m => {
+              if (m._temp && m.message === newMsg.message) {
+                return true;
+              }
+
+              return m.id === newMsg.id;
+            });
+            
             if (!exists) {
               messages.value.push(newMsg);
             }
           });
           
-          // update last msg
-          const sortedMsgs = messages.value.sort((a, b) => a.id - b.id);
-          if (sortedMsgs.length > 0) {
-            lastMessageId.value = sortedMsgs[sortedMsgs.length - 1].id;
+          const realMessages = messages.value.filter(m => !m._temp);
+          if (realMessages.length > 0) {
+            const sortedReal = realMessages.sort((a, b) => a.id - b.id);
+            lastMessageId.value = sortedReal[sortedReal.length - 1].id;
           }
           
           if (!isOpen.value) {
@@ -402,7 +445,7 @@ export const useChatStore = defineStore('chat', () => {
   };
   
   const startTicketPolling = () => {
-    console.log('▶️ startTicketPolling called');
+    console.log('startTicketPolling called');
     
     stopTicketPolling();
     ticketPollingActive = true;
@@ -410,7 +453,7 @@ export const useChatStore = defineStore('chat', () => {
   };
   
   const stopTicketPolling = () => {
-    console.log('⏹️ stopTicketPolling called');
+    console.log('stopTicketPolling called');
     
     ticketPollingActive = false;
     
@@ -459,6 +502,21 @@ export const useChatStore = defineStore('chat', () => {
     if (!message.trim() || !selectedTicket.value) return { success: false };
     
     sending.value = true;
+
+    const tempMessage = {
+      id: Date.now(), 
+      ticket_id: selectedTicket.value.id,
+      sender_type: 'admin',
+      sender_id: senderId,
+      admin_name: senderName,
+      admin_role: senderRole,
+      message: message,
+      created_at: new Date().toISOString(),
+      is_read: false,
+      _temp: true
+    }
+    
+    messages.value.push(tempMessage)
     
     try {
       const response = await api.sendChat({
@@ -472,17 +530,41 @@ export const useChatStore = defineStore('chat', () => {
       });
 
       if (response.data.success) {
+        const realMessageId = response.data.data.message_id
+        const tempIndex = messages.value.findIndex(m => m._temp && m.message === message)
+        
+        if (tempIndex >= 0) {
+          messages.value[tempIndex] = {
+            ...tempMessage,
+            id: realMessageId,
+            created_at: response.data.data.created_at,
+            _temp: false
+          }
+        }
+        
+        lastMessageId.value = realMessageId
+
         return { success: true };
       } else {
-        return { success: false, error: response.data.error };
+        const tempIndex = messages.value.findIndex(m => m._temp && m.message === message)
+        if (tempIndex >= 0) {
+          messages.value.splice(tempIndex, 1)
+        }
+
+        return { success: false, error: response.data.error }
       }
     } catch (error) {
       console.error('Error sending admin message:', error);
-      return { success: false, error: 'Greška pri slanju poruke' };
+      const tempIndex = messages.value.findIndex(m => m._temp && m.message === message)
+      if (tempIndex >= 0) {
+        messages.value.splice(tempIndex, 1)
+      }
+
+      return { success: false, error: 'Greška pri slanju poruke' }
     } finally {
-      sending.value = false;
+      sending.value = false
     }
-  };
+  }
   
   const assignTicket = async (ticketIdParam, adminId) => {
     assigning.value = true;
