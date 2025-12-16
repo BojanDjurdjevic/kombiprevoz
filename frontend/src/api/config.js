@@ -8,7 +8,11 @@ const instance = axios.create({
 
 instance.interceptors.request.use(config => {
   const user = useUserStore()
-  user.loading = true
+
+  if (!config.silent) {
+    user.loading = true
+  }
+
   return config
 }, error => {
   const user = useUserStore()
@@ -16,14 +20,21 @@ instance.interceptors.request.use(config => {
   return Promise.reject(error)
 })
 
-// Interceptor after response
 instance.interceptors.response.use(response => {
   const user = useUserStore()
-  user.loading = false
+
+  if (!response.config.silent) {
+    user.loading = false
+  }
+
   return response
 }, error => {
   const user = useUserStore()
-  user.loading = false
+
+  if (!error.config?.silent) {
+    user.loading = false
+  }
+
   return Promise.reject(error)
 })
 

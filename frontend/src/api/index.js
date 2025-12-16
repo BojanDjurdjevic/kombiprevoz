@@ -149,12 +149,13 @@ export default {
    //--------------------------------- CHAT ---------------------------------//
 
    getChat(config) {
+        config.silent = true
         return axios.get("", config)
    },
    sendChat(data) {
     console.log('API sendChat called with:', data);
     try {
-        const response = axios.post("", data);
+        const response = axios.post("", data, { silent: true });
         console.log('Axios response:', response);
         return response;
     } catch (error) {

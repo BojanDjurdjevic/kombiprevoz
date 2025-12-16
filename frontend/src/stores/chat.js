@@ -498,7 +498,7 @@ export const useChatStore = defineStore('chat', () => {
     }
   };
   
-  const sendAdminMessage = async (message, senderId) => {
+  const sendAdminMessage = async (message, senderId, senderName, senderRole) => {
     if (!message.trim() || !selectedTicket.value) return { success: false };
     
     sending.value = true;
