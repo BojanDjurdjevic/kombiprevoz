@@ -30,7 +30,7 @@ onMounted(() => {
   
   badgeInterval = setInterval(() => {
     if(admin.adminView !== 'Chat') chat.loadTickets()
-  }, 30000);
+  }, 60000);
 });
 
 onBeforeUnmount(() => {
@@ -38,10 +38,10 @@ onBeforeUnmount(() => {
     clearInterval(badgeInterval)
   }
 });
-/*
+
 const chatWidth = computed(() =>
   admin.adminView === 'Chat' ? '100%' : '75%'
-) */
+) 
 
 </script>
 
@@ -100,7 +100,7 @@ const chatWidth = computed(() =>
       </v-navigation-drawer>
 
       <v-main class="d-flex">
-        <v-container class="h-100 w-75 pa-3 d-flex flex-column align-center" >
+        <v-container class="h-100 pa-3 d-flex flex-column align-center" :width="chatWidth">
           <div class="w-100 text-center">
             <h1 class="mt-3">{{ admin.adminView }}</h1>
             <v-divider class="w-100"></v-divider>

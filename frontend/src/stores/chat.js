@@ -32,8 +32,11 @@ export const useChatStore = defineStore('chat', () => {
   const assigning = ref(false);
   const closing = ref(false);
   
-  let messagePollingInterval = null;
-  let ticketPollingInterval = null;
+  // avoid multiple polling
+  let messagePollingActive = false;
+  let ticketPollingActive = false;
+  let messagePollingTimeout = null;
+  let ticketPollingTimeout = null;
   let typingTimeout = null;
 
   // ==================== COMPUTED ====================
@@ -76,15 +79,10 @@ export const useChatStore = defineStore('chat', () => {
   };
   
   const createTicket = async (initialMessage = '') => {
-    console.log('createTicket STARTED');
-    console.log('Customer Info:', customerInfo.value);
-    console.log('Initial Message:', initialMessage);
     creating.value = true;
     
-    
     try {
-      console.log('Sending API request...');
-      const dto = {
+      const payload = {
         chat: {
           create_ticket: true,
           customer_name: customerInfo.value.name,
@@ -93,15 +91,11 @@ export const useChatStore = defineStore('chat', () => {
           reservation_number: customerInfo.value.reservation,
           initial_message: initialMessage
         }
-      }
-      console.log('dto :', dto)
-      const response = await api.sendChat(dto);
-
-      console.log('API Response:', response);
-      console.log('Response Data:', response.data);
+      };
+      
+      const response = await api.sendChat(payload);
 
       if (response.data.success) {
-        console.log('Success! Ticket created:', response.data.data);
         ticketId.value = response.data.data.ticket_id;
         ticketNumber.value = response.data.data.ticket_number;
         
@@ -113,18 +107,12 @@ export const useChatStore = defineStore('chat', () => {
         
         return { success: true };
       } else {
-        console.log('API returned success=false:', response.data);
         return { success: false, error: response.data.error };
       }
     } catch (error) {
-      console.error('ERROR in createTicket:', error);
-      console.error('Error message:', error.message);
-      console.error('Error response:', error.response);
-      console.error('Error response data:', error.response?.data);
       console.error('Error creating ticket:', error);
       return { success: false, error: 'Greška pri kreiranju tiketa' };
     } finally {
-      console.log('createTicket FINISHED');
       creating.value = false;
     }
   };
@@ -194,7 +182,11 @@ export const useChatStore = defineStore('chat', () => {
   };
   
   const pollMessages = async () => {
-    if (!ticketId.value) return;
+    // Stop active or without TKTid
+    if (!ticketId.value || !messagePollingActive) {
+      console.log('Poll stopped - no ticketId or inactive');
+      return;
+    }
     
     try {
       const response = await api.getChat({
@@ -219,8 +211,19 @@ export const useChatStore = defineStore('chat', () => {
         }
         
         if (data.messages && data.messages.length > 0) {
-          messages.value.push(...data.messages);
-          lastMessageId.value = messages.value[messages.value.length - 1].id;
+          // only new msg
+          data.messages.forEach(newMsg => {
+            const exists = messages.value.find(m => m.id === newMsg.id);
+            if (!exists) {
+              messages.value.push(newMsg);
+            }
+          });
+          
+          // update last msg
+          const sortedMsgs = messages.value.sort((a, b) => a.id - b.id);
+          if (sortedMsgs.length > 0) {
+            lastMessageId.value = sortedMsgs[sortedMsgs.length - 1].id;
+          }
           
           if (!isOpen.value) {
             const adminMessages = data.messages.filter(m => m.sender_type === 'admin');
@@ -233,22 +236,37 @@ export const useChatStore = defineStore('chat', () => {
     } catch (error) {
       console.error('Polling error:', error);
     } finally {
-      if (isOpen.value && !ticketClosed.value) {
-        messagePollingInterval = setTimeout(() => pollMessages(), 1000);
+      // continue if poll is active
+      if (messagePollingActive && isOpen.value && !ticketClosed.value) {
+        messagePollingTimeout = setTimeout(() => pollMessages(), 3000); 
       }
     }
   };
   
   const startMessagePolling = () => {
+    console.log('startMessagePolling called');
+    
+    // block all active
     stopMessagePolling();
+    
+    // flag on true
+    messagePollingActive = true;
+    
+    // Start new poll
     pollMessages();
   };
   
   const stopMessagePolling = () => {
-    if (messagePollingInterval) {
-      clearTimeout(messagePollingInterval);
-      messagePollingInterval = null;
+    console.log('stopMessagePolling called');
+    
+    messagePollingActive = false;
+    
+    if (messagePollingTimeout) {
+      clearTimeout(messagePollingTimeout);
+      messagePollingTimeout = null;
     }
+    
+    console.log('Message polling stopped');
   };
   
   const updateTyping = (userType, userId = null) => {
@@ -291,6 +309,8 @@ export const useChatStore = defineStore('chat', () => {
   };
   
   const resetCustomerChat = () => {
+    stopMessagePolling();
+    
     ticketId.value = null;
     ticketNumber.value = null;
     messages.value = [];
@@ -302,8 +322,6 @@ export const useChatStore = defineStore('chat', () => {
     
     localStorage.removeItem('chatTicketId');
     localStorage.removeItem('chatTicketNumber');
-    
-    stopMessagePolling();
   };
 
   // ==================== ADMIN ACTIONS ====================
@@ -337,6 +355,11 @@ export const useChatStore = defineStore('chat', () => {
   };
   
   const pollNewTickets = async () => {
+    if (!ticketPollingActive) {
+      console.log('Ticket poll stopped - inactive');
+      return;
+    }
+    
     try {
       const response = await api.getChat({
         params: {
@@ -372,25 +395,31 @@ export const useChatStore = defineStore('chat', () => {
     } catch (error) {
       console.error('Polling tickets error:', error);
     } finally {
-      ticketPollingInterval = setTimeout(() => pollNewTickets(), 3000);
+      if (ticketPollingActive) {
+        ticketPollingTimeout = setTimeout(() => pollNewTickets(), 5000); 
+      }
     }
   };
   
   const startTicketPolling = () => {
+    console.log('▶️ startTicketPolling called');
+    
     stopTicketPolling();
+    ticketPollingActive = true;
     pollNewTickets();
   };
   
   const stopTicketPolling = () => {
-    console.log('stopTicketPolling called');
-
-    if (ticketPollingInterval) {
-      clearTimeout(ticketPollingInterval);
-      ticketPollingInterval = null;
-      console.log('Ticket polling stopped');
-    } else {
-      console.log('No polling interval to stop');
+    console.log('⏹️ stopTicketPolling called');
+    
+    ticketPollingActive = false;
+    
+    if (ticketPollingTimeout) {
+      clearTimeout(ticketPollingTimeout);
+      ticketPollingTimeout = null;
     }
+    
+    console.log('Ticket polling stopped');
   };
   
   const loadTicketMessages = async (ticketIdParam) => {
@@ -404,7 +433,7 @@ export const useChatStore = defineStore('chat', () => {
               messages: true,
               ticket_id: ticketIdParam,
               limit: 100,
-              offset: 0  
+              offset: 0
             }
           }
         }
@@ -543,10 +572,11 @@ export const useChatStore = defineStore('chat', () => {
   };
   
   const clearSelectedTicket = () => {
+    stopMessagePolling(); 
+    
     selectedTicket.value = null;
     messages.value = [];
     lastMessageId.value = 0;
-    stopMessagePolling();
   };
 
   // ==================== HELPER FUNCTIONS ====================

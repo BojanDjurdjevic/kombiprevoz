@@ -211,7 +211,7 @@ class Chat {
     {
         $ticketID = $this->ticket_id ?? 0;
         $lastMessageID = $this->last_message_id ?? 0;
-        $timeout = 30;
+        $timeout = 5;
         $start = time();
 
         try {
@@ -246,7 +246,7 @@ class Chat {
 
                 $typing = $this->getTypingStatus($ticketID);
 
-                usleep(500000); 
+                usleep(300000); 
             }
 
             return $this->success([
@@ -264,7 +264,7 @@ class Chat {
     public function pollNewTickets() 
     {
         $lastChecked = $this->last_checked ?? date('Y-m-d H:i:s', strtotime('-1 hour'));
-        $timeout = 30;
+        $timeout = 5;
         $start = time();
 
         try {
@@ -295,7 +295,7 @@ class Chat {
                     ]);
                 }
 
-                usleep(500000);
+                usleep(300000);
             }
 
             return $this->success([

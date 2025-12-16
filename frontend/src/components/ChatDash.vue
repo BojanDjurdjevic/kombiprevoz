@@ -40,13 +40,13 @@ onBeforeUnmount(() => {
 });
 
 // If no Chat sec => STOP POLL
-/*
+
 watch(() => admin.adminView, (newView) => {
   if (newView !== 'Chat') {
     console.log('Switched away from Chat: STOP polling');
     chat.stopTicketPolling();
   }
-}); */
+}); 
 
 const handleLoadTickets = async () => {
   const filters = {};
