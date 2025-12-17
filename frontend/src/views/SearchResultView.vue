@@ -3,10 +3,12 @@
     import { useTourStore } from '@/stores/tours';
     import { useUserStore } from '@/stores/user';
     import { VNumberInput } from 'vuetify/labs/VNumberInput'
+    import { useDisplay } from 'vuetify/lib/framework.mjs';
     import router from '@/router';
 
     const user = useUserStore()
     const tours = useTourStore()
+    const { mdAndUp } = useDisplay()
     
     if(localStorage.getItem('avTours')) {
         onload = () => {
@@ -16,6 +18,240 @@
     
 
 </script>
+
+<template>
+    <v-container class="text-center">
+        <h1>Dostupne vožnje</h1>
+    </v-container>
+    
+    <v-btn 
+        class="ma-1"
+        @click="tours.active = true"
+    >
+        Otvori
+    </v-btn>
+
+    <v-container fluid class="pa-3">
+        <v-row justify="center" class="ga-6">
+            
+            <v-col
+            v-for="t in tours.available"
+            :key="t.id"
+            cols="12"
+            md="10"
+            lg="8"
+            >
+            <v-card elevation="2" rounded="lg">
+                <v-row>
+
+                <!-- FROM -->
+                <v-col cols="12" md="3">
+                    <v-sheet 
+                        class="pa-4 text-center h-100 d-flex flex-column align-center justify-center rounded-lg" 
+                        color="grey-lighten-3"
+                        elevation="9"
+                    >
+                        <v-card-title>{{ t.from }}</v-card-title>
+                        <v-card-subtitle>{{ t.date }}</v-card-subtitle>
+                        <v-card-title>{{ t.departure }}</v-card-title>
+                    </v-sheet>
+                </v-col>
+
+                <!-- ACTIONS -->
+                <v-col cols="12" md="6" class="d-flex justify-center">
+                    <v-card-actions class="flex-column ga-2">
+                    <v-card-title>{{ t.priceTotal }} EUR</v-card-title>
+
+                    <v-number-input
+                        v-model="t.seats"
+                        :min="1"
+                        :max="t.left"
+                        control-variant="split"
+                        @update:model-value="tours.countSeats(t.id)"
+                    />
+
+                    <v-card-text class="text-red-darken-3">
+                        Slobodna mesta: {{ t.left }}
+                    </v-card-text>
+
+                    <v-btn
+                        color="red-darken-3"
+                        variant="outlined"
+                        @click="tours.addTour(t)"
+                    >
+                        Dodaj
+                    </v-btn>
+                    </v-card-actions>
+                </v-col>
+
+                <!-- TO -->
+                <v-col cols="12" md="3">
+                    <v-sheet 
+                        class="pa-4 text-center h-100 d-flex flex-column align-center justify-center rounded-lg" 
+                        color="grey-lighten-3"
+                        elevation="9"
+                    >
+                        <v-card-title>{{ t.to }}</v-card-title>
+                        <v-card-subtitle>{{ t.date }}</v-card-subtitle>
+                        <v-card-title>{{ t.arrival }}</v-card-title>
+                    </v-sheet>
+                </v-col>
+
+                </v-row>
+            </v-card>
+            </v-col>
+
+        </v-row>
+    </v-container>
+
+    <v-bottom-sheet v-if="!mdAndUp"
+        v-model="tours.active"
+        height="100%"
+        class="pa-6 w-100 "
+        color="indigo-darken-4"
+    >   
+        <v-card class="pa-3 w-100 d-md-flex justify-space-evenly" elevation="9" color="indigo-darken-4">
+            <v-card-title class="d-flex flex-column justify-space-evenly align-center" 
+                v-if="tours.bookedTours.length > 0"
+            >
+                <h3>Dodato:</h3>
+                <p>Ukupan Iznos: {{ tours.totalPrice }} EUR</p>
+                <v-btn
+                    @click="tours.removeAll"
+                    variant="elevated"
+                    min-width="120"
+                    color="indigo-lighten-4"
+                >
+                    Isprazni
+                </v-btn>
+            </v-card-title>
+            
+            <v-card
+                v-for="b in tours.bookedTours"
+                class="pa-3" elevation="3"
+                color="indigo-darken-2"
+            >
+                <input type="hidden" :value="b.tour_id">
+                <v-card-title> {{ b.from }} - {{ b.to }} </v-card-title>
+                <v-card-subtitle> {{ b.date }} </v-card-subtitle>
+                <v-card-subtitle>Broj mesta: {{ b.places }} </v-card-subtitle>
+                <v-card-title> {{ b.price }} EUR</v-card-title>
+                <v-divider></v-divider>
+                <v-card-actions class="d-flex justify-center">
+                   <v-btn
+                        icon="mdi-delete"
+                        variant="plain"
+                        color="red"
+                        @click="tours.removeTour(b.tour_id)"
+                    >
+                    </v-btn> 
+                </v-card-actions>
+                
+            </v-card>
+            <v-sheet v-if="tours.bookedTours.length === 0" class="d-flex justify-center align-center w-100">
+                <v-card-title >
+                    Nemate izabranih vožnji
+                </v-card-title>
+            </v-sheet>
+            <v-card-actions class="d-flex flex-column justify-space-evenly">
+                <v-btn 
+                    v-if="tours.bookedTours.length > 0"
+                    @click="tours.book"
+                    variant="elevated"
+                    min-width="120"
+                    color="red-darken-4"
+                >
+                    Rezerviši
+                </v-btn>
+                <v-btn 
+                    @click="tours.active = false"
+                    variant="elevated"
+                    min-width="120"
+                    color="indigo-darken-3"
+                >
+                    Zatvori
+                </v-btn>
+            </v-card-actions>
+        </v-card>   
+    </v-bottom-sheet>
+
+    <v-bottom-navigation v-else
+        :active="tours.active"
+        height="300"
+        class="pa-6 w-100 "
+        color="indigo-darken-4"
+    >   
+        <v-card class="pa-3 w-100 d-md-flex justify-space-evenly" elevation="9" color="indigo-darken-4">
+            <v-card-title class="d-flex flex-column justify-space-evenly align-center" 
+                v-if="tours.bookedTours.length > 0"
+            >
+                <h3>Dodato:</h3>
+                <p>Ukupan Iznos: {{ tours.totalPrice }} EUR</p>
+                <v-btn
+                    @click="tours.removeAll"
+                    variant="elevated"
+                    min-width="120"
+                    color="indigo-lighten-4"
+                >
+                    Isprazni
+                </v-btn>
+            </v-card-title>
+            
+            <v-card
+                v-for="b in tours.bookedTours"
+                class="pa-3" elevation="3"
+                color="indigo-darken-2"
+            >
+                <input type="hidden" :value="b.tour_id">
+                <v-card-title> {{ b.from }} - {{ b.to }} </v-card-title>
+                <v-card-subtitle> {{ b.date }} </v-card-subtitle>
+                <v-card-subtitle>Broj mesta: {{ b.places }} </v-card-subtitle>
+                <v-card-title> {{ b.price }} EUR</v-card-title>
+                <v-divider></v-divider>
+                <v-card-actions class="d-flex justify-center">
+                   <v-btn
+                        icon="mdi-delete"
+                        variant="plain"
+                        color="red"
+                        @click="tours.removeTour(b.tour_id)"
+                    >
+                    </v-btn> 
+                </v-card-actions>
+                
+            </v-card>
+            <v-sheet v-if="tours.bookedTours.length === 0" class="d-flex justify-center align-center w-100">
+                <v-card-title >
+                    Nemate izabranih vožnji
+                </v-card-title>
+            </v-sheet>
+            <v-card-actions class="d-flex flex-column justify-space-evenly">
+                <v-btn 
+                    v-if="tours.bookedTours.length > 0"
+                    @click="tours.book"
+                    variant="elevated"
+                    min-width="120"
+                    color="red-darken-4"
+                >
+                    Rezerviši
+                </v-btn>
+                <v-btn 
+                    @click="tours.active = false"
+                    variant="elevated"
+                    min-width="120"
+                    color="indigo-darken-3"
+                >
+                    Zatvori
+                </v-btn>
+            </v-card-actions>
+        </v-card>   
+    </v-bottom-navigation>
+
+    <v-fade-transition mode="out-in">
+        <RouterView />
+    </v-fade-transition>
+</template>
+
+<!--
 
 <template>
     <v-container class="text-center">
@@ -109,6 +345,8 @@
         </v-row>
         </v-card>
         
+        
+    </v-container>
         <v-bottom-navigation
             :active="tours.active"
             height="300"
@@ -179,9 +417,9 @@
                 </v-card-actions>
             </v-card>   
         </v-bottom-navigation>
-    </v-container>
-
     <v-fade-transition mode="out-in">
         <RouterView />
     </v-fade-transition>
 </template>
+
+-->
