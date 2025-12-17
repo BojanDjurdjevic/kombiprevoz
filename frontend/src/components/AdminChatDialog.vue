@@ -22,23 +22,163 @@ const messagesContainerRef = ref(null);
 
 const quickEmojis = ['👍', '👎', '😊', '😢', '🎉', '✅', '❌', '⚠️', '💡', '🔥'];
 
+// Local polling control
+let adminMessagePollingActive = false
+let adminMessagePollingTimeout = null
+
+//Typing indicator polling
+let typingPollingTimeout = null
+const customerTyping = ref(false)
+
 // Watchers
 watch(() => props.modelValue, (newVal) => {
   if (newVal && chatStore.selectedTicket) {
-    chatStore.startMessagePolling();
+    console.log('Dialog opened - starting admin message polling')
+    startAdminMessagePolling()
   } else {
-    chatStore.stopMessagePolling();
+    console.log('Dialog closed - stopping admin message polling')
+    stopAdminMessagePolling()
   }
 });
 
 watch(() => chatStore.messages.length, () => {
-  nextTick(() => scrollToBottom());
-});
+  nextTick(() => scrollToBottom())
+})
 
 // Lifecycle
 onBeforeUnmount(() => {
-  chatStore.stopMessagePolling();
+  stopAdminMessagePolling()
+  stopTypingPolling()
 });
+
+// Admin Message Polling
+const pollAdminMessages = async () => {
+  if (!adminMessagePollingActive || !chatStore.selectedTicket) {
+    console.log('Admin poll stopped');
+    return;
+  }
+
+  try {
+    const response = await api.getChat({
+      params: {
+        data: {
+          chat: {
+            poll_messages: true,
+            ticket_id: chatStore.selectedTicket.id,
+            last_message_id: chatStore.lastMessageId
+          }
+        }
+      }
+    });
+
+    if (response.data.success) {
+      const data = response.data.data
+
+      if (data.ticket_closed) {
+        chatStore.selectedTicket.status = 'closed'
+        stopAdminMessagePolling()
+        return
+      }
+
+      if (data.messages && data.messages.length > 0) {
+        data.messages.forEach(newMsg => {
+          const exists = chatStore.messages.find(m => {
+            if (m._temp && m.message === newMsg.message) return true
+            return m.id === newMsg.id
+          });
+
+          if (!exists) {
+            chatStore.messages.push(newMsg)
+          }
+        });
+
+        //update lastMessageId
+        const realMessages = chatStore.messages.filter(m => !m._temp)
+        if (realMessages.length > 0) {
+          const sortedReal = realMessages.sort((a, b) => a.id - b.id)
+          chatStore.lastMessageId = sortedReal[sortedReal.length - 1].id
+        }
+
+        //Mark as read
+        await chatStore.markAsRead('admin')
+
+        nextTick(() => scrollToBottom())
+      }
+    }
+  } catch (error) {
+    console.error('Admin polling error:', error)
+  } finally {
+    //Continue polling
+    if (adminMessagePollingActive && props.modelValue) {
+      adminMessagePollingTimeout = setTimeout(() => pollAdminMessages(), 2000) // 2s
+    }
+  }
+};
+
+const startAdminMessagePolling = () => {
+  stopAdminMessagePolling()
+  adminMessagePollingActive = true;
+  pollAdminMessages()
+  startTypingPolling() 
+};
+
+const stopAdminMessagePolling = () => {
+  adminMessagePollingActive = false
+  if (adminMessagePollingTimeout) {
+    clearTimeout(adminMessagePollingTimeout)
+    adminMessagePollingTimeout = null
+  }
+};
+
+//Typing Indicator Polling
+const pollTyping = async () => {
+  if (!props.modelValue || !chatStore.selectedTicket) {
+    return
+  }
+
+  try {
+    const response = await api.getChat({
+      params: {
+        data: {
+          chat: {
+            get_typing: true,
+            ticket_id: chatStore.selectedTicket.id
+          }
+        }
+      }
+    });
+
+    if (response.data.success) {
+      const typingData = response.data.data.typing
+      
+      // typing only if user is cust (not admin)
+      if (typingData && typingData.user_type === 'customer') {
+        customerTyping.value = true
+      } else {
+        customerTyping.value = false
+      }
+    }
+  } catch (error) {
+    console.error('Typing polling error:', error)
+  } finally {
+    if (props.modelValue) {
+      typingPollingTimeout = setTimeout(() => pollTyping(), 1500) // 1.5s
+    }
+  }
+};
+
+const startTypingPolling = () => {
+  stopTypingPolling()
+  pollTyping()
+};
+
+const stopTypingPolling = () => {
+  if (typingPollingTimeout) {
+    clearTimeout(typingPollingTimeout)
+    typingPollingTimeout = null
+  }
+  customerTyping.value = false
+}
 
 // Methods
 const handleSendMessage = async () => {
@@ -73,7 +213,6 @@ const handleAssignToMe = async () => {
   );
   
   if (result.success) {
-    // Lokalno ažuriranje
     chatStore.selectedTicket.assigned_to = user.user.id;
     chatStore.selectedTicket.assigned_admin_name = user.user.name;
   } else {
@@ -103,28 +242,31 @@ const handleCloseTicket = async () => {
 const handleReopenTicket = async () => {
   if (!chatStore.selectedTicket) return;
 
-  const result = await chatStore.reopenTicket(chatStore.selectedTicket.id);
+  const result = await chatStore.reopenTicket(chatStore.selectedTicket.id)
   
   if (result.success) {
-    chatStore.selectedTicket.status = 'in_progress';
+    chatStore.selectedTicket.status = 'in_progress'
+    startAdminMessagePolling()
   } else {
-    alert(result.error || 'Greška pri ponovnom otvaranju tiketa');
+    alert(result.error || 'Greška pri ponovnom otvaranju tiketa')
   }
-};
+}
 
 const addEmoji = (emoji) => {
   newMessage.value += emoji;
 };
 
 const closeDialog = () => {
+  stopAdminMessagePolling()
+  stopTypingPolling()
   emit('update:modelValue', false);
   emit('closed');
 };
 
 const scrollToBottom = () => {
-  const container = messagesContainerRef.value?.$el || messagesContainerRef.value;
+  const container = messagesContainerRef.value?.$el || messagesContainerRef.value
   if (container) {
-    container.scrollTop = container.scrollHeight;
+    container.scrollTop = container.scrollHeight
   }
 };
 
@@ -254,7 +396,7 @@ const getStatusLabel = (status) => {
         </div>
 
         <!-- Typing Indicator -->
-        <div v-if="chatStore.otherTyping" class="message message-other">
+        <div v-if="customerTyping" class="message message-other">
           <div class="message-bubble typing-indicator">
             <span></span>
             <span></span>

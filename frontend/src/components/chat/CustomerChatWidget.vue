@@ -12,6 +12,10 @@ const newMessage = ref('');
 const infoFormRef = ref(null);
 const messagesContainerRef = ref(null);
 
+//Typing polling
+let typingPollingTimeout = null;
+const adminTyping = ref(false);
+
 // Validation Rules
 const rules = {
   required: v => !!v || 'Ovo polje je obavezno',
@@ -25,6 +29,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   chatStore.stopMessagePolling();
+  stopTypingPolling()
 });
 
 // Watch for new messages to scroll
@@ -33,22 +38,76 @@ watch(() => chatStore.messages.length, () => {
 });
 
 // Methods
+
+//poll typing status
+const pollTyping = async () => {
+  if (!chatStore.isOpen || !chatStore.hasActiveTicket) {
+    return;
+  }
+
+  try {
+    const response = await api.getChat({
+      params: {
+        data: {
+          chat: {
+            get_typing: true,
+            ticket_id: chatStore.ticketId
+          }
+        }
+      }
+    });
+
+    if (response.data.success) {
+      const typingData = response.data.data.typing;
+      
+      // typing show only if admin (not customer)
+      if (typingData && typingData.user_type === 'admin') {
+        adminTyping.value = true;
+      } else {
+        adminTyping.value = false;
+      }
+    }
+  } catch (error) {
+    console.error('Typing polling error:', error);
+  } finally {
+    if (chatStore.isOpen) {
+      typingPollingTimeout = setTimeout(() => pollTyping(), 1500); // 1.5s
+    }
+  }
+};
+
+const startTypingPolling = () => {
+  stopTypingPolling();
+  pollTyping();
+};
+
+const stopTypingPolling = () => {
+  if (typingPollingTimeout) {
+    clearTimeout(typingPollingTimeout);
+    typingPollingTimeout = null;
+  }
+  adminTyping.value = false;
+}
+
 const openChat = () => {
   chatStore.isOpen = true;
   if (chatStore.hasActiveTicket) {
     chatStore.startMessagePolling();
+    startTypingPolling()
     nextTick(() => scrollToBottom());
   }
 };
 
 const minimizeChat = () => {
   chatStore.isOpen = false;
-  chatStore.stopMessagePolling();
+  chatStore.stopMessagePolling()
+  stopTypingPolling()
 };
 
 const closeChat = () => {
   chatStore.isOpen = false;
   chatStore.stopMessagePolling();
+  stopTypingPolling()
 };
 
 const handleCreateTicket = async () => {
@@ -98,7 +157,9 @@ const scrollToBottom = () => {
   if (container) {
     container.scrollTop = container.scrollHeight;
   }
-};
+}
+
+
 </script>
 
 <template>
@@ -243,7 +304,7 @@ const scrollToBottom = () => {
           </div>
 
           <!-- Typing Indicator -->
-          <div v-if="chatStore.otherTyping" class="message message-other">
+          <div v-if="adminTyping" class="message message-other">
             <div class="message-bubble typing-indicator">
               <span></span>
               <span></span>
