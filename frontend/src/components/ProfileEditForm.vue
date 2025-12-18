@@ -1,10 +1,11 @@
 <script setup>
     import router from '@/router';
-import { useUserStore } from '@/stores/user';
+    import { useUserStore } from '@/stores/user';
     //import { ref } from 'vue';
 
     const user = useUserStore()
 
+    /*
     function handleReset() {
         user.profile.users.name = user.user.name
         user.profile.users.email = user.user.email
@@ -25,12 +26,12 @@ import { useUserStore } from '@/stores/user';
             user.profile.users.email = user.profile.users.email.trim()
             user.profile.users.address = user.profile.users.address.trim()
             user.profile.users.phone = user.profile.users.phone.trim() 
-            user.profile.users.id = user.user.id
+            user.profile.users.id = user.user.id */
             /*
             console.dir(typeof(user.profile.users.city))
             if(String(user.profile.users.city )) {
                 user.profile.users.city = user.profile.user.city.trim()
-            } */
+            } */ /*
             if(user.actions.checkSession()) {
                 user.actions.profileUpdate(user.profile)
             } else {
@@ -40,9 +41,159 @@ import { useUserStore } from '@/stores/user';
         } else {
             return
         }
+    } */
+
+   function handleReset() {
+        Object.assign(user.profile.users, {
+            name: user.user.name,
+            email: user.user.email,
+            address: user.user.address,
+            phone: user.user.phone,
+            city: user.user.city
+        })
+    }
+
+        function handleClear() {
+        Object.assign(user.profile.users, {
+            name: '',
+            email: '',
+            address: '',
+            phone: '',
+            city: ''
+        })
+    }
+
+        function submit() {
+        const u = user.profile.users
+
+        if (!u.name || !u.email || !u.address || !u.phone || !u.city) return
+
+        Object.keys(u).forEach(k => {
+            if (typeof u[k] === 'string') u[k] = u[k].trim()
+        })
+
+        u.id = user.user.id
+
+        if (user.actions.checkSession()) {
+            user.actions.profileUpdate(user.profile)
+            user.profileDialog = false
+        } else {
+            router.push('/login')
+        }
     }
 </script>
 <template>
+
+  <v-card class="pa-6" max-width="800"> <!-- ⬅ CHANGED -->
+    
+    <!-- HEADER -->
+    <v-card-title class="d-flex justify-space-between align-center">
+      <h2>Izmeni podatke</h2>
+
+      <v-btn
+        icon="mdi-close"
+        variant="text"
+        color="error"
+        @click="user.profileDialog = false"
+      />
+    </v-card-title>
+
+    <v-divider class="mb-4" />
+
+    <!-- FORM -->
+    <v-form @submit.prevent="submit">
+      <v-row dense> <!-- ⬅ CHANGED -->
+
+        <!-- Ime -->
+        <v-col cols="12" md="6">
+          <v-text-field
+            v-model="user.profile.users.name"
+            label="Ime"
+            prepend-icon="mdi-account"
+            :rules="[user.rules.required]"
+            clearable
+          />
+        </v-col>
+
+        <!-- Email -->
+        <v-col cols="12" md="6">
+          <v-text-field
+            v-model="user.profile.users.email"
+            label="Email"
+            prepend-icon="mdi-email"
+            :rules="[user.rules.required, user.rules.email]"
+            clearable
+          />
+        </v-col>
+
+        <!-- Telefon -->
+        <v-col cols="12" md="6">
+          <v-text-field
+            v-model="user.profile.users.phone"
+            label="Telefon"
+            prepend-icon="mdi-phone"
+            :rules="[user.rules.required]"
+            clearable
+          />
+        </v-col>
+
+        <!-- Grad -->
+        <v-col cols="12" md="6">
+          <v-text-field
+            v-model="user.profile.users.city"
+            label="Grad"
+            prepend-icon="mdi-city"
+            :rules="[user.rules.required]"
+            clearable
+          />
+        </v-col>
+
+        <!-- Adresa -->
+        <v-col cols="12">
+          <v-text-field
+            v-model="user.profile.users.address"
+            label="Adresa"
+            prepend-icon="mdi-map-marker"
+            :rules="[user.rules.required]"
+            clearable
+          />
+        </v-col>
+      </v-row>
+
+      <!-- ACTIONS -->
+      <v-divider class="my-4" />
+
+      <v-card-actions class="flex-column flex-sm-row justify-space-between"> <!-- ⬅ CHANGED -->
+
+        <v-btn
+          type="submit"
+          color="success"
+          prepend-icon="mdi-check-circle"
+        >
+          Potvrdi
+        </v-btn>
+
+        <v-btn
+          color="indigo-darken-4"
+          variant="outlined"
+          @click="handleReset"
+        >
+          Vrati na staro
+        </v-btn>
+
+        <v-btn
+          color="error"
+          variant="outlined"
+          @click="handleClear"
+        >
+          Obriši sve
+        </v-btn>
+
+      </v-card-actions>
+    </v-form>
+  </v-card>
+
+    <!--
     <v-sheet color="indigo-darken-4" height="80%">
     <v-container class="text-center" width="80%">
         <h1>Izmeni podatke</h1>
@@ -145,4 +296,5 @@ import { useUserStore } from '@/stores/user';
     </v-container>
     <v-divider></v-divider>
     </v-sheet>
+    -->
 </template>

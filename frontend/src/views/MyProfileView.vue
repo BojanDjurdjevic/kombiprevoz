@@ -4,6 +4,11 @@ import ProfileEditForm from '../components/ProfileEditForm.vue';
 import { useUserStore } from '@/stores/user';
 import { ref } from 'vue';
 
+import ProfileHeader from '@/components/profile/ProfileHeader.vue'
+import ProfileInfoCard from '@/components/profile/ProfileInfoCard.vue'
+import ProfileEditDialog from '@/components/profile/ProfileEditDialog.vue'
+import PasswordChangeCard from '@/components/profile/PasswordChangeCard.vue'
+
 const user = useUserStore()
 
 const newPass = ref({
@@ -45,6 +50,19 @@ function submitPass() {
 </script>
 
 <template>
+
+    <ProfileHeader />
+
+    <ProfileInfoCard />
+
+    <ProfileEditDialog @open="fillProfile" />
+
+    <PasswordChangeCard
+        v-model="newPass"
+        @submit="submitPass"
+    />
+
+    <!--
     <v-container>
         <h1 class="text-center">Moj Profil</h1>
         <v-divider></v-divider>
@@ -163,4 +181,6 @@ function submitPass() {
             </v-form>
         </v-card>
     </v-container>
+
+    -->
 </template>
