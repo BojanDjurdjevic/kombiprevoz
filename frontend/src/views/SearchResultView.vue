@@ -5,6 +5,7 @@
     import { VNumberInput } from 'vuetify/labs/VNumberInput'
     import { useDisplay } from 'vuetify/lib/framework.mjs';
     import router from '@/router';
+    import BookingPanel from '@/components/BookingPanel.vue';
 
     const user = useUserStore()
     const tours = useTourStore()
@@ -103,6 +104,12 @@
 
         </v-row>
     </v-container>
+
+    <BookingPanel />
+
+    </template>
+
+    <!--
 
     <v-bottom-sheet v-if="!mdAndUp"
         v-model="tours.active"
@@ -251,7 +258,7 @@
     </v-fade-transition>
 </template>
 
-<!--
+
 
 <template>
     <v-container class="text-center">
