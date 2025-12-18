@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
 import { useChatStore } from '@/stores/chat';
+import api from '@/api';
 
 // Store
 const chatStore = useChatStore();

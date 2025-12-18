@@ -34,6 +34,87 @@ function clsData() {
 
 </script>
 <template>
+    <v-container class="text-center mb-4">
+        <h1>Uloguj se</h1>
+        <v-divider />
+    </v-container>
+
+    <v-container class="d-flex justify-center">
+        <v-card class="pa-6" max-width="500" width="100%">
+        <v-form @submit.prevent="logSubmit">
+
+            <v-text-field
+            v-model="logUser.users.email"
+            prepend-icon="mdi-email"
+            type="email"
+            label="Email"
+            :rules="[user.rules.required, user.rules.email]"
+            clearable
+            />
+
+            <v-text-field
+            v-model="logUser.users.pass"
+            prepend-icon="mdi-key"
+            label="Lozinka"
+            type="password"
+            :rules="[user.rules.required]"
+            clearable
+            />
+
+            <v-checkbox
+            v-model="logUser.users.remember"
+            label="Zapamti me"
+            />
+
+            <v-card-actions class="flex-column flex-sm-row justify-space-between">
+            <v-btn
+                type="submit"
+                color="indigo-darken-4"
+                class="mb-2 mb-sm-0"
+                variant="elevated"
+            >
+                Potvrdi
+            </v-btn>
+
+            <v-btn variant="outlined" @click="clsData">
+                Obriši
+            </v-btn>
+            </v-card-actions>
+        </v-form>
+        </v-card>
+    </v-container>
+
+    <!-- LINKS -->
+    <v-container class="d-flex justify-center">
+        <v-card class="pa-4 mt-4" max-width="700" width="100%">
+        <v-row>
+            <v-col cols="12" md="6" class="text-center">
+            Nemate nalog?
+            <v-btn
+                color="indigo-darken-4"
+                variant="text"
+                to="/registracija"
+            >
+                Registruj se
+            </v-btn>
+            </v-col>
+
+            <v-col cols="12" md="6" class="text-center">
+            Zaboravili ste lozinku?
+            <v-btn
+                color="indigo-darken-4"
+                variant="text"
+                to="/request-password-reset"
+            >
+                Reset lozinke
+            </v-btn>
+            </v-col>
+        </v-row>
+        </v-card>
+    </v-container>
+
+
+    <!--
     <v-container class="text-center">
         <h1>Uloguj se</h1>
         <v-divider></v-divider>
@@ -100,5 +181,5 @@ function clsData() {
             </div>
         </v-card>
     </v-container>
-
+    -->
 </template>

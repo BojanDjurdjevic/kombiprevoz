@@ -2,6 +2,7 @@
 import { ref, watch, nextTick, onBeforeUnmount } from 'vue';
 import { useChatStore } from '@/stores/chat';
 import { useUserStore } from '@/stores/user';
+import api from '@/api';
 
 const props = defineProps({
   modelValue: {
@@ -97,6 +98,7 @@ const pollAdminMessages = async () => {
         if (realMessages.length > 0) {
           const sortedReal = realMessages.sort((a, b) => a.id - b.id)
           chatStore.lastMessageId = sortedReal[sortedReal.length - 1].id
+          chatStore.playNotificationSound()
         }
 
         //Mark as read

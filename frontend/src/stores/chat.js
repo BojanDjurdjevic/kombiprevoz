@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
+import notificationSound from '@/assets/sounds/notification.mp3'
 import api from '@/api';
 
 export const useChatStore = defineStore('chat', () => {
@@ -266,6 +267,7 @@ export const useChatStore = defineStore('chat', () => {
           if (realMessages.length > 0) {
             const sortedReal = realMessages.sort((a, b) => a.id - b.id);
             lastMessageId.value = sortedReal[sortedReal.length - 1].id;
+            playNotificationSound()
           }
           
           if (!isOpen.value) {
@@ -418,19 +420,19 @@ export const useChatStore = defineStore('chat', () => {
       });
 
       if (response.data.success) {
-        const data = response.data.data;
+        const data = response.data.data
         
         if (data.tickets && data.tickets.length > 0) {
           data.tickets.forEach(newTicket => {
-            const existingIndex = tickets.value.findIndex(t => t.id === newTicket.id);
+            const existingIndex = tickets.value.findIndex(t => t.id === newTicket.id)
             if (existingIndex >= 0) {
               tickets.value[existingIndex] = newTicket;
             } else {
-              tickets.value.unshift(newTicket);
+              tickets.value.unshift(newTicket)
             }
           });
           
-          playNotificationSound();
+          playNotificationSound()
         }
         
         lastChecked.value = data.timestamp;
@@ -711,12 +713,12 @@ export const useChatStore = defineStore('chat', () => {
   
   const playNotificationSound = () => {
     try {
-      const audio = new Audio('/sounds/notification.mp3');
-      audio.play().catch(err => console.log('Sound play failed:', err));
+      const audio = new Audio(notificationSound)
+      audio.play().catch(err => console.log('Sound play failed:', err))
     } catch (err) {
-      console.log('Audio not available');
+      console.log('Audio not available')
     }
-  };
+  }
 
   // ==================== RETURN ====================
   

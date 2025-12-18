@@ -155,6 +155,124 @@ const { handleSubmit, handleReset } = useForm({
 </script>
 
 <template>
+  <v-container class="text-center mb-4">
+    <h1>Registracija</h1>
+    <v-divider />
+  </v-container>
+
+  <v-container class="d-flex justify-center">
+    <v-card class="pa-6" max-width="900" width="100%">
+      <v-form @submit.prevent="submit">
+
+        <v-row dense>
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model="name.value.value"
+              label="Ime"
+              :error-messages="name.errorMessage.value"
+              clearable
+            />
+          </v-col>
+
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model="email.value.value"
+              label="E-mail"
+              :error-messages="email.errorMessage.value"
+              clearable
+            />
+          </v-col>
+
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model="pass.value.value"
+              label="Lozinka"
+              :error-messages="pass.errorMessage.value"
+              type="password"
+              clearable
+            />
+          </v-col>
+
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model="phone.value.value"
+              label="Broj telefona"
+              :error-messages="phone.errorMessage.value"
+              clearable
+            />
+          </v-col>
+
+          <v-col cols="12" md="6">
+            <v-autocomplete
+              v-model="country.value.value"
+              :items="countries"
+              label="Država"
+              :error-messages="country.errorMessage.value"
+              return-object
+              clearable
+              @update:model-value="val => getMyCity(val.id)"
+            />
+          </v-col>
+
+          <v-col cols="12" md="6">
+            <v-autocomplete
+              v-model="city.value.value"
+              :items="cities"
+              label="Grad"
+              :error-messages="city.errorMessage.value"
+              clearable
+            />
+          </v-col>
+
+          <v-col cols="12">
+            <v-combobox
+              v-model="address.value.value"
+              label="Adresa"
+              :error-messages="address.errorMessage.value"
+              clearable
+            />
+          </v-col>
+        </v-row>
+
+        <v-checkbox
+          v-model="checkbox.value.value"
+          :error-messages="checkbox.errorMessage.value"
+          label="Saglasan sam sa uslovima korišćenja."
+        />
+
+        <v-checkbox
+          v-model="remember"
+          label="Zapamti me"
+        />
+
+        <v-divider class="my-4" />
+
+        <v-card-actions class="flex-column flex-sm-row justify-space-between">
+          <div>
+            <v-btn type="submit" color="indigo-darken-4" class="me-sm-2 mb-2 mb-sm-0" variant="elevated">
+              Potvrdi
+            </v-btn>
+            <v-btn variant="outlined" @click="handleReset">
+              Obriši
+            </v-btn>
+          </div>
+
+          <div class="text-center mt-4 mt-sm-0">
+            Već imate nalog?
+            <v-btn
+              color="indigo-darken-4"
+              variant="elevated"
+              to="/login"
+            >
+              Uloguj se
+            </v-btn>
+          </div>
+        </v-card-actions>
+      </v-form>
+    </v-card>
+  </v-container>
+
+  <!--
     <v-container class="text-center">
         <h1>Registracija</h1>
         <v-divider></v-divider>
@@ -262,4 +380,5 @@ const { handleSubmit, handleReset } = useForm({
             </v-form>
         </v-card>
     </v-container>
+    -->
 </template>
