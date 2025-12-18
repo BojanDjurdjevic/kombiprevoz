@@ -4,15 +4,43 @@ import { useSearchStore } from "@/stores/search";
 import { useUserStore } from "@/stores/user";
 import { VNumberInput } from "vuetify/labs/VNumberInput";
 import { VDateInput } from "vuetify/labs/VDateInput";
+import OrderHeader from "@/components/myorder/OrderHeader.vue";
+import OrderCard from "@/components/myorder/OrderCard.vue";
 const orders = useMyOrdersStore();
 const user = useUserStore();
 const search = useSearchStore();
 </script>
 
 <template>
+  <!---->
+  
+  <OrderHeader
+    :code="orders.oneOrder.code"
+    :total="orders.oneOrder.total"
+  />
+
+  <v-divider class="my-4" />
+
   <v-container>
-    <div class="d-flex justify-space-between ma-2 pa-3">
-      <div class="d-flex">
+    <v-row dense>
+      <v-col
+        v-for="order in orders.oneOrder.items"
+        :key="order.id"
+        cols="12"
+        md="6"
+        lg="4"
+      >
+        <OrderCard :order="order" />
+      </v-col>
+    </v-row>
+  </v-container>
+  
+  
+
+  <!--
+  <v-container>
+    <div class="d-flex flex-wrap justify-space-between ma-2 pa-3">
+      <div class="d-flex flex-wrap">
         <v-btn icon="mdi-keyboard-backspace" to="/rezervacije"></v-btn>
         <h1 class="ml-9">Rezervacija broj: {{ orders.oneOrder.code }}</h1>
       </div>
@@ -35,27 +63,27 @@ const search = useSearchStore();
         {{ order.from }} - {{ order.to }}</v-card-title
       >
       <v-divider></v-divider>
-      <v-card-title class="d-flex justify-space-between"
+      <v-card-title class="d-md-flex justify-space-between"
         ><p>Adresa Polaska:</p>
         <p>{{ order.pickup }}</p>
       </v-card-title>
-      <v-card-title class="d-flex justify-space-between"
+      <v-card-title class="d-md-flex justify-space-between"
         ><p>Adresa Dolaska:</p>
         <p>{{ order.dropoff }}</p>
       </v-card-title>
-      <v-card-title class="d-flex justify-space-between"
+      <v-card-title class="d-md-flex justify-space-between"
         ><p>Broj Sedišta:</p>
         <p>{{ order.places }}</p>
       </v-card-title>
-      <v-card-title class="d-flex justify-space-between"
+      <v-card-title class="d-md-flex justify-space-between"
         ><p>Datum Vožnje:</p>
         <p>{{ order.date }}</p>
       </v-card-title>
-      <v-card-title class="d-flex justify-space-between"
+      <v-card-title class="d-md-flex justify-space-between"
         ><p>Vreme Polaska:</p>
         <p>{{ order.time }}</p>
       </v-card-title>
-      <v-card-title class="d-flex justify-space-between"
+      <v-card-title class="d-md-flex justify-space-between"
         ><p>Cena:</p>
         <p>{{ order.price }}</p>
       </v-card-title>
@@ -181,9 +209,11 @@ const search = useSearchStore();
             </v-form>
           </v-card>
         </v-dialog>
+        -->
 
         <!--  Start reschedule  -->
 
+        <!--
         <v-dialog
           v-model="orders.dateDialog"
           max-width="75%"
@@ -326,9 +356,10 @@ const search = useSearchStore();
             </v-form>
           </v-card>
         </v-dialog>
+        -->
 
         <!--  End reschedule  -->
-
+        <!--
         <v-dialog
           v-model="orders.delDialog"
           max-width="75%"
@@ -370,4 +401,6 @@ const search = useSearchStore();
       </v-card-actions>
     </v-card>
   </v-container>
+
+  -->
 </template>
