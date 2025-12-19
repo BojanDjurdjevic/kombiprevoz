@@ -75,6 +75,7 @@ export const useUserStore = defineStore('user', () => {
     const successMsg = ref(false)
     const loading = ref(false)
     const profileDialog = ref(false)
+    const profileHistory = ref(false)
     const admin = ref(false)
 
     function showErr(error, time) {
@@ -108,8 +109,8 @@ export const useUserStore = defineStore('user', () => {
                 const res = await api.isLogged(isLoggedUser.value)
                 if(res.data.user) {
                     user.value = res.data.user
-                    if(res.data.logs) logs.value = res.data.logs
                     orders.actions.getUserOrders(orders.addedOrders.orders)
+                    actions.value.getUserLogs()
                     return true
                 } else {
                     user.value = null
@@ -131,10 +132,10 @@ export const useUserStore = defineStore('user', () => {
             }
             
         },
-        setUser: (userData, userLogs = []) => {
+        setUser: (userData) => { // userLogs = []
             user.value = userData
-            logs.value = userLogs.length > 0 ? userLogs : []
-            console.log('User iz baze: ', user.value, "\n", 'User_logs iz baze: ', logs.value)
+            //logs.value = userLogs && userLogs.length > 0 ? userLogs : []
+            console.log('User iz baze: ', user.value) // , "\n", 'User_logs iz baze: ', logs.value
         }, 
         handleSignin: async (users) => {
             loading.value = true
@@ -143,8 +144,7 @@ export const useUserStore = defineStore('user', () => {
                 console.log('Data User-a: ', res.data)
                 if(res.data.success) {
                     //user.value = res.data.user
-                    if(res.data.logs) actions.value.setUser(res.data.user, res.data.logs)
-                    else actions.value.setUser(res.data.user)
+                    actions.value.setUser(res.data.user)
                     //successMsg.value = res.data.msg 
                     const redirectPath = route.query.redirect || '/'
                     router.push(redirectPath)
@@ -173,8 +173,8 @@ export const useUserStore = defineStore('user', () => {
                 console.log('Data User-a: ', res.data)
                 if(res.data.success) {
                     //user.value = res.data.user
-                    if(res.data.logs) actions.value.setUser(res.data.user, res.data.logs)
-                    else actions.value.setUser(res.data.user)
+                    actions.value.setUser(res.data.user)
+                    actions.value.getUserLogs()
                     //successMsg.value = res.data.msg 
                     const redirectPath = route.query.redirect || '/'
                     router.push(redirectPath)
@@ -192,6 +192,24 @@ export const useUserStore = defineStore('user', () => {
                 }
             } finally {
                 loading.value = false
+            }
+        },
+        getUserLogs: async () => {
+            try {
+                const res = await api.getUsrLogs({
+                    params: {
+                        users: {
+                            getLogs: true,
+                            user_id: user.value.id
+                        }
+                    }
+                    
+                })
+                logs.value = res.data.success ? res.data.logs : []
+                console.log('UserLOGS iz baze: ', logs.value)
+                console.log('Logovi iz API: ', res.data)
+            } catch (error) {
+                console.dir(error, {depth: null})
             }
         },
         logout: async (users) => {
@@ -272,6 +290,7 @@ export const useUserStore = defineStore('user', () => {
 
     return {
         user, errorMsg, loading, getters, actions, successMsg, rules, profileDialog, profile, admin,
+        logs, profileHistory,
         logout, showErr, showSucc, clearMsg,
     }
 })

@@ -8,6 +8,7 @@ import ProfileHeader from '@/components/profile/ProfileHeader.vue'
 import ProfileInfoCard from '@/components/profile/ProfileInfoCard.vue'
 import ProfileEditDialog from '@/components/profile/ProfileEditDialog.vue'
 import PasswordChangeCard from '@/components/profile/PasswordChangeCard.vue'
+import HistoryDialog from '@/components/profile/HistoryDialog.vue';
 
 const user = useUserStore()
 
@@ -56,6 +57,7 @@ function submitPass() {
     <ProfileInfoCard />
 
     <ProfileEditDialog @open="fillProfile" />
+    <HistoryDialog  />
 
     <PasswordChangeCard
         v-model="newPass"

@@ -478,6 +478,7 @@ export const useAdminStore = defineStore("admin", () => {
   const items_users = ["Kreiraj novog korisnika", "Pretraga"];
 
   const userByAdmin = ref(null)
+  const userLogs = ref([])
 
   const userEditDialog = ref(false)
   const userContactDialog = ref(false)
@@ -818,8 +819,9 @@ export const useAdminStore = defineStore("admin", () => {
       try {
         const res = await api.getUser(dto)
         userByAdmin.value = res.data.user
-        console.log(res.data)
-        console.log(res.data.user)
+        userLogs.value = res.data.logs ? res.data.logs : []
+        console.log(userByAdmin.value)
+        console.log('Svi logovi traženog USER-a: ', userLogs.value)
       } catch (error) {
         console.log(error)
       } finally {
@@ -1251,6 +1253,7 @@ export const useAdminStore = defineStore("admin", () => {
     myCountry, citiesByCountry, countryDialog, cityDialog, myCity, selectedPictures,
     myCityPics, cityDeletedPics, unSelectedPictures, tab_users, items_users,
     userOptions, userByAdmin, userEditDialog, userContactDialog, editedUser,
+    userLogs,
 
 
     formatDate, showDetails, adminDateQuery, isDateAllowed, selectFlag, selectCityPics,

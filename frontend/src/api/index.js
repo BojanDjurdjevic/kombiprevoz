@@ -105,6 +105,10 @@ export default {
             }
         }) 
     },
+    getUsrLogs(users) {
+        console.log(users)
+        return axios.get("", users)
+    },
     isLogged(user) {
         return axios.post("", user)
     },

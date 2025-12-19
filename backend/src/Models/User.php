@@ -43,6 +43,10 @@ class User {
     // Check if it the User is logedin:
     public static function isLoged($db)
     {
+
+        //$logs = isset($_SESSION['user']) ? new Logger(self::$db)->getUserLogs($_SESSION['user']['id']) : [];
+
+
         if(!isset($_SESSION['user']) && isset($_COOKIE['remember_me'])) {
             $sql = "SELECT * FROM users WHERE id = :id";
             $stmt = $db->prepare($sql);
@@ -71,6 +75,9 @@ class User {
                             'phone' => $user->phone,
                             'initials' => $initials
                         ];
+                        /*
+                        $logger = new Logger(self::$db);
+                        $logs = $logger->getUserLogs($user->id); */
                     }
                 }
             } catch (PDOException $e) {
@@ -86,7 +93,12 @@ class User {
             }
         }
         
-        if(isset($_SESSION['user'])) {
+        if(isset($_SESSION['user'])) { /*
+            if (empty($logs)) {
+                $logger = new Logger(self::$db);
+                $logs = $logger->getUserLogs($_SESSION['user']['id']);
+            } */
+
             echo json_encode([
                 'success' => true,
                 'user' => $_SESSION['user']
@@ -105,6 +117,12 @@ class User {
     {
         if(isset($_SESSION['user']) && !empty($this->id) && $this->id == $_SESSION['user']['id']) return true;
         else return false;
+    }
+
+    public function getLogs() 
+    {
+        $logger = new Logger($this->db);
+        return $logger->getUserLogs($this->id);
     }
 
     // -------------------------  FUNCTIONS AFTER ACTION --------------------------------- //
@@ -597,6 +615,7 @@ class User {
 
     public function login()
     {
+        //$logs = [];
         $find = "SELECT * FROM users WHERE email = :email AND deleted = 0";
         $stmt = $this->db->prepare($find);
         if(filter_var($this->email, FILTER_VALIDATE_EMAIL)) {
@@ -644,11 +663,17 @@ class User {
                                 ]);
                             }
                             $name = $_SESSION['user']['name'];
+                            /*
+                            $logger = new Logger($this->db);
+                            $logs = $logger->getUserLogs($user->id);
+                            'logs' => $logs,
+                            */
                             echo json_encode([
                                 'success' => true,
                                 'user' => $_SESSION['user'],
                                 'msg' => "Dobrodošli nazad $name!" 
-                            ], JSON_PRETTY_PRINT);
+                            ]);
+                            return;
                         } else {
                             http_response_code(401);
                             echo json_encode([
@@ -656,6 +681,7 @@ class User {
                                 'error' => 'Pogrešan email ili lozinka!'
                             ], JSON_PRETTY_PRINT);
                             Logger::security("Wrong email or password - failed login at login() [ User Email: $this->email ]", 'HIGH');
+                            return;
                         }
                         
                     } else {
@@ -664,6 +690,8 @@ class User {
                             'success' => false,
                             'error' => 'Pogrešan email ili lozinka!'
                         ], JSON_PRETTY_PRINT);
+                        Logger::security("Wrong email or password - failed login at login() [ User Email: $this->email ]", 'HIGH');
+                        return;
                     }
                 } else {
                     http_response_code(500);

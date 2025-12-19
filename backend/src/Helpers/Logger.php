@@ -176,7 +176,7 @@ class Logger
     public function getUserLogs(? int $id = null)
     {
         if (!Validator::isAdmin() && !Validator::isSuper()) {
-            $sql = "SELECT created_at, field_changed as field 
+            $sql = "SELECT id, created_at, field_changed
                     FROM user_logs 
                     WHERE user_id = :user_id 
                     ORDER BY created_at DESC 

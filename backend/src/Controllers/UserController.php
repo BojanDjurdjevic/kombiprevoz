@@ -120,6 +120,14 @@ class UserController {
                         exit;
                     } 
                 }
+                if(isset($this->data->users->getLogs) && !empty($this->data->users->getLogs)) {
+                    $logs = $this->user->getLogs();
+                    echo json_encode([
+                        'success'=> true,
+                        'logs'=> $logs
+                    ]);
+                    exit;
+                }
                 break;
             case 'POST':
                 if(isset($this->data->users->signin) && !empty($this->data->users->signin)) {
