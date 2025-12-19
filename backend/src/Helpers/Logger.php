@@ -173,10 +173,10 @@ class Logger
         }
     }
 
-    public function getUserLogs() 
+    public function getUserLogs(? int $id = null)
     {
         if (!Validator::isAdmin() && !Validator::isSuper()) {
-            $sql = "SELECT created_at 
+            $sql = "SELECT created_at, field_changed as field 
                     FROM user_logs 
                     WHERE user_id = :user_id 
                     ORDER BY created_at DESC 
@@ -194,14 +194,44 @@ class Logger
                     LIMIT 50";
             
             $stmt = $this->db->prepare($sql);
-            $userId = $_GET['user_id'] ?? $_SESSION['user']['id'];
+            $userId = $id ?? $_SESSION['user']['id'];
             $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
         }
 
         $stmt->execute();
         $logs = $stmt->fetchAll(PDO::FETCH_OBJ);
 
-        echo json_encode(['logs' => $logs], JSON_UNESCAPED_UNICODE);
+        return $logs;
+    }
+
+    public function getOrderLogs(? int $id = null)
+    {
+        if (!Validator::isAdmin() && !Validator::isSuper()) {
+            $sql = "SELECT created_at, field_changed as field
+                    FROM order_logs 
+                    WHERE order_id = :order_id 
+                    ORDER BY created_at DESC 
+                    LIMIT 10";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindParam(':order_id', $id, PDO::PARAM_INT);
+        } else {
+            $sql = "SELECT ol.*, 
+                        u.name as changed_by_name
+                    FROM order_logs ol
+                    LEFT JOIN users u ON ol.changed_by = u.id
+                    WHERE ol.order_id = :order_id
+                    ORDER BY ol.created_at DESC
+                    LIMIT 50";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindParam(':order_id', $id, PDO::PARAM_INT);
+        }
+
+        $stmt->execute();
+        $logs = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+        return $logs;
     }
 
 }

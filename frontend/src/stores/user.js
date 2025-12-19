@@ -21,6 +21,8 @@ export const useUserStore = defineStore('user', () => {
         address: 'Gavrila Principa 6',
         phone: '062640273'
     } */)
+    
+    const logs = ref([])
 
     const profile = ref({
         //user: true,
@@ -106,6 +108,7 @@ export const useUserStore = defineStore('user', () => {
                 const res = await api.isLogged(isLoggedUser.value)
                 if(res.data.user) {
                     user.value = res.data.user
+                    if(res.data.logs) logs.value = res.data.logs
                     orders.actions.getUserOrders(orders.addedOrders.orders)
                     return true
                 } else {
@@ -128,9 +131,10 @@ export const useUserStore = defineStore('user', () => {
             }
             
         },
-        setUser: (userData) => {
+        setUser: (userData, userLogs = []) => {
             user.value = userData
-            console.log('User iz baze: ', user.value)
+            logs.value = userLogs.length > 0 ? userLogs : []
+            console.log('User iz baze: ', user.value, "\n", 'User_logs iz baze: ', logs.value)
         }, 
         handleSignin: async (users) => {
             loading.value = true
@@ -139,8 +143,8 @@ export const useUserStore = defineStore('user', () => {
                 console.log('Data User-a: ', res.data)
                 if(res.data.success) {
                     //user.value = res.data.user
-                    actions.value.setUser(res.data.user)
-                    
+                    if(res.data.logs) actions.value.setUser(res.data.user, res.data.logs)
+                    else actions.value.setUser(res.data.user)
                     //successMsg.value = res.data.msg 
                     const redirectPath = route.query.redirect || '/'
                     router.push(redirectPath)
@@ -169,7 +173,8 @@ export const useUserStore = defineStore('user', () => {
                 console.log('Data User-a: ', res.data)
                 if(res.data.success) {
                     //user.value = res.data.user
-                    actions.value.setUser(res.data.user)
+                    if(res.data.logs) actions.value.setUser(res.data.user, res.data.logs)
+                    else actions.value.setUser(res.data.user)
                     //successMsg.value = res.data.msg 
                     const redirectPath = route.query.redirect || '/'
                     router.push(redirectPath)

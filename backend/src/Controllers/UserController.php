@@ -94,7 +94,8 @@ class UserController {
                             http_response_code(200);
                             echo json_encode([
                                 'success' => true,
-                                'user' => $result['user']
+                                'user' => $result['user'],
+                                'logs' => $result['logs']
                             ], JSON_UNESCAPED_UNICODE);
                             exit;
 

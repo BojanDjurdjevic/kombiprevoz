@@ -57,7 +57,7 @@ class User {
                         $splited = explode(" ", $user->name);
                         $arr = [];
                         foreach($splited as $s) {
-                            array_push($arr, strtoupper($s[0]));
+                            array_push($arr, mb_strtoupper(mb_substr($s, 0,1, "UTF-8")));
                         }
                         $initials = implode("", $arr);
 
@@ -199,14 +199,13 @@ class User {
                         'success' => true,
                         'msg' => $output
                     ], JSON_UNESCAPED_UNICODE);
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode([
-                'error' => 'Došlo je do greške!',
-                'msg' => $mail->ErrorInfo
+        } catch (PDOException $e) {
+            Logger::error('Failed email to user', [
+                'DB_message'=> $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
             ]);
         }
-        //return $mail; 
     
     }
 
@@ -269,10 +268,14 @@ class User {
                 $stmt->execute();
                 $user = $stmt->fetch(PDO::FETCH_OBJ);
 
+                $logger = new Logger($this->db);
+                $logs = $logger->getUserLogs($user->id);
+
                 if($user) {
                     return [
                         'success' => true,
-                        'user' => $user
+                        'user' => $user,
+                        'logs'=> $logs
                     ];
                 } else {
                     return [
@@ -419,7 +422,7 @@ class User {
                                 $splited = explode(" ", $user->name);
                                 $arr = [];
                                 foreach($splited as $s) {
-                                    array_push($arr, strtoupper($s[0]));
+                                    array_push($arr, mb_strtoupper(mb_substr($s, 0,1, "UTF-8")));
                                 }
                                 $initials = implode("", $arr);
 
