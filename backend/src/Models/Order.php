@@ -567,6 +567,7 @@ class Order {
         $mail->isHTML(true);
         $mail->addAttachment($path, "Kombiprevoz - rezervacija: ". $new_code);
         $mail->Subject = "Potvrda Rezervacije";
+        $mail->setLanguage('sr');
         $mail->Body = <<<END
 
             $template
@@ -654,6 +655,7 @@ class Order {
         $mail->isHTML(true);
         $mail->addAttachment($path, "Kombiprevoz - rezervacija: ". $new_code);
         $mail->Subject = "Potvrda Rezervacije";
+        $mail->setLanguage('sr');
         $mail->Body = <<<END
 
             $template

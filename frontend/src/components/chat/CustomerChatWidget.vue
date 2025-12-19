@@ -7,15 +7,15 @@ import api from '@/api';
 const chatStore = useChatStore();
 
 // Refs
-const formValid = ref(false);
-const initialMessage = ref('');
-const newMessage = ref('');
-const infoFormRef = ref(null);
-const messagesContainerRef = ref(null);
+const formValid = ref(false)
+const initialMessage = ref('')
+const newMessage = ref('')
+const infoFormRef = ref(null)
+const messagesContainerRef = ref(null)
 
 //Typing polling
-let typingPollingTimeout = null;
-const adminTyping = ref(false);
+let typingPollingTimeout = null
+const adminTyping = ref(false)
 
 // Validation Rules
 const rules = {
@@ -25,18 +25,18 @@ const rules = {
 
 // Lifecycle
 onMounted(() => {
-  chatStore.loadSavedTicket();
-});
+  chatStore.loadSavedTicket()
+})
 
 onBeforeUnmount(() => {
-  chatStore.stopMessagePolling();
+  chatStore.stopMessagePolling()
   stopTypingPolling()
-});
+})
 
 // Watch for new messages to scroll
 watch(() => chatStore.messages.length, () => {
-  nextTick(() => scrollToBottom());
-});
+  nextTick(() => scrollToBottom())
+})
 
 // Methods
 
@@ -56,108 +56,116 @@ const pollTyping = async () => {
           }
         }
       }
-    });
+    })
 
     if (response.data.success) {
-      const typingData = response.data.data.typing;
+      const typingData = response.data.data.typing
       
       // typing show only if admin (not customer)
       if (typingData && typingData.user_type === 'admin') {
-        adminTyping.value = true;
+        adminTyping.value = true
       } else {
-        adminTyping.value = false;
+        adminTyping.value = false
       }
     }
   } catch (error) {
-    console.error('Typing polling error:', error);
+    console.error('Typing polling error:', error)
   } finally {
     if (chatStore.isOpen) {
-      typingPollingTimeout = setTimeout(() => pollTyping(), 1500); // 1.5s
+      typingPollingTimeout = setTimeout(() => pollTyping(), 1500) // 1.5s
     }
   }
-};
+}
 
 const startTypingPolling = () => {
-  stopTypingPolling();
-  pollTyping();
-};
+  stopTypingPolling()
+  pollTyping()
+}
 
 const stopTypingPolling = () => {
   if (typingPollingTimeout) {
-    clearTimeout(typingPollingTimeout);
-    typingPollingTimeout = null;
+    clearTimeout(typingPollingTimeout)
+    typingPollingTimeout = null
   }
-  adminTyping.value = false;
+  adminTyping.value = false
 }
 
 const openChat = () => {
-  chatStore.isOpen = true;
+  chatStore.isOpen = true
   if (chatStore.hasActiveTicket) {
-    chatStore.startMessagePolling();
+    chatStore.startMessagePolling()
     startTypingPolling()
-    nextTick(() => scrollToBottom());
+    nextTick(() => scrollToBottom())
   }
-};
+}
 
 const minimizeChat = () => {
-  chatStore.isOpen = false;
+  chatStore.isOpen = fals
   chatStore.stopMessagePolling()
   stopTypingPolling()
-};
+}
 
 const closeChat = () => {
-  chatStore.isOpen = false;
-  chatStore.stopMessagePolling();
+  chatStore.isOpen = false
+  chatStore.stopMessagePolling()
   stopTypingPolling()
-};
+}
 
 const handleCreateTicket = async () => {
-  console.log('handleCreateTicket STARTED');
-  console.log('Form valid:', formValid.value);
-  console.log('Customer Info:', chatStore.customerInfo);
+  console.log('handleCreateTicket STARTED')
+  console.log('Form valid:', formValid.value)
+  console.log('Customer Info:', chatStore.customerInfo)
 
   if (!formValid.value) {
-    console.log('Form not valid, aborting');
+    console.log('Form not valid, aborting')
     return;
   } 
-  console.log('Calling chatStore.createTicket...');
+  console.log('Calling chatStore.createTicket...')
   const result = await chatStore.createTicket(initialMessage.value);
 
-  console.log('Result from store:', result);
+  console.log('Result from store:', result)
   
   if (result.success) {
-    console.log('Success! Clearing form...');
-    initialMessage.value = '';
-    nextTick(() => scrollToBottom());
+    console.log('Success! Clearing form...')
+    initialMessage.value = ''
+    nextTick(() => scrollToBottom())
   } else {
-    console.log('Failed:', result.error);
-    alert(result.error || 'Greška pri kreiranju tiketa. Pokušajte ponovo.');
+    console.log('Failed:', result.error)
+    alert(result.error || 'Greška pri kreiranju tiketa. Pokušajte ponovo.')
   }
 };
 
 const handleSendMessage = async () => {
-  if (!newMessage.value.trim()) return;
+  if (!newMessage.value.trim()) return
 
-  const messageText = newMessage.value;
-  newMessage.value = '';
+  const messageText = newMessage.value
+  newMessage.value = ''
 
-  const result = await chatStore.sendMessage(messageText);
+  const result = await chatStore.sendMessage(messageText)
   
   if (!result.success) {
-    newMessage.value = messageText;
-    alert(result.error || 'Greška pri slanju poruke. Pokušajte ponovo.');
+    newMessage.value = messageText
+    alert(result.error || 'Greška pri slanju poruke. Pokušajte ponovo.')
   }
 };
 
 const handleTyping = () => {
-  chatStore.updateTyping('customer');
+  chatStore.updateTyping('customer')
 };
 
 const scrollToBottom = () => {
-  const container = messagesContainerRef.value?.$el || messagesContainerRef.value;
+  const container = messagesContainerRef.value?.$el || messagesContainerRef.value
   if (container) {
-    container.scrollTop = container.scrollHeight;
+    container.scrollTop = container.scrollHeight
   }
+}
+
+const startNewConversation = () => {
+  console.log('Starting new conversation...')
+  
+  chatStore.resetCustomerChat()
+
+  chatStore.isOpen = true
 }
 
 
@@ -321,7 +329,15 @@ const scrollToBottom = () => {
             density="compact"
             class="mt-3"
           >
-            Razgovor je zatvoren. Možete otvoriti novi razgovor ako je potrebno.
+            <p class="mb-3">Razgovor je zatvoren.</p>
+            <v-btn
+              color="primary"
+              variant="elevated"
+              prepend-icon="mdi-message-plus"
+              @click="startNewConversation"
+            >
+              Započni novi razgovor
+            </v-btn>
           </v-alert>
         </v-card-text>
 

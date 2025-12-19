@@ -5,6 +5,8 @@ namespace Models;
 use Helpers\Logger;
 use PDO;
 use PDOException;
+use PHPMailer\PHPMailer\PHPMailer;
+use Rules\Validator;
 
 if (!defined('APP_ACCESS')) {
     http_response_code(403);
@@ -106,6 +108,49 @@ class Chat {
         return ['success' => false, 'error' => $message, 'code' => $code];
     }
 
+    //Invite Admin to chat:
+
+    public function sendEmail($html, $code, $email, $name) 
+    {
+        $template = Validator::mailerTemplate($html, $code, $name);
+        $mail = new PHPMailer(true);
+        //$mail->SMTPDebug = SMTP::DEBUG_SERVER;
+        $mail->isSMTP();
+        $mail->SMTPAuth = true;
+
+        $mail->Host = "smtp.gmail.com";
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+        $mail->Port = 465;
+        $mail->Username = $_ENV["SMTP_USER"];
+        $mail->Password = $_ENV["SMTP_PASS"];
+
+        $mail->setFrom("noreply-kombiprevoz@gmail.com", "Bojan");
+        $mail->addAddress($email, $name);
+
+        $mail->CharSet = 'UTF-8';
+        $mail->Encoding = 'base64';
+
+        $mail->isHTML(true);
+        $mail->Subject = 'Novi chat tiket na čekanju!';
+        $mail->setLanguage('sr');
+        $mail->Body = <<<END
+
+        $template
+
+        END;
+
+        try {
+            $mail->send();
+            
+        } catch (PDOException $e) {
+            Logger::error('Failed email to SuperAdmin, MessageDB: [' . $e->getMessage() . '] ', [
+                'file' => __FILE__,
+                'line' => __LINE__]
+            );
+        }
+    
+    }
+
     // CREATE NEW TICKET
 
     public function createTicket() 
@@ -142,12 +187,33 @@ class Chat {
 
             $ticketID = $this->db->lastInsertId();
 
+            $welcomeMessage = "Zdravo {$this->customer_name}! 👋\n\n" .
+                 "Hvala što ste nas kontaktirali. Vaš tiket broj: {$ticketNumber}.\n\n" .
+                 "Molimo Vas da sačekate dok admin ne preuzme vašu konverzaciju. " .
+                 "Odgovorićemo Vam u najkraćem mogućem roku.\n\n" .
+                 "Hvala na strpljenju! 😊";
+        
+            $this->addMessage($ticketID, 'admin', null, $welcomeMessage);
+
             if(!empty($this->initial_message)) {
                 $this->addMessage($ticketID, 'customer', null, $this->initial_message);
             }
 
             $this->logger->info("Chat ticket created: $ticketNumber (ID: $ticketID) by {$this->customer_email}");
             $this->logger->audit("Chat ticket $ticketNumber created", null);
+
+            $html = "
+                        <p>Poštovani/a {{ name }}</p>
+                        <br>
+                        <p>Imate novi Chat na čekanju, broj tiketa: {{ code }}</p>
+                        <br>
+                        <p> molimo Vas da uđete na admin panel na link: </p>
+                        <p>http://localhost:5173/admin</p>
+                        <br>
+                        <p>Srdačan pozdrav od KombiPrevoz tima!</p>
+                    ";
+
+            $this->sendEmail($html,$ticketNumber, 'pininfarina164@gmail.com', 'Bojane');
 
             return $this->success([
                 "ticket_id"=> (int)$ticketID,
@@ -433,12 +499,21 @@ class Chat {
                 return $this->error('Tiket ne postoji', 404);
             }
 
+            $stmt = $this->db->prepare("SELECT name FROM users WHERE id = ?");
+            $stmt->execute([$adminId]);
+            $admin = $stmt->fetch(PDO::FETCH_OBJ);
+
             $stmt = $this->db->prepare(
                 "UPDATE chat_tickets 
                 SET assigned_to = ?, status = 'in_progress', updated_at = NOW() 
                 WHERE id = ?"
             );
             $stmt->execute([$adminId, $ticketId]);
+
+            if ($admin) {
+                $assignMessage = "Admin {$admin->name} je preuzeo Vašu konverzaciju i uskoro će Vam odgovoriti. 👨‍💼";
+                $this->addMessage($ticketId, 'admin', $adminId, $assignMessage);
+            }
 
             Logger::audit("Chat ticket #{$ticket->ticket_number} assigned to admin ID: $adminId", $adminId);
 
