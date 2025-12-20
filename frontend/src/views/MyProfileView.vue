@@ -57,7 +57,7 @@ function submitPass() {
     <ProfileInfoCard />
 
     <ProfileEditDialog @open="fillProfile" />
-    <HistoryDialog  />
+    <HistoryDialog v-if="user.logs.length > 0" />
 
     <PasswordChangeCard
         v-model="newPass"

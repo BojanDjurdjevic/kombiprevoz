@@ -3,6 +3,7 @@ import { useAdminStore } from "@/stores/admin";
 import { useUserStore } from "@/stores/user";
 import { useField, useForm } from 'vee-validate';
 import { ref } from "vue";
+import HistoryDialog from "./profile/HistoryDialog.vue";
 
 const admin = useAdminStore();
 const user = useUserStore();
@@ -122,17 +123,12 @@ const { handleSubmit, handleReset } = useForm({
                   >
                     <v-btn
                       color="indigo-darken-4"
-                      variant="elevated"
+                      prepend-icon="mdi-pencil-circle"
                       @click="admin.actions.openUserEditDialog"
                     >
                       Uredi
                     </v-btn>
-                    <v-btn
-                      color="red-darken-4"
-                      variant="elevated"
-                    >
-                      Pošalji email
-                    </v-btn>
+                    <HistoryDialog v-if="admin.userLogs.length > 0" />
                   </v-card-actions>
                 </v-card> 
 
