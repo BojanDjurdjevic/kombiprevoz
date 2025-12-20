@@ -245,7 +245,7 @@ class OrderController {
                                 ]
                             ]);
                         } else {
-                            if(isset($address['db']) or isset($myplaces['db']) or isset($reschedule['db'])) {
+                            if(isset($address['error']) or isset($myplaces['error']) or isset($reschedule['error'])) {
                                 http_response_code(500);
                                 echo json_encode(['error' => 'Došlo je do greške pri konekciji na bazu!']);
                                 exit();

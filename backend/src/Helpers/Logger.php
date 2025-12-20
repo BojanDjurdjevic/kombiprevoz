@@ -146,7 +146,7 @@ class Logger
     public function logOrderChange($orderId, $userId, $action, $fieldChanged = null, $oldValue = null, $newValue = null) 
     {
         $sql = "INSERT INTO order_logs 
-                SET order_id = :order_id,  user_id = :user_id, 
+                SET order_id = :order_id,  changed_by = :user_id, 
                 action = :action, field_changed = :field_changed, 
                 old_value = :old_value, new_value = :new_value, 
                 ip_address = :ip_address, user_agent = :user_agent";
@@ -207,7 +207,7 @@ class Logger
     public function getOrderLogs(? int $id = null)
     {
         if (!Validator::isAdmin() && !Validator::isSuper()) {
-            $sql = "SELECT created_at, field_changed as field
+            $sql = "SELECT created_at, field_changed
                     FROM order_logs 
                     WHERE order_id = :order_id 
                     ORDER BY created_at DESC 
