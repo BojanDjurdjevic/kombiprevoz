@@ -149,6 +149,8 @@ export const useAdminStore = defineStore("admin", () => {
   const cancelDialog = ref(false)
   const restoreDialog = ref(false)
 
+  const orderHistoryDialog = ref(false)
+
   async function showDetails(order) {
     selected.value = order
     console.log(selected.value)
@@ -1253,7 +1255,7 @@ export const useAdminStore = defineStore("admin", () => {
     myCountry, citiesByCountry, countryDialog, cityDialog, myCity, selectedPictures,
     myCityPics, cityDeletedPics, unSelectedPictures, tab_users, items_users,
     userOptions, userByAdmin, userEditDialog, userContactDialog, editedUser,
-    userLogs,
+    userLogs, orderHistoryDialog,
 
 
     formatDate, showDetails, adminDateQuery, isDateAllowed, selectFlag, selectCityPics,

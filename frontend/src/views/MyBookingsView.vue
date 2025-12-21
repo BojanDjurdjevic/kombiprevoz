@@ -14,36 +14,6 @@ const orders = useMyOrdersStore()
         <h1 class="ma-3 pa-1 text-center">Moje Rezervacije</h1>
         <v-divider></v-divider>
     </v-container>
-    <!--
-    <v-container  >
-        <v-row>
-            <v-col
-                v-for="order in orders.myorders" 
-                :key="order"
-                cols="12"
-                sm="6"
-                lg="3"
-            >
-                <v-card height="18rem" width="18rem" elevation="9"
-                    class="d-flex flex-column justify-space-evenly align-center"
-                >
-                    <v-card-title> {{ order.from }} - {{ order.to }} </v-card-title>
-                    <v-divider ></v-divider>
-                    <v-card-subtitle> {{ order.date }} </v-card-subtitle>
-                    <v-card-subtitle> {{ order.time }} </v-card-subtitle>
-                    <v-card-actions>
-                        <v-btn
-                            variant="elevated"
-                            color="red-darken-4"
-                        >
-                            Uredi
-                        </v-btn>
-                    </v-card-actions>
-                </v-card>
-            </v-col>
-        </v-row>
-    </v-container>
-    -->
 
     <v-container class="d-flex justify-space-evenly align-center flex-wrap">
         

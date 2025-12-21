@@ -69,6 +69,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
         }
     }
     function populatePickup(order) {
+        console.log('Iz propsa: ', order)
         pickup.value.id = order.id
         pickup.value.add_from = order.pickup
         pickup.value.add_to = order.dropoff
