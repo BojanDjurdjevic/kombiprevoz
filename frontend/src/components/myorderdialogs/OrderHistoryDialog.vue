@@ -2,8 +2,10 @@
 import { useAdminStore } from '@/stores/admin'
 import { useUserStore } from '@/stores/user'
 import OrderLogs from '../admin/OrderLogs.vue'
+import { useMyOrdersStore } from '@/stores/myorders'
 
 const user = useUserStore()
+const myorder = useMyOrdersStore()
 const admin = useAdminStore()
 
 defineProps({ order: Object })
@@ -17,9 +19,9 @@ defineProps({ order: Object })
           v-bind="props"
           color="red-darken-4"
           prepend-icon="mdi-pencil-circle"
-          @click="admin.orderHistoryDialog = true, console.log(order)"
+          @click="myorder.openMyOrderLogs(order)"
         >
-          Istorija izmena
+          Istorija
         </v-btn>
       </template>
 

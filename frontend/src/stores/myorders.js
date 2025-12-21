@@ -5,6 +5,7 @@ import { useSearchStore } from "./search";
 import api from "@/api";
 import router from "@/router";
 import { useRoute } from 'vue-router';
+import { useAdminStore } from "./admin";
 
 
 export const useMyOrdersStore = defineStore('myorders', () => {
@@ -24,6 +25,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
     const route = useRoute()
     const user = useUserStore()
     const search = useSearchStore()
+    const admin = useAdminStore()
     const myorders = ref([])
     const oneOrder = ref({})
 
@@ -145,6 +147,18 @@ export const useMyOrdersStore = defineStore('myorders', () => {
         if(!requestDate.value && !requestDateIn.value) {
             dateConfDialog.value = false
         } else dateConfDialog.value = true
+    }
+
+    // --------------------------- ORDER LOGS --------------------//
+
+    const myOrderLogs = ref([])
+
+    function openMyOrderLogs(order) {
+        console.log("OrderID: ", order.id, "\n", 'Logovi ordera: ', order.logs)
+        myOrderLogs.value = order.logs
+        setTimeout(() => {
+            admin.orderHistoryDialog = true
+        }, 100);
     }
 
     // --------------------------- DELETE ----------------------- //
@@ -349,8 +363,10 @@ export const useMyOrdersStore = defineStore('myorders', () => {
     return {
         myorders, oneOrder, actions, addedOrders, addressDialog, plsDialog, dateDialog, pickup, seatsUp,
         currentPrice, newPrice, pricePerUnit, plsConfDialog, dateConfDialog, currentDate, currentDateIn,
-        requestDate, requestDateIn, requestDateView, requestDateInView, delDialog,
+        requestDate, requestDateIn, requestDateView, requestDateInView, delDialog, myOrderLogs,
+
         takeOrder, clearPickup, populatePickup, places, clsSeats, calculateNewPrice, clsReschedule,
         prepareDates, onRequestDate, onRequestDateIn, dateFormat, checkDates, deleteRequest, deleteDeny,
+        openMyOrderLogs,
     }
 })

@@ -1,10 +1,12 @@
 <script setup>
 import { useAdminStore } from '@/stores/admin';
+import { useMyOrdersStore } from '@/stores/myorders';
 import { useUserStore } from '@/stores/user';
 
 
 const user = useUserStore();
 const admin = useAdminStore();
+const myorder = useMyOrdersStore()
 
 defineProps({ order: Object })
 
@@ -33,18 +35,18 @@ defineProps({ order: Object })
         v-if="user.user.status !== 'Superadmin' && user.user.status !== 'Admin'"
       >
         <v-alert
-          v-if="!order.logs || order.logs.length === 0"
+          v-if="!myorder.myOrderLogs || myorder.myOrderLogs.length === 0"
           type="info"
           variant="tonal"
           border="start"
           class="mb-4"
         >
-          Nema zabeleženih izmena profila.
+          Nema zabeleženih izmena rezervacije.
         </v-alert>
 
         <v-list v-else density="compact">
           <v-list-item
-            v-for="(log, i) in order.logs"
+            v-for="(log, i) in myorder.myOrderLogs"
             :key="i"
           >
             <template #prepend>
@@ -65,7 +67,16 @@ defineProps({ order: Object })
 
       <!-- ADMIN -->
       <div v-else>
-        <v-table density="compact" hover>
+        <v-alert
+          v-if="!myorder.myOrderLogs || myorder.myOrderLogs.length === 0"
+          type="info"
+          variant="tonal"
+          border="start"
+          class="mb-4"
+        >
+          Nema zabeleženih izmena rezervacije.
+        </v-alert>
+        <v-table density="compact" hover v-if="myorder.myOrderLogs.length > 0">
           <thead>
             <tr>
               <th>Datum</th>
@@ -79,7 +90,7 @@ defineProps({ order: Object })
           </thead>
           <tbody>
             <tr
-              v-for="log in order.logs"
+              v-for="log in myorder.myOrderLogs"
               :key="log.id"
             >
               <td>

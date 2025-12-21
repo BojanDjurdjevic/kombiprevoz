@@ -4,6 +4,7 @@ import { useSearchStore } from "@/stores/search";
 import { ref, computed, watch } from "vue";
 import { VDateInput } from "vuetify/labs/VDateInput";
 import { VNumberInput } from "vuetify/labs/VNumberInput";
+import OrderHistoryDialog from "./myorderdialogs/OrderHistoryDialog.vue";
 
 const admin = useAdminStore();
 const search = useSearchStore();
@@ -133,6 +134,7 @@ watch(() => bookings48.value, (val) => {
                               <v-btn color="primary" size="small" @click="admin.showDetails(item.raw)">
                                 Detalji
                               </v-btn>
+                              <order-history-dialog :order="item.raw" />
                             </v-card-actions>
                           </v-card>
                         </v-col>
