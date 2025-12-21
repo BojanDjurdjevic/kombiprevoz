@@ -1041,13 +1041,23 @@ class Order {
             $stmt->execute();
             $orders = $stmt->fetchAll(PDO::FETCH_OBJ);
 
+            foreach ($orders as $order) {
+                $logs = $this->logger->getOrderLogs($order->item_id);
+                $order->logs = $logs;
+            }
+
             header('Content-Type: application/json');
             echo json_encode(['orders' => $orders, 'has_orders' => !empty($orders)], JSON_PRETTY_PRINT);
         } catch (PDOException $e) {
+            $this->logger->error("Failed to get order_items by filters in getAllByFilter()", [
+                'user_id' => $_SESSION['user']['id'],
+                'error' => $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
             http_response_code(500);
             echo json_encode([
-                'error' => 'Došlo je do greške pri konekciji na bazu!',
-                'msg' => $e->getMessage()
+                'error' => 'Došlo je do greške pri filtriranju rezervacija!'
             ]);
         }
     }
@@ -1163,6 +1173,9 @@ class Order {
                     $item->to = $row->to_city;
                     $item->deleted = $row->deleted;
 
+                    $logs = $this->logger->getOrderLogs($row->item_id);
+                    $item->logs = $logs;
+
                     $orders[$orderId]->items[] = $item;
                 }
                 echo json_encode([
@@ -1196,7 +1209,7 @@ class Order {
 
         if(Validator::validateCode($this->code)) {
             $stmt = $this->db->prepare($sql);
-            $this->code = htmlspecialchars(strip_tags($this->code));
+
             $stmt->bindParam(':code', $this->code);
 
             try {
@@ -1206,10 +1219,15 @@ class Order {
                     echo json_encode(['orders' => $orders, 'has_orders' => !empty($orders)], JSON_PRETTY_PRINT);
                 }
             } catch (PDOException $e) {
+                $this->logger->error("Failed to search order_item with code: $this->code", [
+                    'user_id' => $_SESSION['user']['id'],
+                    'error' => $e->getMessage(),
+                    'file' => __FILE__,
+                    'line' => __LINE__
+                ]);
                 http_response_code(500);
                 echo json_encode([
-                    'order' => 'Došlo je do greške pri konekciji na bazu podataka.',
-                    'msg' => $e->getMessage()
+                    'order' => 'Došlo je do greške pri konekciji na bazu podataka.'
                 ], JSON_PRETTY_PRINT);
             }
         } else {

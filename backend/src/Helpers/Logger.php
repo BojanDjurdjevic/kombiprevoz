@@ -227,9 +227,18 @@ class Logger
             $stmt = $this->db->prepare($sql);
             $stmt->bindParam(':order_id', $id, PDO::PARAM_INT);
         }
-
-        $stmt->execute();
-        $logs = $stmt->fetchAll(PDO::FETCH_OBJ);
+        try {
+            $stmt->execute();
+            $logs = $stmt->fetchAll(PDO::FETCH_OBJ);
+        } catch (PDOException $e) {
+            self::error("Failed to get Order logs for order_item with ID: $id", [
+                'user_id' => $_SESSION['user']['id'],
+                'error'=> $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            $logs = [];
+        }
 
         return $logs;
     }
