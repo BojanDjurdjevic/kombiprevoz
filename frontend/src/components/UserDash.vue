@@ -4,9 +4,13 @@ import { useUserStore } from "@/stores/user";
 import { useField, useForm } from 'vee-validate';
 import { ref } from "vue";
 import HistoryDialog from "./profile/HistoryDialog.vue";
+import UsersCreateTab from "./admin/users/tabs/UsersCreateTab.vue";
+import UsersSearchTab from "./admin/users/tabs/UsersSearchTab.vue";
 
 const admin = useAdminStore();
 const user = useUserStore();
+
+const tabItems = ['Kreiraj novog korisnika', 'Pretraga'];
 
 const newUser = ref({
   users: {
@@ -84,6 +88,30 @@ const { handleSubmit, handleReset } = useForm({
 </script>
 
 <template>
+
+  <div class="mt-6 pa-3 w-full flex flex-col items-center" v-if="admin.adminView === 'Users'">
+    <v-card class="w-full">
+      <v-toolbar>
+        <template v-slot>
+          <v-tabs v-model="admin.tab_users" align-tabs="title">
+            <v-tab v-for="item in tabItems" :key="item" :value="item" :text="item"></v-tab>
+          </v-tabs>
+        </template>
+      </v-toolbar>
+
+      <v-tabs-window v-model="admin.tab_users">
+        <v-tabs-window-item v-for="item in tabItems" :key="item" :value="item">
+          <v-card flat>
+            <v-card-text>
+              <component :is="item === 'Kreiraj novog korisnika' ? UsersCreateTab : UsersSearchTab"/>
+            </v-card-text>
+          </v-card>
+        </v-tabs-window-item>
+      </v-tabs-window>
+    </v-card>
+  </div>
+
+  <!--
   <div
     class="mt-6 pa-3 w-100 d-flex flex-column align-center"
     v-if="admin.adminView == 'Users'"
@@ -133,10 +161,11 @@ const { handleSubmit, handleReset } = useForm({
                 </v-card> 
 
                 <!--   EDIT USER DIALOG   -->
-
+                <!--
                 <v-dialog v-model="admin.userEditDialog" fullscreen transition="dialog-bottom-transition" persistent>
                   <v-card>
                     <!-- Header -->
+                     <!--
                     <v-toolbar color="indigo-darken-4">
                       <v-btn icon @click="admin.actions.closeUserEditDialog">
                         <v-icon>mdi-arrow-left</v-icon>
@@ -148,6 +177,8 @@ const { handleSubmit, handleReset } = useForm({
                     <!-- MAIN CONTENT - USER DETAILS -->
 
                     <!--  Details  -->
+
+                    <!--
                     <v-card-text class="pa-4 ">
                       <h3 class="text-center">Podaci korisnika</h3>
                       <div class="w-100 h-100 d-flex">
@@ -162,6 +193,8 @@ const { handleSubmit, handleReset } = useForm({
 
                         <!--  ACTIONS - profile managing by admin  -->
                         <!--  Update  -->
+
+                        <!--
                         <div class="w-50 h-100 pa-6 mt-3 d-flex flex-column justify-space-around">
                           <div class="h-75 d-flex flex-column justify-space-evenly">
                             <div>
@@ -234,6 +267,8 @@ const { handleSubmit, handleReset } = useForm({
                     </v-card-text>
 
                     <!-- Btn -->
+
+                    <!--
                     <v-card-actions>
                       <v-btn block color="success" @click="admin.actions.closeUserEditDialog">
                         Zatvori
@@ -244,6 +279,8 @@ const { handleSubmit, handleReset } = useForm({
 
 
                 <!--   CONTACT USER DIALOG   -->
+
+                <!--
               </div>
               <div v-if="item == 'Kreiraj novog korisnika'">
                 <v-container class="d-flex justify-center align-center" height="95%">
@@ -344,5 +381,5 @@ const { handleSubmit, handleReset } = useForm({
         </v-tabs-window-item>
       </v-tabs-window>
     </v-card>
-  </div>
+  </div>   -->
 </template>
