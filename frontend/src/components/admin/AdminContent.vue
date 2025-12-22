@@ -23,33 +23,13 @@ const { mdAndUp } = useDisplay()
       
     >
       <div v-if="admin.adminView === 'Bookings'" >
-        <div >
-          <BookingDash  />
-        </div>
-        <!--
-        <div
-          :class="$vuetify.display.mdAndUp ? 'w-25 pa-3' : 'w-100 pa-3'"
-        >
-          <BookingFilter />
-        </div>-->
+        <BookingDash  />
       </div>
       <div v-else-if="admin.adminView === 'Users'">
-        <div>
-          <UserDash  />
-        </div>
-        <!--
-        <div :class="$vuetify.display.mdAndUp ? 'w-25 pa-3' : 'w-100 pa-3'">
-          <UserFilter />
-        </div>-->
+        <UserDash  />
       </div>
       <div v-else-if="admin.adminView === 'Tours'">
-        <div>
-          <ToursDash  />
-        </div>
-        <!--
-        <div :class="$vuetify.display.mdAndUp ? 'w-25 pa-3' : 'w-100 pa-3'">
-          <ToursFilter />
-        </div>-->
+        <ToursDash  />
       </div>
       <div v-else-if="admin.adminView === 'Chat'">
         <ChatDash  />
