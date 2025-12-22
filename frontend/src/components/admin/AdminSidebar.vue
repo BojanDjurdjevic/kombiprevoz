@@ -9,11 +9,15 @@ const user = useUserStore()
 
 const { mdAndUp, smAndDown } = useDisplay()
 const drawer = ref(mdAndUp.value)
+admin.drawer = mdAndUp.value
 
 // close DRAWER on mobile - onCLick
 function go(view) {
   admin.adminView = view
-  if (smAndDown.value) drawer.value = false
+  if (smAndDown.value) {
+    drawer.value = false
+    admin.drawer = false
+  } 
 }
 </script>
 
@@ -21,6 +25,8 @@ function go(view) {
   <v-navigation-drawer
     v-model="drawer"
     :permanent="mdAndUp"
+    :expand-on-hover="mdAndUp"
+    :rail="mdAndUp"
     :temporary="smAndDown"
     width="260"
   >

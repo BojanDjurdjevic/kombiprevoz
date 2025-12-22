@@ -3,9 +3,12 @@ import { ref } from 'vue'
 import { useDisplay } from 'vuetify'
 import AdminSidebar from '@/components/admin/AdminSidebar.vue'
 import AdminTopBar from '@/components/admin/AdminTopBar.vue';
+import { useAdminStore } from '@/stores/admin';
 /*
 const { mdAndUp } = useDisplay()
 const drawer = ref(mdAndUp.value) */
+const admin = useAdminStore()
+
 const drawer = ref(true)
 
 function toggleDrawer() {
@@ -15,10 +18,10 @@ function toggleDrawer() {
 
 <template>
   <v-layout class="admin-layout">
-    <AdminSidebar v-model="drawer" />
+    <AdminSidebar v-model="admin.drawer" />
 
     <v-main class="admin-main">
-        <AdminTopBar @toggle-drawer="toggleDrawer" />
+        <AdminTopBar @toggle-drawer="admin.toggleDrawer" />
         <slot />
     </v-main>
   </v-layout>

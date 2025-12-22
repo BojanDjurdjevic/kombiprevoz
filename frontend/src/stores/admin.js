@@ -9,6 +9,7 @@ import europeCities from "@/data/country-city.json";
 import { useDestStore } from "./destinations";
 
 export const useAdminStore = defineStore("admin", () => {
+
   const user = useUserStore();
   const search = useSearchStore();
   const dest = useDestStore();
@@ -34,6 +35,20 @@ export const useAdminStore = defineStore("admin", () => {
     if (user.errorMsg) bNum.value = "Primer: 1234567KP";
     else bNum.value = "Broj rezervacije";
   });
+
+  // ADMIN DRAWER
+
+  const drawer = ref(true)
+
+  function toggleDrawer() {
+    drawer.value = !drawer.value
+  }
+
+  const filter = ref(true)
+
+  function toggleFilter() {
+    filter.value = !filter.value
+  }
 
   // BOOKINGS
   const tab_bookings = ref(null);
@@ -1257,9 +1272,15 @@ export const useAdminStore = defineStore("admin", () => {
     userOptions, userByAdmin, userEditDialog, userContactDialog, editedUser,
     userLogs, orderHistoryDialog,
 
+    // admin drawer & layout - AFTER REFACTOR
+    drawer, filter,
 
+    //
     formatDate, showDetails, adminDateQuery, isDateAllowed, selectFlag, selectCityPics,
     clearCityPics, clearFlag, validateTime, disableTour, formatDepDays, showTour,
     openCityDialog, closeCityDialog, userCityOptions,
+
+    // admin layout - AFTER REFACTOR
+    toggleDrawer, toggleFilter,
   };
 });

@@ -1,6 +1,10 @@
 <script setup>
+import { useAdminStore } from '@/stores/admin';
 import { useDisplay } from 'vuetify'
+
+const admin = useAdminStore()
 const { smAndDown } = useDisplay()
+
 </script>
 
 <template>
@@ -8,9 +12,16 @@ const { smAndDown } = useDisplay()
     <v-btn
       v-if="smAndDown"
       icon="mdi-menu"
-      @click="$emit('toggle-drawer')"
+      @click="admin.toggleDrawer"
     />
 
     <v-toolbar-title>Admin panel</v-toolbar-title>
+    
+
+    <v-btn
+      v-if="smAndDown"
+      prepend-icon="mdi-chevron-left"
+      @click="admin.toggleFilter"
+    >Filteri</v-btn>
   </v-app-bar>
 </template>
