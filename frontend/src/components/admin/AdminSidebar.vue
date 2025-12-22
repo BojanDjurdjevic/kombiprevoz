@@ -32,7 +32,7 @@ function go(view) {
   >
     <!-- Header -->
     <v-list-item class="py-4">
-      <v-avatar color="primary" class="mr-3">
+      <v-avatar color="green-darken-3" class="mr-3">
         {{ user.user.initials }}
       </v-avatar>
 

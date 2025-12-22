@@ -580,6 +580,7 @@ export const useAdminStore = defineStore("admin", () => {
         console.log(error)
       } finally {
         tab_bookings.value = "Pretraga"
+        filter.value = false
         loading.value = false
       }
       //console.log(dto)
@@ -843,6 +844,7 @@ export const useAdminStore = defineStore("admin", () => {
         console.log(error)
       } finally {
         tab_users.value = 'Pretraga'
+        filter.value = false
       } 
     },
     // ---------------------- USER MANAGE by ADMIN ----------------------- //
@@ -939,7 +941,9 @@ export const useAdminStore = defineStore("admin", () => {
           tab_tours.value = "Pretraga"
       } catch (error) {
           console.log(error)
-      }
+      } finally {
+        filter.value = false
+      } 
     },
     clearTourFilters: () => {
       tourName.value = null

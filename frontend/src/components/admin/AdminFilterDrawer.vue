@@ -13,8 +13,7 @@ const { mdAndUp } = useDisplay()
   <v-navigation-drawer
     v-model="admin.filter"
     location="right"
-    :temporary="!mdAndUp"
-    :permanent="mdAndUp"
+    temporary
     width="320"
     v-if="admin.adminView !== 'Chat'"
   >

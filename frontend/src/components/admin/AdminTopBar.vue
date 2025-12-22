@@ -19,7 +19,7 @@ const { smAndDown } = useDisplay()
     
 
     <v-btn
-      v-if="smAndDown"
+      
       :prepend-icon="admin.filter ? 'mdi-chevron-right' : 'mdi-chevron-left'"
       @click="admin.toggleFilter"
     >Filteri</v-btn>
