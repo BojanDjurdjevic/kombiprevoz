@@ -878,6 +878,7 @@ class Order {
                     order_items.date,
                     tours.time AS pickuptime,
                     tours.duration,
+                    tours.seats,
                     orders.total AS price,
                     orders.code,
                     orders.file_path AS voucher,
@@ -912,7 +913,9 @@ class Order {
                             'pickuptime' => $row->pickuptime,
                             'duration' => $row->duration,
                             'date' => $tomorrow,
+                            'seats' => $row->seats,
                             'rides' => [],
+                            'total_places' => 0,
                             'unassigned_rides' => 0
                         ];
                     }
@@ -938,6 +941,8 @@ class Order {
                             'phone' => $row->phone,
                         ]
                     ];
+
+                    $orders[$tId]['total_places'] += $row->places;
 
                     if (empty($row->driver_id)) {
                         $orders[$tId]['unassigned_rides']++;
@@ -990,7 +995,13 @@ class Order {
                 ]);
             }
         } catch (PDOException $e) {
-            echo json_encode(['message' => $e->getMessage()]);
+            $this->logger->error("Failed to fetch upcoming bookings in getAll(24, 48).", [
+                'DB error' => $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__  
+            ]);
+            http_response_code(500);
+            echo json_encode(['error' => 'Došlo je do greške pri pretrazi']);
         }
     }
 

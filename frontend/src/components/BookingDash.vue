@@ -5,9 +5,13 @@ import { ref, computed, watch } from "vue";
 import { VDateInput } from "vuetify/labs/VDateInput";
 import { VNumberInput } from "vuetify/labs/VNumberInput";
 import OrderHistoryDialog from "./myorderdialogs/OrderHistoryDialog.vue";
-
+import { useDisplay } from "vuetify/lib/framework.mjs";
+import Booking24MobileCards from "./admin/Booking24MobileCards.vue";
+import Booking48MobileCards from "./admin/Booking48MobileCards.vue";
+import BookingManageDialog from "./admin/AdminDialogs/BookingManageDialog.vue";
 const admin = useAdminStore();
 const search = useSearchStore();
+const { mdAndUp } = useDisplay()
 
 const bookings24 = computed(() => Object.values(admin.in24?.orders || {}));
 const bookings48 = computed(() => Object.values(admin.in48?.orders || {}));
@@ -69,7 +73,7 @@ watch(() => bookings48.value, (val) => {
     <v-card class="w-100 h-100">
       <v-toolbar>
         <template v-slot>
-          <v-tabs v-model="admin.tab_bookings" align-tabs="title">
+          <v-tabs v-model="admin.tab_bookings" align-tabs="title" v-if="mdAndUp">
             <v-tab
               v-for="item in admin.items_bookings"
               :key="item"
@@ -78,6 +82,13 @@ watch(() => bookings48.value, (val) => {
               @click="admin.actions.fetchBookings(item)"
             ></v-tab>
           </v-tabs>
+          <v-select v-else
+            v-model="admin.tab_bookings"
+            :items="admin.items_bookings"
+            variant="text"
+            class="h-100"
+          />
+
         </template>
       </v-toolbar>
 
@@ -152,10 +163,10 @@ watch(() => bookings48.value, (val) => {
                   </v-data-iterator>
 
                   <!-- DIALOG to show details -->
-
+                  <!--
                   <v-dialog v-model="admin.manageDialog" fullscreen transition="dialog-bottom-transition" persistent>
                     <v-card>
-                      <!-- Header -->
+                      <!-- Header -->   <!--
                       <v-toolbar color="indigo-darken-4">
                         <v-btn icon @click="admin.manageDialog = false">
                           <v-icon>mdi-arrow-left</v-icon>
@@ -163,10 +174,11 @@ watch(() => bookings48.value, (val) => {
                         <v-toolbar-title>Rezervacija #{{ admin.selected?.code }}</v-toolbar-title>
                         <v-spacer></v-spacer>
                       </v-toolbar>
-
+                  
                       <!-- MAIN CONTENT - BOOKING DETAILS -->
 
-                      <!--  Details  -->
+                      <!--  Details  --> 
+                      <!--
                       <v-card-text class="pa-4 ">
                         <h3 class="text-center">Detalji vožnje</h3>
                         <div class="w-100 h-100 d-flex">
@@ -184,6 +196,8 @@ watch(() => bookings48.value, (val) => {
 
                           <!--  ACTIONS - booking managing by admin  -->
                           <!--  Update  -->
+
+                          <!--
                           <div class="w-50 h-100 pa-6 mt-3 d-flex flex-column justify-space-around">
                             <div class="h-75 d-flex flex-column justify-space-evenly">
                               <div>
@@ -244,6 +258,8 @@ watch(() => bookings48.value, (val) => {
                                 >Poništi</v-btn>
                               </div>
                             <!--  Voucher sending and Cancel  -->
+
+                            <!--
                             </div>
                             <div class="pa-6 h-25 w-75 d-flex justify-space-evenly align-center">
                               <div class="text-center">
@@ -282,7 +298,9 @@ watch(() => bookings48.value, (val) => {
                         </div>
                       </v-card-text>
 
-                      <!-- Btn -->
+                      <!-- Btn --> 
+
+                      <!--
                       <v-card-actions>
                         <v-btn block color="success" @click="admin.manageDialog = false">
                           Zatvori
@@ -290,6 +308,10 @@ watch(() => bookings48.value, (val) => {
                       </v-card-actions>
                     </v-card>
                   </v-dialog>
+
+                  -->
+
+                  <booking-manage-dialog />
 
                   <!-- CONFIRM CHANGES DIALOG -->
 
@@ -340,7 +362,9 @@ watch(() => bookings48.value, (val) => {
                 </v-container>
               </div>
               <div class="w-100" v-if="admin.tab_bookings == 'U narednih 24h'">
-                <v-card title="Rezervacije u narednih 24h" flat>
+                <v-card title="Rezervacije u narednih 24h" flat 
+                  v-if="mdAndUp"
+                >
                   <template v-slot:text>
                     <v-text-field
                       v-model="admin.in24Search"
@@ -413,9 +437,15 @@ watch(() => bookings48.value, (val) => {
                     </template>
                   </v-data-table>
                 </v-card>
+                <v-card
+                  v-else
+                >
+                  <Booking24MobileCards
+                  />
+                </v-card>
               </div>
               <div class="w-100" v-if="admin.tab_bookings == 'U narednih 48h'">
-                <v-card title="Rezervacije u narednih 48h" flat>
+                <v-card title="Rezervacije u narednih 48h" flat v-if="mdAndUp">
                   <template v-slot:text>
                     <v-text-field
                       v-model="admin.in48Search"
@@ -487,6 +517,9 @@ watch(() => bookings48.value, (val) => {
                       </v-btn>
                     </template>
                   </v-data-table>
+                </v-card>
+                <v-card v-else>
+                  <Booking48MobileCards />
                 </v-card>
               </div>
             </v-card-text>

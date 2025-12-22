@@ -44,7 +44,7 @@ export const useAdminStore = defineStore("admin", () => {
     drawer.value = !drawer.value
   }
 
-  const filter = ref(true)
+  const filter = ref(false)
 
   function toggleFilter() {
     filter.value = !filter.value
@@ -158,8 +158,28 @@ export const useAdminStore = defineStore("admin", () => {
     return allowedDays.value.allowed.includes(dayOfWeek) && !allowedDays.value.fullyBooked.includes(formated) && date >= new Date()
   } 
   // ALL BOOKING MANAGE Dialogs:
+  const dialog = ref({
+    open: false,
+    type: null, // 'details' | 'rides' | 'confirm'
+    payload: null
+  })
+
+  function openDialog(type, payload = null) {
+    dialog.value.open = true
+    dialog.value.type = type
+    dialog.value.payload = payload
+  }
+
+  function closeDialog() {
+      dialog.value.open = false
+      dialog.value.type = null
+      dialog.value.payload = null
+  }
+
+  //old refs
   const selected = ref(null)
   const manageDialog = ref(false)
+  const manageTab = ref('details')
   const confirmManage = ref(false)
   const cancelDialog = ref(false)
   const restoreDialog = ref(false)
@@ -1278,7 +1298,8 @@ export const useAdminStore = defineStore("admin", () => {
 
     // admin drawer & layout - AFTER REFACTOR
     drawer, filter,
-
+    // adminDialogs - AFTER REFACTOR
+    manageTab,
     //
     formatDate, showDetails, adminDateQuery, isDateAllowed, selectFlag, selectCityPics,
     clearCityPics, clearFlag, validateTime, disableTour, formatDepDays, showTour,
@@ -1286,5 +1307,7 @@ export const useAdminStore = defineStore("admin", () => {
 
     // admin layout - AFTER REFACTOR
     toggleDrawer, toggleFilter,
+    // Dialogs
+
   };
 });
