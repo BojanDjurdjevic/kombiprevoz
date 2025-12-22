@@ -86,7 +86,7 @@ watch(() => bookings48.value, (val) => {
             v-model="admin.tab_bookings"
             :items="admin.items_bookings"
             variant="text"
-            class="h-100"
+            class="h-100"     
           />
 
         </template>

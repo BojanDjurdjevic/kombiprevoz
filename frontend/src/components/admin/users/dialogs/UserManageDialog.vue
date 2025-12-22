@@ -70,7 +70,7 @@ const admin = useAdminStore();
             />
 
             <!-- Buttons -->
-            <div class="mt-4 flex justify-around">
+            <div class="mt-4 pa-1  d-flex justify-space-around">
               <v-btn color="green-darken-4" @click="admin.actions.confirmEditUser">
                 Potvrdi
               </v-btn>

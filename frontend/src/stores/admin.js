@@ -887,9 +887,11 @@ export const useAdminStore = defineStore("admin", () => {
       }
     },
     openUserEditDialog: () => {
-      userEditDialog.value = true
       editedUser.value.users = userByAdmin.value
       editedUser.value.updateByAdmin = true
+      setTimeout(() => {
+        userEditDialog.value = true
+      }, 10)
     },
     closeUserEditDialog: () => {
       userEditDialog.value = false

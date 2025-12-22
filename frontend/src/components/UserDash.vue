@@ -6,6 +6,7 @@ import { ref } from "vue";
 import HistoryDialog from "./profile/HistoryDialog.vue";
 import UsersCreateTab from "./admin/users/tabs/UsersCreateTab.vue";
 import UsersSearchTab from "./admin/users/tabs/UsersSearchTab.vue";
+import UserManageDialog from "./admin/users/dialogs/UserManageDialog.vue";
 
 const admin = useAdminStore();
 const user = useUserStore();
@@ -94,13 +95,13 @@ const { handleSubmit, handleReset } = useForm({
       <v-toolbar>
         <template v-slot>
           <v-tabs v-model="admin.tab_users" align-tabs="title">
-            <v-tab v-for="item in tabItems" :key="item" :value="item" :text="item"></v-tab>
+            <v-tab v-for="item in admin.items_users" :key="item" :value="item" :text="item"></v-tab>
           </v-tabs>
         </template>
       </v-toolbar>
 
       <v-tabs-window v-model="admin.tab_users">
-        <v-tabs-window-item v-for="item in tabItems" :key="item" :value="item">
+        <v-tabs-window-item v-for="item in admin.items_users" :key="item" :value="item">
           <v-card flat>
             <v-card-text>
               <component :is="item === 'Kreiraj novog korisnika' ? UsersCreateTab : UsersSearchTab"/>
@@ -110,6 +111,8 @@ const { handleSubmit, handleReset } = useForm({
       </v-tabs-window>
     </v-card>
   </div>
+
+  <UserManageDialog />
 
   <!--
   <div
