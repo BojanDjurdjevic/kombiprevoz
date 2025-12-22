@@ -59,7 +59,7 @@ function go(view) {
       />
 
       <v-list-item
-        prepend-icon="mdi-cog"
+        prepend-icon="mdi-car-traction-control"
         title="Tours"
         @click="go('Tours')"
       />

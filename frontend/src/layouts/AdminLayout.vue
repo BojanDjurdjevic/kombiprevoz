@@ -4,6 +4,7 @@ import { useDisplay } from 'vuetify'
 import AdminSidebar from '@/components/admin/AdminSidebar.vue'
 import AdminTopBar from '@/components/admin/AdminTopBar.vue';
 import { useAdminStore } from '@/stores/admin';
+import AdminFilterDrawer from '@/components/admin/AdminFilterDrawer.vue';
 /*
 const { mdAndUp } = useDisplay()
 const drawer = ref(mdAndUp.value) */
@@ -24,6 +25,8 @@ function toggleDrawer() {
         <AdminTopBar @toggle-drawer="admin.toggleDrawer" />
         <slot />
     </v-main>
+
+    <AdminFilterDrawer />
   </v-layout>
 </template>
 

@@ -17,42 +17,39 @@ const { mdAndUp } = useDisplay()
 
 <template>
   <v-container fluid class="d-flex">
-    <!-- Desktop filter sidebar -->
-    
-
     <!-- Main content -->
     <v-container
       class="pa-3"
       
     >
-      <div v-if="admin.adminView === 'Bookings'" :class="mdAndUp ? 'd-flex' : 'd-flex flex-column'">
-        <div :class="$vuetify.display.mdAndUp ? 'w-75 pa-3' : 'w-100 pa-3'">
+      <div v-if="admin.adminView === 'Bookings'" >
+        <div >
           <BookingDash  />
         </div>
-        
+        <!--
         <div
           :class="$vuetify.display.mdAndUp ? 'w-25 pa-3' : 'w-100 pa-3'"
         >
           <BookingFilter />
-        </div>
+        </div>-->
       </div>
-      <div v-else-if="admin.adminView === 'Users'" :class="$vuetify.display.mdAndUp ? 'd-flex' : 'd-flex flex-column'">
-        <div :class="$vuetify.display.mdAndUp ? 'w-75 pa-3' : 'w-100 pa-3'">
+      <div v-else-if="admin.adminView === 'Users'">
+        <div>
           <UserDash  />
         </div>
-        
+        <!--
         <div :class="$vuetify.display.mdAndUp ? 'w-25 pa-3' : 'w-100 pa-3'">
           <UserFilter />
-        </div>
+        </div>-->
       </div>
-      <div v-else-if="admin.adminView === 'Tours'" :class="$vuetify.display.mdAndUp ? 'd-flex' : 'd-flex flex-column'">
-        <div :class="$vuetify.display.mdAndUp ? 'w-75 pa-3' : 'w-100 pa-3'">
+      <div v-else-if="admin.adminView === 'Tours'">
+        <div>
           <ToursDash  />
         </div>
-        
+        <!--
         <div :class="$vuetify.display.mdAndUp ? 'w-25 pa-3' : 'w-100 pa-3'">
           <ToursFilter />
-        </div>
+        </div>-->
       </div>
       <div v-else-if="admin.adminView === 'Chat'">
         <ChatDash  />
