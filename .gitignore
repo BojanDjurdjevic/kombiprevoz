@@ -3,6 +3,7 @@ backend/.env
 backend/vendor
 backend/src/Logs/*.log 
 backend/src/Logs/.gitkeep
+project-structure.txt
 
 
 
