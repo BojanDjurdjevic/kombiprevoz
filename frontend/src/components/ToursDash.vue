@@ -6,10 +6,17 @@ import { VDateInput } from "vuetify/labs/VDateInput";
 import { VNumberInput } from "vuetify/labs/VNumberInput";
 import { useSearchStore } from '@/stores/search';
 import { useDestStore } from '@/stores/destinations';
+import ToursListTab from './admin/tours/tabs/ToursListTab.vue';
+import TourEditForm from './admin/tours/parts/TourEditForm.vue';
+import { useDisplay } from 'vuetify/lib/framework.mjs';
+import TourDetailsCard from './admin/tours/parts/TourDetailsCard.vue';
+import TourManageDialog from './admin/tours/dialogs/TourManageDialog.vue';
 
 const admin = useAdminStore();
 const search = useSearchStore()
 const dest = useDestStore();
+
+const { mdAndUp } = useDisplay()
 
 onMounted(() => {
   admin.actions.fetchCountries() 
@@ -34,6 +41,10 @@ const tourDays = [
   {id: 5, day: "Petak"},
   {id: 6, day: "Subota"}
 ]
+
+const openTour = (tour) => {
+  admin.showTour(tour)
+}
 </script>
 
 <template>
@@ -44,7 +55,7 @@ const tourDays = [
     <v-card class="w-100">
       <v-toolbar>
         <template v-slot>
-          <v-tabs v-model="admin.tab_tours" align-tabs="title">
+          <v-tabs v-model="admin.tab_tours" align-tabs="title" v-if="mdAndUp">
             <v-tab
               v-for="item in items"
               :key="item"
@@ -52,6 +63,14 @@ const tourDays = [
               :value="item"
             ></v-tab>
           </v-tabs>
+          <v-autocomplete 
+            v-else
+            v-model="admin.tab_tours"
+            :items="admin.items_tours"
+            variant="solo-filled"
+            class="h-100"
+            label="Filtriraj"
+          />
         </template>
       </v-toolbar>
 
@@ -60,6 +79,7 @@ const tourDays = [
           <v-card flat>
             <v-card-text>
               <div v-if="admin.tab_tours == 'Postojeće rute'">
+                <!--
                 <v-data-iterator
                     :items="admin.tours"
                     :items-per-page="10"
@@ -108,6 +128,7 @@ const tourDays = [
                     </template>
 
                     <!-- Pagination -->
+                     <!--
                     <template v-slot:footer>
                       <v-pagination
                         v-model="admin.page"
@@ -118,10 +139,10 @@ const tourDays = [
                   </v-data-iterator>
 
                     <!-- DIALOG to show details -->
-
+                  <!--
                   <v-dialog v-model="admin.manageTourDialog" fullscreen transition="dialog-bottom-transition" persistent>
                     <v-card>
-                      <!-- Header -->
+                       Header 
                       <v-toolbar color="indigo-darken-4">
                         <v-btn icon @click="admin.manageTourDialog = false">
                           <v-icon>mdi-arrow-left</v-icon>
@@ -129,12 +150,26 @@ const tourDays = [
                         <v-toolbar-title>Ruta: {{ admin.selectedTour?.name }}</v-toolbar-title>
                         <v-spacer></v-spacer>
                       </v-toolbar>
-
+                      -->
                       <!-- MAIN CONTENT - TOUR DETAILS -->
 
-                      <!--  Details  -->
+                      <!--  Details  
                       <v-card-text class="pa-4 ">
                         <h3 class="text-center">Detalji rute</h3>
+
+                        <div class="d-flex flex-column flex-md-row">
+                          <div class="w-100 w-md-50">
+                            <TourDetailsCard />
+                            <TourStatusActions />
+                          </div>
+
+                          <div class="w-100 w-md-50">
+                            <TourEditForm />
+                          </div>
+                        </div>
+
+                      -->
+                        <!--
                         <div class="w-100 h-100 d-flex">
                           <div class="w-50 h-100 pa-3 d-flex flex-column justify-space-evenly">
                             <p><strong>Ruta:</strong> {{ admin.selectedTour?.from_city }} → {{ admin.selectedTour?.to_city }}</p>
@@ -172,7 +207,11 @@ const tourDays = [
                           </div>
 
                           <!--  ACTIONS - tour managing by admin  -->
-                          <!--  Update Tour  -->
+                          <!--  Update Tour  
+
+                          <tour-edit-form />-->
+
+                          <!--
                           <div class="w-50 h-100 pa-6 mt-3 d-flex flex-column justify-space-around">
                             <div class="h-25 ">
                               <v-select
@@ -242,22 +281,27 @@ const tourDays = [
                                   @click="admin.actions.clearTourEdit"
                                 >Poništi</v-btn>
                               </div>
-                              <!-- ACTIONS  -->
+                              <!--
                             </div>
-                          </div>
+                          </div> 
                         </div>
-                      </v-card-text>
+                      </v-card-text>-->
 
-                      <!-- Btn -->
+                      <!-- Btn 
                       <v-card-actions>
                         <v-btn block color="success" @click="admin.manageTourDialog = false">
                           Zatvori
                         </v-btn>
                       </v-card-actions>
                     </v-card>
-                  </v-dialog>
+                  </v-dialog>-->
 
-                  
+                  <tour-manage-dialog />
+
+                  <tours-list-tab
+                    :items="admin.tours"
+                    @open="openTour"
+                  />
               </div>
               <div class="w-100" v-if="admin.tab_tours == 'Dodaj novu rutu'">
                 <v-expansion-panels>
@@ -821,6 +865,8 @@ const tourDays = [
               
               <!--  Search by Filter  -->
               <div v-if="admin.tab_tours == 'Pretraga' && admin.filteredTours">
+
+                <!--
                 <v-data-iterator
                     :items="admin.filteredTours"
                     :items-per-page="10"
@@ -869,6 +915,7 @@ const tourDays = [
                     </template>
 
                     <!-- Pagination -->
+                     <!--
                     <template v-slot:footer>
                       <v-pagination
                         v-model="admin.page"
@@ -878,22 +925,22 @@ const tourDays = [
                     </template>
                   </v-data-iterator>
 
-                    <!-- DIALOG to show details -->
+                    <!-- DIALOG to show details 
 
                   <v-dialog v-model="admin.manageTourDialog" fullscreen transition="dialog-bottom-transition" persistent>
-                    <v-card>
-                      <!-- Header -->
+                    <v-card>-->
+                      <!-- Header 
                       <v-toolbar color="indigo-darken-4">
                         <v-btn icon @click="admin.manageTourDialog = false">
                           <v-icon>mdi-arrow-left</v-icon>
                         </v-btn>
                         <v-toolbar-title>Ruta: {{ admin.selectedTour?.from_city }} → {{ admin.selectedTour?.to_city }}</v-toolbar-title>
                         <v-spacer></v-spacer>
-                      </v-toolbar>
+                      </v-toolbar>-->
 
                       <!-- MAIN CONTENT - TOUR DETAILS -->
 
-                      <!--  Details  -->
+                      <!--  Details  
                       <v-card-text class="pa-4 ">
                         <h3 class="text-center">Detalji rute</h3>
                         <div class="w-100 h-100 d-flex">
@@ -903,7 +950,7 @@ const tourDays = [
                             <p><strong>Vreme Polaska:</strong> {{ admin.selectedTour?.time }}</p>
                             <p><strong>Trajanje:</strong> {{ admin.selectedTour?.duration }}</p>
                             <p><strong>Maksimum mesta:</strong> {{ admin.selectedTour?.seats }}</p>
-                            <p><strong>Cena:</strong> {{ admin.selectedTour?.price }} €</p>
+                            <p><strong>Cena:</strong> {{ admin.selectedTour?.price }} €</p> 
                             <div class="w-100 d-flex justify-space-around">
                               <div class="text-center" v-if="admin.selectedTour?.deleted == 1">
                                 <h4>Aktiviraj turu</h4>
@@ -930,10 +977,12 @@ const tourDays = [
                                 ></v-btn>
                               </div>
                             </div>
-                          </div>
+                          </div>-->
 
                           <!--  ACTIONS - tour managing by admin  -->
-                          <!--  Update Tour  -->
+                          <!--  Update Tour  
+                          <TourEditForm />-->
+                          <!--
                           <div class="w-50 h-100 pa-6 mt-3 d-flex flex-column justify-space-around">
                             <div class="h-25 ">
                               <v-select
@@ -1003,21 +1052,26 @@ const tourDays = [
                                   @click="admin.actions.clearTourEdit"
                                 >Poništi</v-btn>
                               </div>
-                              <!-- ACTIONS  -->
                             </div>
-                          </div>
+                          </div> 
                         </div>
-                      </v-card-text>
+                      </v-card-text>-->
 
-                      <!-- Btn -->
+                      <!-- Btn 
                       <v-card-actions>
                         <v-btn block color="success" @click="admin.manageTourDialog = false">
                           Zatvori
                         </v-btn>
                       </v-card-actions>
                     </v-card>
-                  </v-dialog>
+                  </v-dialog>-->
 
+                  <tour-manage-dialog />
+
+                  <ToursListTab
+                    :items="admin.filteredTours"
+                    @open="openTour"
+                  />
                   
               </div>
             </v-card-text>

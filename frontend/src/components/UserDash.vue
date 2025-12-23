@@ -7,9 +7,11 @@ import HistoryDialog from "./profile/HistoryDialog.vue";
 import UsersCreateTab from "./admin/users/tabs/UsersCreateTab.vue";
 import UsersSearchTab from "./admin/users/tabs/UsersSearchTab.vue";
 import UserManageDialog from "./admin/users/dialogs/UserManageDialog.vue";
+import { useDisplay } from "vuetify/lib/framework.mjs";
 
 const admin = useAdminStore();
 const user = useUserStore();
+const { mdAndUp } = useDisplay()
 
 const tabItems = ['Kreiraj novog korisnika', 'Pretraga'];
 
@@ -94,9 +96,16 @@ const { handleSubmit, handleReset } = useForm({
     <v-card class="w-full">
       <v-toolbar>
         <template v-slot>
-          <v-tabs v-model="admin.tab_users" align-tabs="title">
+          <v-tabs v-model="admin.tab_users" align-tabs="title" v-if="mdAndUp">
             <v-tab v-for="item in admin.items_users" :key="item" :value="item" :text="item"></v-tab>
           </v-tabs>
+          <v-autocomplete 
+            v-else
+            v-model="admin.tab_users"
+            :items="admin.items_users"
+            variant="solo-filled"
+            class="h-100"
+          />
         </template>
       </v-toolbar>
 

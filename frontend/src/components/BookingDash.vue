@@ -82,11 +82,12 @@ watch(() => bookings48.value, (val) => {
               @click="admin.actions.fetchBookings(item)"
             ></v-tab>
           </v-tabs>
-          <v-select v-else
+          <v-autocomplete 
+            v-else
             v-model="admin.tab_bookings"
             :items="admin.items_bookings"
-            variant="text"
-            class="h-100"     
+            class="h-100"
+            label="Filtriraj"     
           />
 
         </template>
