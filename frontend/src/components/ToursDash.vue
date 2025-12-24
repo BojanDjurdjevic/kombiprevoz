@@ -13,6 +13,9 @@ import TourDetailsCard from './admin/tours/parts/TourDetailsCard.vue';
 import TourManageDialog from './admin/tours/dialogs/TourManageDialog.vue';
 import TourEditAddForm from './admin/tours/parts/TourEditAddForm.vue';
 import CountryCityForm from './admin/tours/parts/CountryCityForm.vue';
+import CountryDialog from './admin/tours/parts/CountryDialog.vue';
+import CityDialog from './admin/tours/parts/CityDialog.vue';
+import CountryCityTab from './admin/tours/tabs/CountryCityTab.vue';
 
 const admin = useAdminStore();
 const search = useSearchStore()
@@ -81,239 +84,57 @@ const openTour = (tour) => {
           <v-card flat>
             <v-card-text>
               <div v-if="admin.tab_tours == 'Postojeće rute'">
-                <!--
-                <v-data-iterator
-                    :items="admin.tours"
-                    :items-per-page="10"
-                    v-model:page="admin.tourPage"
-                  >
-                    <template v-slot:default="{ items }">
-                      <v-row dense>
-                        <v-col
-                          v-for="(item, i) in items"
-                          :key="item.raw.id"
-                          cols="12"
-                          sm="6"
-                          md="6"
-                        >
-                          <v-card class="rounded-2xl shadow-md hover:shadow-lg transition-all relative">
-                            <v-badge
-                              v-if="item.raw.deleted == 1"
-                              color="red-darken-3"
-                              content="NEAKTIVNA"
-                              bordered
-                              class="absolute top-2 right-2 ml-3"
-                            ></v-badge>
-                            <v-card-title class="text-lg font-semibold">
-                              {{ item.raw.from_city }} → {{ item.raw.to_city }}
-                            </v-card-title>
+                <tour-manage-dialog />
 
-                            <v-card-subtitle class="text-sm text-gray-600">
-                              Polasci: {{admin.formatDepDays(item.raw.departures) }}
-                            </v-card-subtitle>
-
-                            <v-card-text class="space-y-2">
-                              <div><strong>Vreme polaska:</strong> {{ item.raw.time }}</div>
-                              <div><strong>Trajanje:</strong> {{ item.raw.duration }} sati</div>
-                              <div><strong>Maksimum mesta:</strong> {{ item.raw.seats }}</div>
-                              <div><strong>Cena:</strong> {{ item.raw.price }} €</div>
-                            </v-card-text>
-
-                            <v-card-actions>
-                              <v-btn color="primary" size="small" @click="admin.showTour(item.raw)">
-                                Detalji
-                              </v-btn>
-                            </v-card-actions>
-                          </v-card>
-                        </v-col>
-                      </v-row>
-                    </template>
-
-                    <!-- Pagination -->
-                     <!--
-                    <template v-slot:footer>
-                      <v-pagination
-                        v-model="admin.page"
-                        :length="admin.tPageCount"
-                        total-visible="5"
-                      ></v-pagination>
-                    </template>
-                  </v-data-iterator>
-
-                    <!-- DIALOG to show details -->
-                  <!--
-                  <v-dialog v-model="admin.manageTourDialog" fullscreen transition="dialog-bottom-transition" persistent>
-                    <v-card>
-                       Header 
-                      <v-toolbar color="indigo-darken-4">
-                        <v-btn icon @click="admin.manageTourDialog = false">
-                          <v-icon>mdi-arrow-left</v-icon>
-                        </v-btn>
-                        <v-toolbar-title>Ruta: {{ admin.selectedTour?.name }}</v-toolbar-title>
-                        <v-spacer></v-spacer>
-                      </v-toolbar>
-                      -->
-                      <!-- MAIN CONTENT - TOUR DETAILS -->
-
-                      <!--  Details  
-                      <v-card-text class="pa-4 ">
-                        <h3 class="text-center">Detalji rute</h3>
-
-                        <div class="d-flex flex-column flex-md-row">
-                          <div class="w-100 w-md-50">
-                            <TourDetailsCard />
-                            <TourStatusActions />
-                          </div>
-
-                          <div class="w-100 w-md-50">
-                            <TourEditForm />
-                          </div>
-                        </div>
-
-                      -->
-                        <!--
-                        <div class="w-100 h-100 d-flex">
-                          <div class="w-50 h-100 pa-3 d-flex flex-column justify-space-evenly">
-                            <p><strong>Ruta:</strong> {{ admin.selectedTour?.from_city }} → {{ admin.selectedTour?.to_city }}</p>
-                            <p><strong>Polasci:</strong> {{ admin.formatDepDays(admin.selectedTour?.departures) }}</p>
-                            <p><strong>Vreme Polaska:</strong> {{ admin.selectedTour?.time }}</p>
-                            <p><strong>Trajanje:</strong> {{ admin.selectedTour?.duration }}</p>
-                            <p><strong>Maksimum mesta:</strong> {{ admin.selectedTour?.seats }}</p>
-                            <p><strong>Cena:</strong> {{ admin.selectedTour?.price }} €</p>
-                            <div class="w-100 d-flex justify-space-around">
-                              <div class="text-center" v-if="admin.selectedTour?.deleted == 1">
-                                <h4>Aktiviraj turu</h4>
-                                <v-btn
-                                  color="green-darken-3"
-                                  icon="mdi-check-all"
-                                  @click="admin.actions.restoreTour"
-                                ></v-btn>
-                              </div>
-                              <div class="text-center" v-if="admin.selectedTour?.deleted == 0">
-                                <h4>Deaktiviraj turu</h4>
-                                <v-btn
-                                  color="red-darken-3"
-                                  icon="mdi-check-all"
-                                  @click="admin.actions.removeTour"
-                                ></v-btn>
-                              </div>
-                              <div class="text-center" v-if="admin.selectedTour?.deleted == 1">
-                                <h4>Zauvek obriši</h4>
-                                <v-btn
-                                  color="red-darken-3"
-                                  icon="mdi-close-thick"
-                                  @click="admin.actions.permanentDeleteTour"
-                                ></v-btn>
-                              </div>
-                            </div>
-                          </div>
-
-                          <!--  ACTIONS - tour managing by admin  -->
-                          <!--  Update Tour  
-
-                          <tour-edit-form />-->
-
-                          <!--
-                          <div class="w-50 h-100 pa-6 mt-3 d-flex flex-column justify-space-around">
-                            <div class="h-25 ">
-                              <v-select
-                                v-model="admin.changeDeps"
-                                class="w-75 mt-5"
-                                prepend-icon="mdi-calendar-month-outline"
-                                clearable
-                                chips
-                                label="Izmeni dane polaska"
-                                :items="tourDays"
-                                multiple
-                                return-object
-                                item-title="day"
-                                item-value="id"
-                                @click:clear="admin.changeDeps = null"
-                              ></v-select>
-                              <v-text-field
-                                prepend-icon="mdi-clock-time-three-outline"
-                                class="w-75 mt-5"
-                                v-model="admin.changeTime"
-                                label="Vreme polaska"
-                                placeholder="hh:mm:ss"
-                                clearable
-                                hint="Upiši u formatu 08:30:00"
-                                persistent-hint
-                                :rules="[admin.validateTime]"
-                              ></v-text-field>
-                            </div>
-                            <div class="w-100 h-50">
-                              <div class="w-75 d-flex flex-column align-center">
-                                <h5>Trajanje u satima</h5>
-                                <v-number-input
-                                  v-model="admin.changeDuration"
-                                  class="w-75 mt-1"
-                                  control-variant="split"
-                                  :max="33"
-                                  :min="1"
-                                ></v-number-input>
-                              </div>
-                              <div class="w-75 d-flex flex-column align-center">
-                                <h5>Maksimum putnika</h5>
-                                <v-number-input
-                                  v-model="admin.changeTourSeats"
-                                  class="w-75 mt-1"
-                                  control-variant="split"
-                                  :max="8"
-                                  :min="1"
-                                ></v-number-input>
-                              </div>
-                              <div class="w-75 d-flex flex-column align-center">
-                                <h5>Cena u eurima</h5>
-                                <v-number-input
-                                  v-model="admin.changePrice"
-                                  class="w-75 mt-1"
-                                  control-variant="split"
-                                  :min="30"
-                                ></v-number-input>
-                              </div>
-                              <div class="w-75 d-flex justify-space-around">
-                                <v-btn 
-                                  variant="elevated" 
-                                  color="green-darken-4"
-                                  @click="admin.actions.updateTour"
-                                  :disabled="!admin.changeDeps || !admin.changeTime || !admin.changeDuration || !admin.changeTourSeats || !admin.changePrice"
-                                >Potvrdi</v-btn>
-                                <v-btn color="red-darken-3"
-                                  @click="admin.actions.clearTourEdit"
-                                >Poništi</v-btn>
-                              </div>
-                              <!--
-                            </div>
-                          </div> 
-                        </div>
-                      </v-card-text>-->
-
-                      <!-- Btn 
-                      <v-card-actions>
-                        <v-btn block color="success" @click="admin.manageTourDialog = false">
-                          Zatvori
-                        </v-btn>
-                      </v-card-actions>
-                    </v-card>
-                  </v-dialog>-->
-
-                  <tour-manage-dialog />
-
-                  <tours-list-tab
-                    :items="admin.tours"
-                    @open="openTour"
-                  />
+                <tours-list-tab
+                  :items="admin.tours"
+                  @open="openTour"
+                />
               </div>
               <div class="w-100" v-if="admin.tab_tours == 'Dodaj novu rutu'">
                 <v-expansion-panels>
                   <v-expansion-panel expand focusable>
-                    <v-expansion-panel-title
-                      >Dodaj destinaciju</v-expansion-panel-title
-                    >
+                    <v-expansion-panel-title>Dodaj destinaciju</v-expansion-panel-title>
                     <v-expansion-panel-text>
                       <country-city-form />
-                      <!-- before refactor
+                    </v-expansion-panel-text>
+                  </v-expansion-panel>
+                </v-expansion-panels>
+                <v-expansion-panels mb-3>
+                  <v-expansion-panel expand focusable>
+                    <v-expansion-panel-title>Dodaj rutu</v-expansion-panel-title>
+                    <v-expansion-panel-text>
+                      <tour-edit-add-form mode="add" />
+                    </v-expansion-panel-text>
+                  </v-expansion-panel>
+                </v-expansion-panels>
+              </div>
+              <CountryCityTab v-if="admin.tab_tours === 'Države i Gradovi'" />
+              
+              <!--  Search by Filter  -->
+              <div v-if="admin.tab_tours == 'Pretraga' && admin.filteredTours">
+                  <tour-manage-dialog />
+
+                  <ToursListTab
+                    :items="admin.filteredTours"
+                    @open="openTour"
+                  />
+                  
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-tabs-window-item>
+      </v-tabs-window>
+    </v-card>
+  </div>
+</template>
+
+
+<style scoped>
+
+/** BEFORE REFACTOR
+
+<!-- before refactor
                       <h3>Dodaj novu destinaciju</h3>
                       <div class="d-flex w-100 justify-space-around">
                         <div class="w-50 d-flex flex-column align-center">
@@ -542,11 +363,7 @@ const openTour = (tour) => {
                         @click="admin.actions.addTour"
                       >Dodaj Rutu</v-btn>
                       -->
-                    </v-expansion-panel-text>
-                  </v-expansion-panel>
-                </v-expansion-panels>
-              </div>
-              <!-- Cities & Countries -->
+<!-- Cities & Countries 
               <div v-if="admin.tab_tours == 'Države i Gradovi'"
                 class="d-flex flex-column justify-space-evenly"
                 min-height="33rem"
@@ -623,23 +440,23 @@ const openTour = (tour) => {
                     ></v-btn>
                   </v-card>
                 </div>
-
-                <!--  DIALOG for COUNTRY managing  -->
-
+                <CountryDialog /> -->
+                <!--  DIALOG for COUNTRY managing  
+                
                 <v-dialog v-model="admin.countryDialog" fullscreen transition="dialog-bottom-transition" persistent>
-                    <v-card>
-                      <!-- Header -->
+                    <v-card>-->
+                      <!-- Header 
                       <v-toolbar color="indigo-darken-4">
                         <v-btn icon @click="admin.countryDialog = false">
                           <v-icon>mdi-arrow-left</v-icon>
                         </v-btn>
                         <v-toolbar-title>Država: {{ admin.myCountry?.name }}</v-toolbar-title>
                         <v-spacer></v-spacer>
-                      </v-toolbar>
+                      </v-toolbar>-->
 
                       <!-- MAIN CONTENT - COUNTRY DETAILS -->
 
-                      <!--  Details  -->
+                      <!--  Details  
                       <v-card-text class="pa-4 ">
                         <h2 class="text-center">{{ admin.myCountry?.name }}</h2>
                         <div class="w-100 h-100 pa-9 d-flex flex-column align-center">
@@ -662,7 +479,8 @@ const openTour = (tour) => {
                             class="w-100"
                             @change="admin.selectFlag"
                             @click:clear="admin.clearFlag"
-                          /> <!--
+                          /> -->
+                          <!--
                           <v-img
                             v-if="admin.preview"
                             :key="admin.preview"
@@ -671,7 +489,7 @@ const openTour = (tour) => {
                             max-width="250"
                             class="mt-4 rounded-lg elevation-3"
                             cover
-                          />-->
+                          />
                           <img
                             v-if="admin.preview"
                             :src="admin.preview"
@@ -685,9 +503,9 @@ const openTour = (tour) => {
                         </div>
                         
                         
-                      </v-card-text>
+                      </v-card-text>-->
 
-                      <!-- Btn -->
+                      <!-- Btn 
                       <v-card-actions>
                         <v-btn block color="success" @click="admin.countryDialog = false">
                           Zatvori
@@ -695,23 +513,23 @@ const openTour = (tour) => {
                       </v-card-actions>
                     </v-card>
                   </v-dialog>
-
-                  <!--  DIALOG for CITY managing  -->
+                  <CityDialog />-->
+                  <!--  DIALOG for CITY managing  
 
                   <v-dialog v-model="admin.cityDialog" fullscreen transition="dialog-bottom-transition" persistent>
-                    <v-card>
-                      <!-- Header -->
+                    <v-card>-->
+                      <!-- Header 
                       <v-toolbar color="indigo-darken-4">
                         <v-btn icon @click="admin.closeCityDialog">
                           <v-icon>mdi-arrow-left</v-icon>
                         </v-btn>
                         <v-toolbar-title>Grad: {{ admin.myCity?.name }}</v-toolbar-title>
                         <v-spacer></v-spacer>
-                      </v-toolbar>
+                      </v-toolbar>-->
 
                       <!-- MAIN CONTENT - CITY DETAILS -->
 
-                      <!--  Details  -->
+                      <!--  Details  
                       <v-card-text class="pa-4 ">
                         <h2 class="text-center">{{ admin.myCity?.name }}</h2>
                         <div class="w-100 h-100 pa-9 d-flex flex-column align-center">
@@ -773,9 +591,9 @@ const openTour = (tour) => {
 
                           <div v-if="admin.myCityPics.length <= 0">
                             <p>Trenutno nema slika za ovaj grad</p>
-                          </div>
+                          </div> -->
 
-                          <!--     NEAKTIVNE SLIKE     -->
+                          <!--     NEAKTIVNE SLIKE     
                           <h3 v-if="admin.cityDeletedPics.length > 0">Neaktivne slike</h3>
                           <v-item-group
                             v-model="admin.unSelectedPictures"
@@ -861,234 +679,216 @@ const openTour = (tour) => {
                         </div>
                         
                         
-                      </v-card-text>
+                      </v-card-text> -->
 
-                      <!-- Btn -->
+                      <!-- Btn 
                       <v-card-actions>
                         <v-btn block color="success" @click="admin.closeCityDialog">
                           Zatvori
                         </v-btn>
                       </v-card-actions>
                     </v-card>
-                  </v-dialog>
+                  </v-dialog> -->
+<!--
+<v-data-iterator
+    :items="admin.filteredTours"
+    :items-per-page="10"
+     v-model:page="admin.tourPage"
+  >
+    <template v-slot:default="{ items }">
+      <v-row dense>
+        <v-col
+          v-for="(item, i) in items"
+          :key="item.raw.id"
+          cols="12"
+          sm="6"
+          md="6"
+        >
+          <v-card class="rounded-2xl shadow-md hover:shadow-lg transition-all relative">
+            <v-badge
+              v-if="item.raw.deleted == 1"
+              color="red-darken-3"
+              content="NEAKTIVNA"
+              bordered
+              class="absolute top-2 right-2 ml-3"
+            ></v-badge>
+            <v-card-title class="text-lg font-semibold">
+              {{ item.raw.from_city }} → {{ item.raw.to_city }}
+            </v-card-title>
 
-              </div> 
-              
-              <!--  Search by Filter  -->
-              <div v-if="admin.tab_tours == 'Pretraga' && admin.filteredTours">
+            <v-card-subtitle class="text-sm text-gray-600">
+              Polasci: {{admin.formatDepDays(item.raw.departures) }}
+            </v-card-subtitle>
 
-                <!--
-                <v-data-iterator
-                    :items="admin.filteredTours"
-                    :items-per-page="10"
-                    v-model:page="admin.tourPage"
-                  >
-                    <template v-slot:default="{ items }">
-                      <v-row dense>
-                        <v-col
-                          v-for="(item, i) in items"
-                          :key="item.raw.id"
-                          cols="12"
-                          sm="6"
-                          md="6"
-                        >
-                          <v-card class="rounded-2xl shadow-md hover:shadow-lg transition-all relative">
-                            <v-badge
-                              v-if="item.raw.deleted == 1"
-                              color="red-darken-3"
-                              content="NEAKTIVNA"
-                              bordered
-                              class="absolute top-2 right-2 ml-3"
-                            ></v-badge>
-                            <v-card-title class="text-lg font-semibold">
-                              {{ item.raw.from_city }} → {{ item.raw.to_city }}
-                            </v-card-title>
-
-                            <v-card-subtitle class="text-sm text-gray-600">
-                              Polasci: {{admin.formatDepDays(item.raw.departures) }}
-                            </v-card-subtitle>
-
-                            <v-card-text class="space-y-2">
-                              <div><strong>Vreme polaska:</strong> {{ item.raw.time }}</div>
-                              <div><strong>Trajanje:</strong> {{ item.raw.duration }} sati</div>
-                              <div><strong>Maksimum mesta:</strong> {{ item.raw.seats }}</div>
-                              <div><strong>Cena:</strong> {{ item.raw.price }} €</div>
-                            </v-card-text>
-
-                            <v-card-actions>
-                              <v-btn color="primary" size="small" @click="admin.showTour(item.raw)">
-                                Detalji
-                              </v-btn>
-                            </v-card-actions>
-                          </v-card>
-                        </v-col>
-                      </v-row>
-                    </template>
-
-                    <!-- Pagination -->
-                     <!--
-                    <template v-slot:footer>
-                      <v-pagination
-                        v-model="admin.page"
-                        :length="admin.tPageCount"
-                        total-visible="5"
-                      ></v-pagination>
-                    </template>
-                  </v-data-iterator>
-
-                    <!-- DIALOG to show details 
-
-                  <v-dialog v-model="admin.manageTourDialog" fullscreen transition="dialog-bottom-transition" persistent>
-                    <v-card>-->
-                      <!-- Header 
-                      <v-toolbar color="indigo-darken-4">
-                        <v-btn icon @click="admin.manageTourDialog = false">
-                          <v-icon>mdi-arrow-left</v-icon>
-                        </v-btn>
-                        <v-toolbar-title>Ruta: {{ admin.selectedTour?.from_city }} → {{ admin.selectedTour?.to_city }}</v-toolbar-title>
-                        <v-spacer></v-spacer>
-                      </v-toolbar>-->
-
-                      <!-- MAIN CONTENT - TOUR DETAILS -->
-
-                      <!--  Details  
-                      <v-card-text class="pa-4 ">
-                        <h3 class="text-center">Detalji rute</h3>
-                        <div class="w-100 h-100 d-flex">
-                          <div class="w-50 h-100 pa-3 d-flex flex-column justify-space-evenly">
-                            <p><strong>Ruta:</strong> {{ admin.selectedTour?.from_city }} → {{ admin.selectedTour?.to_city }}</p>
-                            <p><strong>Polasci:</strong> {{ admin.formatDepDays(admin.selectedTour?.departures) }}</p>
-                            <p><strong>Vreme Polaska:</strong> {{ admin.selectedTour?.time }}</p>
-                            <p><strong>Trajanje:</strong> {{ admin.selectedTour?.duration }}</p>
-                            <p><strong>Maksimum mesta:</strong> {{ admin.selectedTour?.seats }}</p>
-                            <p><strong>Cena:</strong> {{ admin.selectedTour?.price }} €</p> 
-                            <div class="w-100 d-flex justify-space-around">
-                              <div class="text-center" v-if="admin.selectedTour?.deleted == 1">
-                                <h4>Aktiviraj turu</h4>
-                                <v-btn
-                                  color="green-darken-3"
-                                  icon="mdi-check-all"
-                                  @click="admin.actions.restoreTour"
-                                ></v-btn>
-                              </div>
-                              <div class="text-center" v-if="admin.selectedTour?.deleted == 0">
-                                <h4>Deaktiviraj turu</h4>
-                                <v-btn
-                                  color="red-darken-3"
-                                  icon="mdi-check-all"
-                                  @click="admin.actions.removeTour"
-                                ></v-btn>
-                              </div>
-                              <div class="text-center" v-if="admin.selectedTour?.deleted == 1">
-                                <h4>Zauvek obriši</h4>
-                                <v-btn
-                                  color="red-darken-3"
-                                  icon="mdi-close-thick"
-                                  @click="admin.actions.permanentDeleteTour"
-                                ></v-btn>
-                              </div>
-                            </div>
-                          </div>-->
-
-                          <!--  ACTIONS - tour managing by admin  -->
-                          <!--  Update Tour  
-                          <TourEditForm />-->
-                          <!--
-                          <div class="w-50 h-100 pa-6 mt-3 d-flex flex-column justify-space-around">
-                            <div class="h-25 ">
-                              <v-select
-                                v-model="admin.changeDeps"
-                                class="w-75 mt-5"
-                                prepend-icon="mdi-calendar-month-outline"
-                                clearable
-                                chips
-                                label="Izmeni dane polaska"
-                                :items="tourDays"
-                                multiple
-                                return-object
-                                item-title="day"
-                                item-value="id"
-                                @click:clear="admin.changeDeps = null"
-                              ></v-select>
-                              <v-text-field
-                                prepend-icon="mdi-clock-time-three-outline"
-                                class="w-75 mt-5"
-                                v-model="admin.changeTime"
-                                label="Vreme polaska"
-                                placeholder="hh:mm:ss"
-                                clearable
-                                hint="Upiši u formatu 08:30:00"
-                                persistent-hint
-                                :rules="[admin.validateTime]"
-                              ></v-text-field>
-                            </div>
-                            <div class="w-100 h-50">
-                              <div class="w-75 d-flex flex-column align-center">
-                                <h5>Trajanje u satima</h5>
-                                <v-number-input
-                                  v-model="admin.changeDuration"
-                                  class="w-75 mt-1"
-                                  control-variant="split"
-                                  :max="33"
-                                  :min="1"
-                                ></v-number-input>
-                              </div>
-                              <div class="w-75 d-flex flex-column align-center">
-                                <h5>Maksimum putnika</h5>
-                                <v-number-input
-                                  v-model="admin.changeTourSeats"
-                                  class="w-75 mt-1"
-                                  control-variant="split"
-                                  :max="8"
-                                  :min="1"
-                                ></v-number-input>
-                              </div>
-                              <div class="w-75 d-flex flex-column align-center">
-                                <h5>Cena u eurima</h5>
-                                <v-number-input
-                                  v-model="admin.changePrice"
-                                  class="w-75 mt-1"
-                                  control-variant="split"
-                                  :min="30"
-                                ></v-number-input>
-                              </div>
-                              <div class="w-75 d-flex justify-space-around">
-                                <v-btn 
-                                  variant="elevated" 
-                                  color="green-darken-4"
-                                  @click="admin.actions.updateTour"
-                                  :disabled="!admin.changeDeps || !admin.changeTime || !admin.changeDuration || !admin.changeTourSeats || !admin.changePrice"
-                                >Potvrdi</v-btn>
-                                <v-btn color="red-darken-3"
-                                  @click="admin.actions.clearTourEdit"
-                                >Poništi</v-btn>
-                              </div>
-                            </div>
-                          </div> 
-                        </div>
-                      </v-card-text>-->
-
-                      <!-- Btn 
-                      <v-card-actions>
-                        <v-btn block color="success" @click="admin.manageTourDialog = false">
-                          Zatvori
-                        </v-btn>
-                      </v-card-actions>
-                    </v-card>
-                  </v-dialog>-->
-
-                  <tour-manage-dialog />
-
-                  <ToursListTab
-                    :items="admin.filteredTours"
-                    @open="openTour"
-                  />
-                  
-              </div>
+            <v-card-text class="space-y-2">
+              <div><strong>Vreme polaska:</strong> {{ item.raw.time }}</div>
+              <div><strong>Trajanje:</strong> {{ item.raw.duration }} sati</div>
+              <div><strong>Maksimum mesta:</strong> {{ item.raw.seats }}</div>
+              <div><strong>Cena:</strong> {{ item.raw.price }} €</div>
             </v-card-text>
+
+            <v-card-actions>
+              <v-btn color="primary" size="small" @click="admin.showTour(item.raw)">
+                Detalji
+              </v-btn>
+            </v-card-actions>
           </v-card>
-        </v-tabs-window-item>
-      </v-tabs-window>
-    </v-card>
-  </div>
-</template>
+        </v-col>
+      </v-row>
+    </template>
+
+    <!-- Pagination -->
+     <!--
+    <template v-slot:footer>
+      <v-pagination
+        v-model="admin.page"
+        :length="admin.tPageCount"
+        total-visible="5"
+      ></v-pagination>
+    </template>
+  </v-data-iterator>
+
+    <!-- DIALOG to show details 
+
+<v-dialog v-model="admin.manageTourDialog" fullscreen transition="dialog-bottom-transition" persistent>
+  <v-card>-->
+    <!-- Header 
+    <v-toolbar color="indigo-darken-4">
+      <v-btn icon @click="admin.manageTourDialog = false">
+        <v-icon>mdi-arrow-left</v-icon>
+      </v-btn>
+      <v-toolbar-title>Ruta: {{ admin.selectedTour?.from_city }} → {{ admin.selectedTour?.to_city }}</v-toolbar-title>
+      <v-spacer></v-spacer>
+    </v-toolbar>-->
+
+    <!-- MAIN CONTENT - TOUR DETAILS -->
+
+    <!--  Details  
+    <v-card-text class="pa-4 ">
+      <h3 class="text-center">Detalji rute</h3>
+      <div class="w-100 h-100 d-flex">
+        <div class="w-50 h-100 pa-3 d-flex flex-column justify-space-evenly">
+          <p><strong>Ruta:</strong> {{ admin.selectedTour?.from_city }} → {{ admin.selectedTour?.to_city }}</p>
+          <p><strong>Polasci:</strong> {{ admin.formatDepDays(admin.selectedTour?.departures) }}</p>
+          <p><strong>Vreme Polaska:</strong> {{ admin.selectedTour?.time }}</p>
+          <p><strong>Trajanje:</strong> {{ admin.selectedTour?.duration }}</p>
+          <p><strong>Maksimum mesta:</strong> {{ admin.selectedTour?.seats }}</p>
+          <p><strong>Cena:</strong> {{ admin.selectedTour?.price }} €</p> 
+          <div class="w-100 d-flex justify-space-around">
+            <div class="text-center" v-if="admin.selectedTour?.deleted == 1">
+              <h4>Aktiviraj turu</h4>
+              <v-btn
+                color="green-darken-3"
+                icon="mdi-check-all"
+                @click="admin.actions.restoreTour"
+              ></v-btn>
+            </div>
+            <div class="text-center" v-if="admin.selectedTour?.deleted == 0">
+              <h4>Deaktiviraj turu</h4>
+              <v-btn
+                color="red-darken-3"
+                icon="mdi-check-all"
+                @click="admin.actions.removeTour"
+              ></v-btn>
+            </div>
+            <div class="text-center" v-if="admin.selectedTour?.deleted == 1">
+              <h4>Zauvek obriši</h4>
+              <v-btn
+                color="red-darken-3"
+                icon="mdi-close-thick"
+                @click="admin.actions.permanentDeleteTour"
+              ></v-btn>
+            </div>
+          </div>
+        </div>-->
+
+        <!--  ACTIONS - tour managing by admin  -->
+        <!--  Update Tour  
+        <TourEditForm />-->
+        <!--
+        <div class="w-50 h-100 pa-6 mt-3 d-flex flex-column justify-space-around">
+          <div class="h-25 ">
+            <v-select
+              v-model="admin.changeDeps"
+              class="w-75 mt-5"
+              prepend-icon="mdi-calendar-month-outline"
+              clearable
+              chips
+              label="Izmeni dane polaska"
+              :items="tourDays"
+              multiple
+              return-object
+              item-title="day"
+              item-value="id"
+              @click:clear="admin.changeDeps = null"
+            ></v-select>
+            <v-text-field
+              prepend-icon="mdi-clock-time-three-outline"
+              class="w-75 mt-5"
+              v-model="admin.changeTime"
+              label="Vreme polaska"
+              placeholder="hh:mm:ss"
+              clearable
+              hint="Upiši u formatu 08:30:00"
+              persistent-hint
+              :rules="[admin.validateTime]"
+            ></v-text-field>
+          </div>
+          <div class="w-100 h-50">
+            <div class="w-75 d-flex flex-column align-center">
+              <h5>Trajanje u satima</h5>
+              <v-number-input
+                v-model="admin.changeDuration"
+                class="w-75 mt-1"
+                control-variant="split"
+                :max="33"
+                :min="1"
+              ></v-number-input>
+            </div>
+            <div class="w-75 d-flex flex-column align-center">
+              <h5>Maksimum putnika</h5>
+              <v-number-input
+                v-model="admin.changeTourSeats"
+                class="w-75 mt-1"
+                control-variant="split"
+                :max="8"
+                :min="1"
+              ></v-number-input>
+            </div>
+            <div class="w-75 d-flex flex-column align-center">
+              <h5>Cena u eurima</h5>
+              <v-number-input
+                v-model="admin.changePrice"
+                class="w-75 mt-1"
+                control-variant="split"
+                :min="30"
+              ></v-number-input>
+            </div>
+            <div class="w-75 d-flex justify-space-around">
+              <v-btn 
+                variant="elevated" 
+                color="green-darken-4"
+                @click="admin.actions.updateTour"
+                :disabled="!admin.changeDeps || !admin.changeTime || !admin.changeDuration || !admin.changeTourSeats || !admin.changePrice"
+              >Potvrdi</v-btn>
+              <v-btn color="red-darken-3"
+                @click="admin.actions.clearTourEdit"
+              >Poništi</v-btn>
+            </div>
+          </div>
+        </div> 
+      </div>
+    </v-card-text>-->
+
+    <!-- Btn 
+    <v-card-actions>
+      <v-btn block color="success" @click="admin.manageTourDialog = false">
+        Zatvori
+      </v-btn>
+    </v-card-actions>
+  </v-card>
+</v-dialog>-->
+
+*/
+
+</style>
