@@ -12,6 +12,7 @@ import { useDisplay } from 'vuetify/lib/framework.mjs';
 import TourDetailsCard from './admin/tours/parts/TourDetailsCard.vue';
 import TourManageDialog from './admin/tours/dialogs/TourManageDialog.vue';
 import TourEditAddForm from './admin/tours/parts/TourEditAddForm.vue';
+import CountryCityForm from './admin/tours/parts/CountryCityForm.vue';
 
 const admin = useAdminStore();
 const search = useSearchStore()
@@ -311,6 +312,8 @@ const openTour = (tour) => {
                       >Dodaj destinaciju</v-expansion-panel-title
                     >
                     <v-expansion-panel-text>
+                      <country-city-form />
+                      <!-- before refactor
                       <h3>Dodaj novu destinaciju</h3>
                       <div class="d-flex w-100 justify-space-around">
                         <div class="w-50 d-flex flex-column align-center">
@@ -346,6 +349,7 @@ const openTour = (tour) => {
                             class="mt-4 rounded-lg elevation-3"
                             cover
                           />-->
+                          <!--
                           <img
                             v-if="admin.preview"
                             :src="admin.preview"
@@ -369,6 +373,7 @@ const openTour = (tour) => {
                             return-object
                           ></v-autocomplete>
                           <!-- europeCities.map((c) => c.country) -->
+                           <!--
                           <v-autocomplete
                             v-model="admin.selectedCity"
                             class="w-100"
@@ -400,6 +405,7 @@ const openTour = (tour) => {
                               cover
                             />
                             -->
+                            <!--
                             <img
                               v-for="p, index in admin.cityPreview"
                               :key="index"
@@ -414,7 +420,7 @@ const openTour = (tour) => {
                             >Dodaj Grad</v-btn
                           >
                         </div>
-                      </div>
+                      </div> -->
                     </v-expansion-panel-text>
                   </v-expansion-panel>
                 </v-expansion-panels>
