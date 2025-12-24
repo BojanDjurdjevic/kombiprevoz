@@ -7,26 +7,31 @@
         <v-col cols="12" md="4">
           <h3>KombiTransfer</h3>
           <p class="text-body-2 mt-2">
-            Pouzdan kombi prevoz putnika iz Srbije ka destinacijama širom Evrope.
+            Pouzdan kombi prevoz putnika iz Srbije ka destinacijama širom Evrope – direktno sa vaše adrese.
           </p>
         </v-col>
 
         <!-- LINKS -->
         <v-col cols="6" md="4">
           <h4>Brzi linkovi</h4>
-          <ul class="footer-links">
-            <li><RouterLink to="/">Početna</RouterLink></li>
-            <li><RouterLink to="/destinacije">Destinacije</RouterLink></li>
-            <li><RouterLink to="/rezervacije">Moje rezervacije</RouterLink></li>
-            <li><RouterLink to="/kontakt">Kontakt</RouterLink></li>
-          </ul>
+          <nav aria-label="Footer navigacija">
+            <ul class="footer-links">
+              <li><RouterLink to="/">Početna</RouterLink></li>
+              <li><RouterLink to="/destinacije">Destinacije</RouterLink></li>
+              <li><RouterLink to="/rezervacije">Moje rezervacije</RouterLink></li>
+              <li><RouterLink to="/kontakt">Kontakt</RouterLink></li>
+              <li><RouterLink to="/disclaimer">Napomena o demo verziji</RouterLink></li>
+            </ul>
+          </nav>
         </v-col>
 
         <!-- CONTACT -->
         <v-col cols="6" md="4">
           <h4>Kontakt</h4>
-          <p class="text-body-2">📞 +381 XX XXX XXX</p>
-          <p class="text-body-2">✉️ info@kombitransfer.com</p>
+          <address class="text-body-2 not-italic">
+            <p class="text-body-2">📞 +381 XX XXX XXX</p>
+            <p class="text-body-2">✉️ info@kombitransfer.com</p>
+          </address>
         </v-col>
 
       </v-row>
@@ -36,10 +41,6 @@
       <div class="text-center text-caption">
         © {{ new Date().getFullYear() }} KombiTransfer. Sva prava zadržana.
         
-      </div>
-      <br>
-      <div class="text-center text-caption">
-        <u>*** Napomena: Ovaj sajt je izrađen isključivo u svrhu učenja programiranja! Svaka podudarnost je slučajna.</u>
       </div>
     </v-container>
   </v-footer>

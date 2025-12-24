@@ -22,7 +22,13 @@ function sendMsg() {
 
 <template>
     <v-container>
-        <h1 class="text-center ma-3">Kontakt</h1>
+        <h1 class="text-center ma-3">
+            Kontakt – Kombi prevoz putnika iz Srbije ka Evropi
+        </h1>
+        <p class="text-center text-body-2 mt-4 mb-6">
+            Kontaktirajte nas za pouzdan i udoban kombi prevoz putnika iz Srbije
+            ka gradovima širom Evrope. Dostupni smo telefonom i emailom.
+        </p>
         <v-divider></v-divider>
     </v-container>
     <v-container
@@ -38,12 +44,12 @@ function sendMsg() {
                     d-flex align-center justify-center"
                     min-height="6rem"
                 >
-                    <v-icon icon="mdi-phone"></v-icon>
-                    <v-card-title
-                        class="cursor-pointer"
-                        
-                        @click="numberColor = 'red'"
-                    >+38162333999</v-card-title>
+                    <v-icon icon="mdi-phone" class="mr-3"></v-icon>
+                    <v-card-title>
+                        <a href="tel:+38162XXXXXX" class="text-white text-decoration-none">
+                            +381 62 XXX XXX
+                        </a>
+                    </v-card-title>
                 </v-card>
             </template>
         </v-hover>
@@ -56,12 +62,13 @@ function sendMsg() {
                     d-flex align-center justify-center"
                     min-height="6rem"
                 >
-                    <v-icon icon="mdi-email"></v-icon>
-                    <v-card-title
-                        class="cursor-pointer"
-                        
-                        @click="numberColor = 'red'"
-                    >kombiprevoz@gmail.com</v-card-title>
+                    <v-icon icon="mdi-email" class="mr-3"></v-icon>
+                    <v-card-title>
+                        <a href="mailto:info@kombitransfer.com" class="text-white text-decoration-none">
+                            info@kombitransfer.com
+                        </a>
+                    </v-card-title>
+
                 </v-card>
             </template>
         </v-hover>

@@ -64,11 +64,4 @@ const route = useRoute()
   * {
     font-family: Verdana, Geneva, Tahoma, sans-serif;
   }
-  .v-card {
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
-  }
-
-  .v-card:hover {
-    transform: translateY(-4px);
-  }
 </style>

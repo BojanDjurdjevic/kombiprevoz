@@ -15,8 +15,10 @@ import { useUserStore } from '@/stores/user'
 import RequestPassResetView from '@/views/RequestPassResetView.vue'
 import MyProfileView from '@/views/MyProfileView.vue'
 import AdminDashView from '@/views/AdminDashView.vue'
+import DisclaimerView from '@/views/DisclaimerView.vue'
 
 const router = createRouter({
+  
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
@@ -79,7 +81,7 @@ const router = createRouter({
     {
       path: '/grad',
       name: 'grad',
-      component: CityBook,
+      component: CityBook
     },
     {
       path: '/korpa',
@@ -120,6 +122,14 @@ const router = createRouter({
       component: MyProfileView,
       meta: {
         requireAuth: true
+      }
+    },
+    {
+      path: '/disclaimer',
+      name: 'disclaimer',
+      component: DisclaimerView,
+      meta: {
+        noindex: true
       }
     },
     {

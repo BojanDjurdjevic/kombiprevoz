@@ -22,6 +22,7 @@ export const useDestStore = defineStore('dest', () => {
     const cityPics = ref(null)
 
     function takeCountry(n) {
+        localStorage.setItem('country', JSON.stringify({id: n.id, name: n.name}))
         country.value = n.name
         selectedCountryID.value = n.id
         search.countryFrom = 'Srbija'

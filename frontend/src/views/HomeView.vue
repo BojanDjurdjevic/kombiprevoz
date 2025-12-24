@@ -180,6 +180,14 @@ import minibusImg from '@/assets/img/minibus.jpg';
 </template>
 
 <style scoped>
+.v-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.v-card:hover {
+  transform: translateY(-4px);
+  cursor: pointer;
+}
 .hero-overlay {
   position: absolute;
   inset: 0;
