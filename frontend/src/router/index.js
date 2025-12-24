@@ -23,6 +23,10 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView,
+      meta: {
+        title: 'Kombi transfer putnika u inostranstvo | Od vrata do vrata',
+        description: 'Pouzdan i udoban kombi transfer putnika iz Srbije ka Evropi. Prevoz od vrata do vrata, profesionalni vozači.'
+      }
     },
     {
       path: '/about',
@@ -36,6 +40,10 @@ const router = createRouter({
       path: '/kontakt',
       name: 'kontakt',
       component: Contact,
+      meta: {
+        title: 'Kontakt | Kombi transfer putnika',
+        description: 'Kontaktirajte nas za sve informacije o kombi prevozu putnika u inostranstvo.'
+      }
     },
     {
       path: '/rezervacije',
@@ -49,6 +57,10 @@ const router = createRouter({
       path: '/destinacije',
       name: 'destinacije',
       component: Destinations,
+      meta: {
+        title: 'Destinacije | Kombi transfer putnika',
+        description: 'Pregled svih dostupnih destinacija za kombi prevoz putnika iz Srbije ka inostranstvu.'
+      }
     },
     {
       path: '/rezultati',
@@ -59,6 +71,10 @@ const router = createRouter({
       path: '/gradovi',
       name: 'gradovi',
       component: CitiesView,
+      meta: {
+        title: 'Gradovi | Kombi transfer putnika',
+        description: 'Lista gradova i destinacija za kombi prevoz putnika. Izaberite grad polaska i dolaska.'
+      }
     },
     {
       path: '/grad',
@@ -112,7 +128,8 @@ const router = createRouter({
       component: AdminDashView, 
       meta: {
         requireAuth: true,
-        requiresRole: ['Superadmin', 'Admin']
+        requiresRole: ['Superadmin', 'Admin'],
+        noindex: true
       },
       // pitanje da li je potrebno?
       children: [
@@ -162,5 +179,38 @@ router.beforeEach((to, from, next) => {
 
   next()
 })
+
+router.afterEach((to) => {
+  // TITLE
+  document.title = to.meta.title || 'Kombi Transfer Putnika'
+
+  // DESCRIPTION
+  let description = document.querySelector('meta[name="description"]')
+  if (!description) {
+    description = document.createElement('meta')
+    description.setAttribute('name', 'description')
+    document.head.appendChild(description)
+  }
+
+  description.setAttribute(
+    'content',
+    to.meta.description || 'Pouzdan kombi prevoz putnika iz Srbije ka Evropi.'
+  )
+
+  // NOINDEX za admin
+  let robots = document.querySelector('meta[name="robots"]')
+  if (!robots) {
+    robots = document.createElement('meta')
+    robots.setAttribute('name', 'robots')
+    document.head.appendChild(robots)
+  }
+
+  if (to.meta.noindex) {
+    robots.setAttribute('content', 'noindex, nofollow')
+  } else {
+    robots.setAttribute('content', 'index, follow')
+  }
+})
+
 
 export default router

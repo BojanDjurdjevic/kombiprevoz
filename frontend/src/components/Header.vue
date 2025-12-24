@@ -6,10 +6,12 @@ import { useSearchStore } from '@/stores/search';
 import { useTourStore } from '@/stores/tours';
 import { useTheme } from 'vuetify'
 import { useUserStore } from '@/stores/user';
+import { useRoute } from 'vue-router';
 
 const active = ref(false)
 const search = useSearchStore()
 const tours = useTourStore()
+const route = useRoute()
 
 const darkTheme = ref(true)
 const theme = useTheme()
@@ -38,9 +40,9 @@ if(localStorage.getItem('myCart')) {
 <template>
       <v-toolbar class="text-white" color="indigo-darken-4" >
 
-        <v-menu >
+        <v-menu v-if="!route.path.startsWith('/admin')">
           <template v-slot:activator="{ props }">
-            <v-btn icon="mdi-menu" class="d-block d-md-none" v-bind="props"></v-btn>
+            <v-btn icon="mdi-menu" class="d-block d-md-none" v-bind="props" aria-label="Meni kombi transfera"></v-btn>
           </template>
 
           <v-list height="90vh" width="95vw" class="d-flex flex-column align-center justify-space-evenly pa-2">
@@ -60,11 +62,16 @@ if(localStorage.getItem('myCart')) {
         </v-menu>
         
   
-        <v-toolbar-title >KombiPrevoz</v-toolbar-title>
+        <v-toolbar-title>
+          <RouterLink to="/" class="text-white text-decoration-none">
+            KombiTransfer
+          </RouterLink>
+        </v-toolbar-title>
+
         <v-spacer></v-spacer>
         <v-dialog
           v-model="search.dialog"
-          v-if="user.admin == false"
+          v-if="!route.path.startsWith('/admin')"
         >
           <template v-slot:activator="{ props: activatorProps }" >
             <v-btn 
@@ -79,28 +86,23 @@ if(localStorage.getItem('myCart')) {
               variant="plain"
               v-bind="activatorProps"
               class="d-block d-md-none"
+              aria-label="Pretraga kombi prevoza"
               >
             </v-btn>
           </template>
           <Search />
         </v-dialog>
         
-        <v-row class="d-none d-md-block" v-if="user.admin == false">
+        <v-row class="d-none d-md-block" v-if="!route.path.startsWith('/admin')">
           <v-btn variant="plain" to="/" >Početna</v-btn>
           <v-btn variant="plain" to="/rezervacije">Moje Rezervacije</v-btn>
           <v-btn variant="plain" to="/destinacije">Destinacije</v-btn>
           <v-btn variant="plain" to="/kontakt">Kontakt</v-btn>
         </v-row>
 
-        <v-row class="d-none d-md-block" v-else>
-          <v-btn variant="plain" to="/admin" >Admin Dashboard || Administrator Panel</v-btn>
-          
-        </v-row>
-
         <v-spacer></v-spacer>
         <div v-if="user.user && (user.user.status == 'Superadmin' || user.user.status == 'Admin')">
-          <v-btn v-if="!user.admin" variant="outlined" to="/admin"  @click="user.admin = true">Admin</v-btn>
-          <v-btn v-else variant="outlined" to="/" @click="user.admin = false" >User</v-btn>  
+          <v-btn v-if="!route.path.startsWith('/admin')" variant="outlined" to="/admin"  >Admin</v-btn>
         </div>
         <v-btn
           @click="changeTheme"
@@ -111,6 +113,7 @@ if(localStorage.getItem('myCart')) {
         </v-btn>
 
         <v-btn
+          v-if="!route.path.startsWith('/admin')"
           icon
           to="/korpa"
         >

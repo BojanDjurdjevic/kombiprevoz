@@ -3,8 +3,11 @@ import { RouterLink, RouterView } from 'vue-router'
 import Header from './components/Header.vue';
 import { useUserStore } from './stores/user';
 import { VOverlay, VProgressCircular } from 'vuetify/components'
+import { useRoute } from 'vue-router';
+import Footer from './components/Footer.vue';
 
 const user = useUserStore()
+const route = useRoute()
 </script>
 
 <template>
@@ -53,11 +56,19 @@ const user = useUserStore()
       </router-view>
       -->
     </v-main>
+    <Footer v-if="!route.path.startsWith('/admin')" />
   </v-app>
 </template>
 
-<style scoped>
+<style >
   * {
     font-family: Verdana, Geneva, Tahoma, sans-serif;
+  }
+  .v-card {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .v-card:hover {
+    transform: translateY(-4px);
   }
 </style>
