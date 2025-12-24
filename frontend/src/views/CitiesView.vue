@@ -2,14 +2,25 @@
     import { ref, onMounted } from 'vue';
     import { useDestStore } from '@/stores/destinations';
     const dest = useDestStore()
-
+    /*
     onMounted(() => {
         let country = JSON.parse(localStorage.getItem('country'))
         dest.country = country.name
         dest.selectedCountryID = country.id
         console.log('CitiesView iz lokala: ', country)
         dest.actions.fetchCities()
+    }) */
+
+   onMounted(async () => {
+        const country = JSON.parse(localStorage.getItem('country'))
+        if (!country) return
+
+        dest.country = country.name
+        dest.selectedCountryID = country.id
+
+        await dest.actions.fetchCities()
     })
+
 </script>
 <template>
     <v-container fluid class="py-6">
@@ -44,9 +55,12 @@
         <v-card
           class="rounded-xl hover-card"
           elevation="8"
-          to="grad"
+          
           style="width: 100%; max-width: 280px; cursor: pointer;"
-          @click="dest.takeCity(n)"
+           @click="() => {
+                dest.takeCity(n)
+                $router.push('/grad')
+            }"
         >
           <v-img
             :src="dest.getCityPrimaryImage(n)"

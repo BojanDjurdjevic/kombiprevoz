@@ -3,7 +3,8 @@ import { useDestStore } from '@/stores/destinations';
 import { useSearchStore } from '@/stores/search';
 import { VDateInput } from 'vuetify/labs/VDateInput'
 import { VNumberInput } from 'vuetify/labs/VNumberInput'
-/*
+import { onMounted } from 'vue';
+ /*
 const items = [
     {
       src: 'https://cdn.vuetifyjs.com/images/carousel/squirrel.jpg',
@@ -21,6 +22,26 @@ const items = [
 */
 const dest = useDestStore()
 const search = useSearchStore()
+/*
+onMounted(() => {
+    let city = JSON.parse(localStorage.getItem('city'))
+    console.log('Grad iz pogleda: ', city)
+    dest.takeCity(city)
+}) 
+*/
+
+onMounted(async () => {
+  dest.hydrateFromStorage()
+
+  if (!dest.destinations) {
+    await dest.actions.fetchCountries()
+  }
+
+  if (!dest.cities && dest.selectedCountryID) {
+    await dest.actions.fetchCities()
+  }
+  //dest.takeCity(dest.storedTown)
+})
 
 </script>
 
@@ -36,19 +57,20 @@ const search = useSearchStore()
     </v-breadcrumbs>
 
     <!-- Title -->
-    <v-row justify="center" class="mb-4">
+    <v-row justify="center" class="mb-4" v-if="dest.city">
       <v-col cols="12" class="text-center">
         <h1>{{ dest.city }}</h1>
       </v-col>
     </v-row>
 
     <!-- Carousel -->
-    <v-row justify="center" class="mb-6">
+    <v-row justify="center" class="mb-6" v-if="dest.city">
       <v-col cols="12" md="10">
         <v-carousel
-          show-arrows-on-hover
-          height="300"
-          hide-delimiter-background
+            v-if="dest.cityPics.length"
+            show-arrows-on-hover
+            height="300"
+            hide-delimiter-background
         >
           <v-carousel-item
             v-for="(item, i) in dest.cityPics"
@@ -63,7 +85,7 @@ const search = useSearchStore()
     </v-row>
 
     <!-- Reservation Form -->
-    <v-row justify="center">
+    <v-row justify="center" v-if="dest.city">
       <v-col cols="12" md="8">
         <h2 class="text-center mb-4">Rezerviši kombi transfer</h2>
         <v-sheet color="indigo-darken-2" class="pa-4 rounded-xl" elevation="2">
@@ -82,6 +104,7 @@ const search = useSearchStore()
           <v-row class="mb-4" dense>
             <v-col cols="12" sm="6">
               <v-autocomplete
+                v-if="dest.cities && dest.cities.length"
                 label="Polazna država"
                 :items="dest.destinations"
                 v-model="search.countryFrom"
@@ -91,6 +114,7 @@ const search = useSearchStore()
             </v-col>
             <v-col cols="12" sm="6">
               <v-autocomplete
+                v-if="dest.cities && dest.cities.length"
                 label="Destinacija"
                 :items="dest.destinations"
                 v-model="search.countryTo"
@@ -103,15 +127,21 @@ const search = useSearchStore()
           <v-row class="mb-4" dense>
             <v-col cols="12" sm="6">
               <v-autocomplete
+                v-if="dest.cities && dest.cities.length"
                 label="Polazni grad"
-                :items="dest.cities[search.countryFrom]"
+                :items="dest.cities"
+                item-title="name"
+                item-value="name"
                 v-model="search.cityFrom"
+                return-object
               ></v-autocomplete>
             </v-col>
             <v-col cols="12" sm="6">
               <v-autocomplete
+                v-if="dest.cities && dest.cities.length"
                 label="Destinacija"
-                :items="dest.cities[search.countryTo]"
+                :items="dest.cities"
+                
                 v-model="search.cityTo"
                 placeholder=" {{ dest.city }} "
                 disabled

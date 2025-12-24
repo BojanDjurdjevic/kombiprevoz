@@ -19,7 +19,7 @@ export const useDestStore = defineStore('dest', () => {
     const country = ref('')
     const selectedCountryID = ref(null)
     const city = ref('')
-    const cityPics = ref(null)
+    const cityPics = ref([])
 
     function takeCountry(n) {
         localStorage.setItem('country', JSON.stringify({id: n.id, name: n.name}))
@@ -28,10 +28,17 @@ export const useDestStore = defineStore('dest', () => {
         search.countryFrom = 'Srbija'
         search.countryTo = n.name
     } 
+    function pushToLocale(n) {
+      localStorage.setItem('city', JSON.stringify({id: n.id, name: n.name, pictures: n.pictures}))
+    } 
     function takeCity(n) {
+        localStorage.setItem('city', JSON.stringify({id: n.id, name: n.name, pictures: n.pictures}))
+        console.log(n)
         city.value = n.name
         search.cityTo = n.name
-        cityPics.value = getCityImages(n.pictures)
+        console.log(n.pictures)
+        cityPics.value = getCityImages(n.pictures || [])
+        console.log(cityPics.value)
     } 
 
     function adminCountryImage(n) {
@@ -70,6 +77,25 @@ export const useDestStore = defineStore('dest', () => {
       return arr
     }
 
+    const storedTown = ref({})
+
+    function hydrateFromStorage() {
+      const storedCountry = JSON.parse(localStorage.getItem('country'))
+      const storedCity = JSON.parse(localStorage.getItem('city'))
+
+      if (storedCountry) {
+        country.value = storedCountry.name
+        selectedCountryID.value = storedCountry.id
+      }
+
+      if (storedCity) {
+        city.value = storedCity.name
+        cityPics.value = getCityImages(storedCity.pictures || [])
+        search.cityTo = storedCity.name
+        storedTown.value = storedCity
+      }
+    }
+
     const actions = ref({
         fetchCountries: async () => {
           const dto = {
@@ -105,8 +131,9 @@ export const useDestStore = defineStore('dest', () => {
 
     return {
         cities, country, city, destinations, actions, selectedCountryID, cityPics,
+        storedTown,
 
         takeCountry, takeCity, getCountryImage, getCityPrimaryImage, getCityImages,
-        adminCountryImage,
+        adminCountryImage, pushToLocale, hydrateFromStorage,
     }
 })
