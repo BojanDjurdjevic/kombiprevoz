@@ -53,8 +53,29 @@ export const useSearchStore = defineStore('search', () => {
         cityTo.value = temp3
       }
 
-      allCities(countryFrom.value.id, true)
-      allCities(countryTo.value.id, false)
+      afterCountryFrom(countryFrom.value, true)
+      allCities(countryTo.value, false)
+      /*
+      // availableCountries
+      if(availableCountries.value.length && availableCountriesTo.value.length) {
+        const temp5 = availableCountries.value
+        const temp6 = availableCountriesTo.value
+        availableCountries.value = temp6
+        availableCountriesTo.value = temp5
+      }
+
+      // availableCities
+      if(availableCities.value.length && availableCitiesTo.value.length) {
+        const temp5 = availableCities.value
+        const temp6 = availableCitiesTo.value
+        availableCities.value = temp6
+        availableCitiesTo.value = temp5
+      }
+      /*
+      allCities(countryFrom.value, true)
+      
+      allCities(countryTo.value, false) */
+      fillToCities(cityFrom.value)
       dateQuery()
     }
     console.log(countryFrom.value.name + "\n" + countryTo.value.name)
@@ -100,6 +121,7 @@ export const useSearchStore = defineStore('search', () => {
 
   const availableCities = ref([])
   const availableCitiesTo = ref([])
+  const tourCitiesTo = ref([])
 
   async function allCountries(data) {
     if(data && data.id) {
@@ -125,19 +147,36 @@ export const useSearchStore = defineStore('search', () => {
     
   }
 
-  function getCountryFrom(id) {
+  function getCountryFrom(c) {
+    if(!c) return
+    console.log('Iz dostupnih država: ', c)
     availableCountriesTo.value = []
+
+    if(c.name === 'Srbija') {
+      availableCountries.value.forEach(item => {
+        if(item.name != 'Srbija') {
+          availableCountriesTo.value.push(item)
+        }
+      });
+    } else {
+      availableCountries.value.forEach(item => {
+        if(item.name == 'Srbija') {
+          availableCountriesTo.value.push(item)
+        }
+      });
+    } /*
     availableCountries.value.forEach(item => {
       if(item.id != id) {
         availableCountriesTo.value.push(item)
       }
-    });
+    }); */
   }
 
-  async function allCities(id, from) {
-    getCountryFrom(id)
+  async function allCities(c, from) {
+    //getCountryFrom(c)
+    if(!c) return
     let dto = {
-      country_id: id
+      country_id: c.id
     }
     try {
       const msg = await api.getCities(dto)
@@ -148,6 +187,38 @@ export const useSearchStore = defineStore('search', () => {
       }
       console.log(availableCities.value)
       console.log(availableCitiesTo.value)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  function afterCountryFrom(c, from) {
+    getCountryFrom(c)
+    allCities(c, from)
+  }
+
+  async function fillToCities(c) {
+    if(!c) return
+    allCities(countryTo.value, false)
+    console.log('Objekat iz forme: ', c)
+    const dto = {
+      city: {
+        name: c.name
+      }
+    }
+
+    try {
+      const res = await api.getTours(dto)
+      console.log(res.data)
+      tourCitiesTo.value = res.data.success ? res.data.toCities : []
+      if(tourCitiesTo.value.length) {
+        availableCitiesTo.value = availableCitiesTo.value.filter(c =>
+          tourCitiesTo.value.some(t => t.to_city === c.name)
+        )
+        console.log("Available Cities: ", availableCitiesTo.value, "\n", "Sa Apija: ", tourCitiesTo.value)
+      } else {
+        availableCitiesTo.value = []
+      }
     } catch (error) {
       console.log(error)
     }
@@ -167,6 +238,7 @@ export const useSearchStore = defineStore('search', () => {
   })
 
   async function dateQuery() {
+    if(!cityFrom.value || !cityTo.value) return
     let formD = qDateForm()
     let dto = {
       days: {
@@ -298,7 +370,7 @@ export const useSearchStore = defineStore('search', () => {
     exCountry, availableCountries, availableCountriesTo, availableCities, availableCitiesTo, rules, violated,
     allowedDays, allowedDaysIn, allCount,
     sendSearch, reverseCountries, cityRules, allCountries, newCountry, changeCountry, dropCountry, getCountryFrom,
-    allCities, dateQuery, isDateAllowed, isDateInAllowed, dateFormat, qDateForm,
+    allCities, dateQuery, isDateAllowed, isDateInAllowed, dateFormat, qDateForm, fillToCities, afterCountryFrom,
   }
 
 })

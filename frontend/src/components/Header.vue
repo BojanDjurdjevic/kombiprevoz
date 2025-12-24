@@ -87,6 +87,7 @@ if(localStorage.getItem('myCart')) {
               v-bind="activatorProps"
               class="d-block d-md-none"
               aria-label="Pretraga kombi prevoza"
+              @click="search.allCountries(search.allCount)"
               >
             </v-btn>
           </template>

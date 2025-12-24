@@ -41,7 +41,6 @@
             >
               <v-autocomplete
                 clearable
-                width=""
                 label="From"
                 :items="search.availableCountries"
                 item-title="name"
@@ -49,7 +48,7 @@
                 :rules="[search.rules.required]"
                 v-model="search.countryFrom"
                 return-object
-                v-on:update:model-value="val => search.allCities(val.id, true)"
+                v-on:update:model-value="val => search.afterCountryFrom(val, true)"
               ></v-autocomplete>
               <v-spacer></v-spacer>
               <v-btn icon="mdi-unfold-more-vertical" class="d-none d-md-block" @click="search.reverseCountries"></v-btn>
@@ -64,7 +63,8 @@
                 item-value="id"
                 return-object
                 v-model="search.countryTo"
-                v-on:update:model-value="val => search.allCities(val.id, false)"
+                :disabled="!search.countryFrom"
+                v-on:update:model-value="val => search.allCities(val, false)"
               ></v-autocomplete>
             </v-sheet>
           </v-row>
@@ -83,7 +83,8 @@
                 item-value="name"
                 return-object
                 v-model="search.cityFrom"
-                v-on:update:model-value="console.log(search.cityFrom.id)"
+                v-on:update:model-value="search.fillToCities(search.cityFrom)"
+                :disabled="!search.countryFrom || !search.countryTo"
               ></v-autocomplete>
               <v-spacer></v-spacer>
               <v-btn icon="mdi-unfold-more-vertical" class="d-none d-md-block" @click="search.reverseCountries"></v-btn>
@@ -99,6 +100,7 @@
                 return-object
                 v-model="search.cityTo"
                 v-on:update:model-value="search.dateQuery"
+                :disabled="!search.countryFrom || !search.countryTo || !search.cityFrom"
               ></v-autocomplete>
             </v-sheet>
           </v-row>

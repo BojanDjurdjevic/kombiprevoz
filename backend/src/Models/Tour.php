@@ -2,6 +2,7 @@
 
 namespace Models;
 
+use Helpers\Logger;
 use PDO;
 use PDOException;
 use Rules\Validator;
@@ -256,6 +257,39 @@ class Tour {
             exit();
         }
     }
+
+    // -----------------------GET tour - to cities -------------------------------//
+
+    public function getToCities($from)
+    {
+        $sql = "SELECT to_city FROM tours
+                WHERE from_city = :from_city
+        ";
+        $stmt = $this->db->prepare($sql);
+
+        $stmt->bindParam(':from_city', $from);
+
+        try {
+            $stmt->execute();
+
+            $cities = $stmt->fetchAll(PDO::FETCH_OBJ);
+            http_response_code(200);
+            echo json_encode([
+                'success' => true,
+                'toCities' => $cities,
+                'has_cities' => !empty($cities)
+            ]);
+        } catch (PDOException $e) {
+            Logger::error("Failed to fetch Tour to_city getToCities()", [
+                'error' => $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            http_response_code(500);
+            echo json_encode(['error' => 'Došlo je do greške prilikom učitavanja gradova!']);
+        }
+    }
+
     //------------------------- Checks available dates for the requested tour --------------//
     public function fullyBooked($format)
     {

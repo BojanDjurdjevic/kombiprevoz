@@ -64,6 +64,9 @@ class TourController {
                                 ], JSON_PRETTY_PRINT);
                             }
                         }
+                        if(isset($this->data->tours->city->name)) {
+                            $this->tour->getToCities($this->data->tours->city->name);
+                        }
                     } 
                 }
                 break;
