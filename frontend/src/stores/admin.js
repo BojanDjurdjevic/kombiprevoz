@@ -1123,24 +1123,40 @@ export const useAdminStore = defineStore("admin", () => {
       countryTo.value = null,
       cityFrom.value = null,
       cityTo.value = null,
+      /*
       daysOfTour.value = null,
       tourTime.value = null,
       hours.value = 3,
       price.value = 50,
-      pax.value = 8
+      pax.value = 8 
+      */
+      changeDeps.value = null
+      changeTime.value = null,
+      changeDuration.value = null,
+      changeTourSeats.value = null,
+      changePrice.value = null
     },
     addTour: async () => {
-      if(!cityFrom.value || !cityTo.value || !daysOfTour.value || !hours.value || !pax.value || !price.value || !tourTime.value) return displayError('Sva polja su obavezna!')
-      let departures = filterDeps(daysOfTour.value)
+      //if(!cityFrom.value || !cityTo.value || !daysOfTour.value || !hours.value || !pax.value || !price.value || !tourTime.value) return displayError('Sva polja su obavezna!')
+      if(!cityFrom.value || !cityTo.value || !changeDeps.value || !changeDuration.value || 
+        !changeTourSeats.value || !changePrice.value || 
+        !changeTime.value) return displayError('Sva polja su obavezna!')
+      let departures = filterDeps(changeDeps.value) //daysOfTour
       const dto = {
         tours : {
           from: cityFrom.value.name,
           to: cityTo.value.name,
-          departures: departures,
+          departures: departures, 
+          /*
           time: tourTime.value,
           duration: hours.value,
           price: price.value,
           seats: pax.value
+          */
+          time: changeTime.value,
+          duration: changeDuration.value,
+          price: changePrice.value,
+          seats: changeTourSeats.value
         }
       }
       try {

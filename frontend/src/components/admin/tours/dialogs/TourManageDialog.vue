@@ -4,6 +4,7 @@ import TourDetailsCard from '../parts/TourDetailsCard.vue';
 import TourStatusActions from '../parts/TourStatusActions.vue';
 import TourEditForm from '../parts/TourEditForm.vue';
 import { useDisplay } from 'vuetify'
+import TourEditAddForm from '../parts/TourEditAddForm.vue';
 
 const { smAndDown } = useDisplay()
 
@@ -26,11 +27,11 @@ const admin = useAdminStore()
             <!-- DESKTOP -->
             <v-row v-if="!smAndDown" dense>
                 <v-col cols="5">
-                <TourDetailsCard />
+                    <TourDetailsCard />
                 </v-col>
 
                 <v-col cols="7">
-                <TourEditForm />
+                    <TourEditAddForm mode="edit"  />
                 </v-col>
             </v-row>
 
@@ -39,12 +40,29 @@ const admin = useAdminStore()
 
                 <!-- DETAILS -->
                 <v-card class="rounded-xl">
-                <TourDetailsCard />
+                    <v-chip
+                        v-if="smAndDown"
+                        color="primary"
+                        size="small"
+                        class="mb-2"
+                        >
+                        Detalji rute
+                    </v-chip>
+
+                    <TourDetailsCard />
                 </v-card>
 
                 <!-- EDIT -->
                 <v-card class="rounded-xl">
-                <TourEditForm />
+                    <v-chip
+                        v-if="smAndDown"
+                        color="primary"
+                        size="small"
+                        class="mb-2"
+                        >
+                        Izmena rute
+                    </v-chip>
+                    <tour-edit-add-form mode="edit" />
                 </v-card>
 
             </div>

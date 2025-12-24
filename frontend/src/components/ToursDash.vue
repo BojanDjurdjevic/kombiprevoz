@@ -11,6 +11,7 @@ import TourEditForm from './admin/tours/parts/TourEditForm.vue';
 import { useDisplay } from 'vuetify/lib/framework.mjs';
 import TourDetailsCard from './admin/tours/parts/TourDetailsCard.vue';
 import TourManageDialog from './admin/tours/dialogs/TourManageDialog.vue';
+import TourEditAddForm from './admin/tours/parts/TourEditAddForm.vue';
 
 const admin = useAdminStore();
 const search = useSearchStore()
@@ -423,7 +424,10 @@ const openTour = (tour) => {
                       >Dodaj rutu</v-expansion-panel-title
                     >
                     <v-expansion-panel-text>
-                      <h3 class="mt-9">Dodaj novu rutu</h3>
+                      <tour-edit-add-form mode="add" />
+
+                      <!--
+                      <h3 class="mt-9">Dodaj novu rutu</h3> 
                       <div class="w-100 pa-3 d-flex flex-wrap">
                         <v-autocomplete
                           v-model="admin.countryFrom"
@@ -531,6 +535,7 @@ const openTour = (tour) => {
                       <v-btn color="green-darken-3" class="" :disabled="!admin.cityFrom || !admin.cityTo || !admin.daysOfTour || !admin.hours || !admin.pax || !admin.price || !admin.tourTime"
                         @click="admin.actions.addTour"
                       >Dodaj Rutu</v-btn>
+                      -->
                     </v-expansion-panel-text>
                   </v-expansion-panel>
                 </v-expansion-panels>

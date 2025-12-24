@@ -1,13 +1,34 @@
 <script setup>
 import { useAdminStore } from '@/stores/admin'
+import { useSearchStore } from '@/stores/search'
 import { computed } from 'vue'
 import { VNumberInput } from 'vuetify/labs/VNumberInput'
 
-const admin = useAdminStore()
+const props = defineProps({
+  mode: {
+    type: String,
+    default: 'edit' // 'edit' ili 'add'
+  }
+})
 
-const isDisabled = computed(() =>
-  !admin.changeDeps || !admin.changeTime || !admin.changeDuration || !admin.changeTourSeats || !admin.changePrice
-)
+const admin = useAdminStore()
+const search = useSearchStore()
+
+const isAddMode = computed(() => props.mode === 'add')
+
+const isDisabled = computed(() => {
+  if (isAddMode.value) {
+    return !admin.countryFrom || !admin.cityFrom ||
+           !admin.countryTo || !admin.cityTo ||
+           !admin.changeDeps || !admin.changeTime ||
+           !admin.changeDuration || !admin.changeTourSeats ||
+           !admin.changePrice
+  } else {
+    return !admin.changeDeps || !admin.changeTime ||
+           !admin.changeDuration || !admin.changeTourSeats ||
+           !admin.changePrice
+  }
+})
 
 const tourDays = [
   {id: 0, day: "Nedelja"},
@@ -22,8 +43,56 @@ const tourDays = [
 
 <template>
   <div class="w-100 pa-6 d-flex flex-column justify-space-around">
+    
+    <!-- ADD MODE FIELDS: Country / City -->
+    <div v-if="isAddMode">
+      <v-select
+        v-model="admin.countryFrom"
+        :items="admin.dbCountries"
+        label="Država polaska"
+        item-title="name"
+        item-value="id"
+        return-object
+        clearable
+        v-on:update:model-value="val => search.allCities(val.id, true)"
+      />
+
+      <v-select
+        v-model="admin.cityFrom"
+        :rules="[search.rules.required]"
+        :items="search.availableCities"
+        label="Grad polaska"
+        item-title="name"
+        item-value="id"
+        return-object
+        clearable
+      />
+
+      <v-select
+        v-model="admin.countryTo"
+        :items="admin.dbCountries"
+        label="Država dolaska"
+        item-title="name"
+        item-value="id"
+        return-object
+        clearable
+        v-on:update:model-value="val => search.allCities(val.id, false)"
+      />
+
+      <v-select
+        v-model="admin.cityTo"
+        :rules="[search.rules.required]"
+        :items="search.availableCitiesTo"
+        label="Grad dolaska"
+        item-title="name"
+        item-value="id"
+        return-object
+        clearable
+      />
+    </div>
+
     <!-- DAYS + TIME -->
-    <div>
+    <div class="mt-6">
       <v-select
         v-model="admin.changeDeps"
         class="w-100 mt-5"
@@ -31,10 +100,11 @@ const tourDays = [
         clearable
         chips
         multiple
-        label="Izmeni dane polaska"
+        label="Izaberi dane polaska"
         :items="tourDays"
         item-title="day"
         item-value="id"
+        return-object
         @click:clear="admin.changeDeps = null"
       />
 
@@ -92,14 +162,14 @@ const tourDays = [
         color="green-darken-4"
         variant="elevated"
         :disabled="isDisabled"
-        @click="admin.actions.updateTour"
+        @click="isAddMode ? admin.actions.addTour() : admin.actions.updateTour()"
       >
         Potvrdi
       </v-btn>
 
       <v-btn
         color="red-darken-3"
-        @click="admin.actions.clearTourEdit"
+        @click="isAddMode ? admin.actions.clearNewTour() : admin.actions.clearTourEdit()"
       >
         Poništi
       </v-btn>
