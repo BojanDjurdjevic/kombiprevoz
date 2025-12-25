@@ -260,14 +260,25 @@ class Tour {
 
     // -----------------------GET tour - to cities -------------------------------//
 
-    public function getToCities($from)
+    public function getToCities($name, $from)
     {
-        $sql = "SELECT to_city FROM tours
-                WHERE from_city = :from_city
-        ";
+        $sql = $from ? "SELECT DISTINCT to_city FROM tours
+                WHERE from_city = :city" :
+                "SELECT DISTINCT from_city FROM tours
+                WHERE to_city = :city"
+        ; /*
+        if($from) {
+            $sql = "SELECT to_city FROM tours
+                WHERE from_city = :city
+            ";
+        } else
+        $sql = "SELECT from_city FROM tours
+                WHERE to_city = :city
+        "; */
+        
         $stmt = $this->db->prepare($sql);
 
-        $stmt->bindParam(':from_city', $from);
+        $stmt->bindParam(':city', $name);
 
         try {
             $stmt->execute();

@@ -1,22 +1,15 @@
 <script setup>
     import { ref, onMounted } from 'vue';
     import { useDestStore } from '@/stores/destinations';
+
     const dest = useDestStore()
-    /*
-    onMounted(() => {
-        let country = JSON.parse(localStorage.getItem('country'))
-        dest.country = country.name
-        dest.selectedCountryID = country.id
-        console.log('CitiesView iz lokala: ', country)
-        dest.actions.fetchCities()
-    }) */
 
    onMounted(async () => {
-        const country = JSON.parse(localStorage.getItem('country'))
-        if (!country) return
+        //dest.hydrateFromStorage()
+        if (!dest.destinations) {
+          await dest.actions.fetchCountries()
+        }
 
-        dest.country = country.name
-        dest.selectedCountryID = country.id
 
         await dest.actions.fetchCities()
     })
@@ -77,35 +70,6 @@
       </v-col>
     </v-row>
   </v-container>
-
-    <!--
-    <v-container class="text-center">
-       <h1>Hi from {{ dest.country }} </h1> 
-    </v-container>
-    <v-container>
-        <v-row class="ma-9 w-100 pa-6">
-            <v-col
-                v-for="n in dest.cities"
-                :key="n"
-                cols="12"
-                md="6"
-                lg="3"
-            >
-                <v-card height="18rem" width="18rem" elevation="9" to="grad" @click="dest.takeCity(n)" v-if="!n.deleted_city">
-                    <v-img
-                        class="align-center text-white"
-                        height="100%"
-                        :src="dest.getCityPrimaryImage(n)"
-                        cover
-                    >
-                        <v-card-title class="text-center"> {{ n.name }} </v-card-title>
-                    </v-img> 
-                </v-card>
-            </v-col>
-            
-        </v-row>
-    </v-container>
-    -->
 </template>
 
 <style scoped>

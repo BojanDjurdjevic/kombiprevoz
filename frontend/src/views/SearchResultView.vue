@@ -1,22 +1,35 @@
 <script setup>
-    import { ref } from 'vue'
+    import { ref, onMounted, watch } from 'vue'
     import { useTourStore } from '@/stores/tours';
     import { useUserStore } from '@/stores/user';
     import { VNumberInput } from 'vuetify/labs/VNumberInput'
     import { useDisplay } from 'vuetify/lib/framework.mjs';
     import router from '@/router';
     import BookingPanel from '@/components/BookingPanel.vue';
+    import { useRoute } from 'vue-router';
 
     const user = useUserStore()
     const tours = useTourStore()
+    const route = useRoute
     const { mdAndUp } = useDisplay()
-    
-    if(localStorage.getItem('avTours')) {
-        onload = () => {
-            tours.available = JSON.parse(localStorage.getItem('avTours'))
+
+    onMounted(() => {
+        if(!tours.available.length) {
+            if(localStorage.getItem('avTours')) {
+                tours.available = JSON.parse(localStorage.getItem('avTours'))
+            }
         }
-    }
+    })
     
+    watch(
+        () => route.name,
+        (name) => {
+            if (name === 'rezultati') {
+                const data = localStorage.getItem('avTours')
+                tours.available = data ? JSON.parse(data) : []
+            }
+        }
+    ) 
 
 </script>
 

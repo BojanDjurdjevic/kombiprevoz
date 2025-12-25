@@ -65,7 +65,14 @@ class TourController {
                             }
                         }
                         if(isset($this->data->tours->city->name)) {
-                            $this->tour->getToCities($this->data->tours->city->name);
+                            $from = filter_var(
+                                $this->data->tours->city->from,
+                                FILTER_VALIDATE_BOOLEAN,
+                                FILTER_NULL_ON_FAILURE
+                            );
+                            $this->data->tours->city->from ?
+                            $this->tour->getToCities($this->data->tours->city->name, $from === true) :
+                            $this->tour->getToCities($this->data->tours->city->name, $from === false);
                         }
                     } 
                 }

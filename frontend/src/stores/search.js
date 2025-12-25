@@ -3,9 +3,11 @@ import { defineStore } from 'pinia'
 import { useTourStore } from './tours'
 import router from '@/router'
 import api from '@/api'
+import { useUserStore } from './user'
 
 export const useSearchStore = defineStore('search', () => {
   const tours = useTourStore()
+  const user = useUserStore()
 
   const rules = {
     required: (value) => !!value || "Obavezno polje",
@@ -149,6 +151,7 @@ export const useSearchStore = defineStore('search', () => {
       const msg = await api.getCities(dto)
       if(from) {
         availableCities.value = msg.data.cities 
+        console.log('Iz ALLCITIES: ', availableCities.value)
       } else {
         availableCitiesTo.value = Object.values(msg.data.cities)
       }
@@ -168,6 +171,7 @@ export const useSearchStore = defineStore('search', () => {
     allCities(countryTo.value, false)
     const dto = {
       city: {
+        from: true,
         name: c.name
       }
     }
@@ -210,7 +214,8 @@ export const useSearchStore = defineStore('search', () => {
         format: formD
       }
     }
-
+    if(dto.days.to === undefined) dto.days.to = cityTo.value
+    console.log('Date UPIT: ', dto.days)
     try {
       const msg = await api.checkAvailableDates(dto)
       if(msg.data.success) {
@@ -278,13 +283,22 @@ export const useSearchStore = defineStore('search', () => {
               seats: seats.value
             }
         }
-
+        if(dto.search.to === undefined) {
+          dto.search.to = String(cityTo.value)
+        }
+        console.log('Grad dolaska iz GRADA: ', dto.search.to)
         try {
           const msg = await api.getTours(dto)
           tours.available = msg.data.tour 
+          console.log(tours.available)
           localStorage.setItem('avTours', JSON.stringify(tours.available))
+          router.push({
+            name: 'rezultati'
+          })
         } catch (error) {
           console.log(error)
+          dialog.value = false
+          user.showErr(error, 3000)
         } finally { 
           tours.mySearch = dto
 
@@ -295,9 +309,8 @@ export const useSearchStore = defineStore('search', () => {
           outDate.value = null
           inDate.value = null
           seats.value = 1
-          router.push({
-            name: 'rezultati'
-          })
+          
+          
         }
     }
   }

@@ -40,7 +40,6 @@ onMounted(async () => {
   if (!dest.cities && dest.selectedCountryID) {
     await dest.actions.fetchCities()
   }
-  //dest.takeCity(dest.storedTown)
 })
 
 </script>
@@ -106,19 +105,22 @@ onMounted(async () => {
               <v-autocomplete
                 v-if="dest.cities && dest.cities.length"
                 label="Polazna država"
-                :items="dest.destinations"
+                item-title="name"
+                item-value="id"
+                :items="search.availableCountries"
                 v-model="search.countryFrom"
-                placeholder="Srbija"
-                disabled
+                :disabled="search.countryFrom"
+                v-on:update:model-value="val => search.afterCountryFrom(val, true)"
               ></v-autocomplete>
             </v-col>
             <v-col cols="12" sm="6">
               <v-autocomplete
                 v-if="dest.cities && dest.cities.length"
                 label="Destinacija"
-                :items="dest.destinations"
+                item-title="name"
+                item-value="id"
+                :items="search.availableCountriesTo"
                 v-model="search.countryTo"
-                placeholder=" {{ dest.country }} "
                 disabled
               ></v-autocomplete>
             </v-col>
@@ -129,21 +131,21 @@ onMounted(async () => {
               <v-autocomplete
                 v-if="dest.cities && dest.cities.length"
                 label="Polazni grad"
-                :items="dest.cities"
+                :items="search.availableCities"
                 item-title="name"
                 item-value="name"
                 v-model="search.cityFrom"
                 return-object
+                v-on:update:model-value="search.dateQuery"
               ></v-autocomplete>
             </v-col>
             <v-col cols="12" sm="6">
               <v-autocomplete
                 v-if="dest.cities && dest.cities.length"
                 label="Destinacija"
-                :items="dest.cities"
-                
+                item-title="name"
+                item-value="name"
                 v-model="search.cityTo"
-                placeholder=" {{ dest.city }} "
                 disabled
               ></v-autocomplete>
             </v-col>
@@ -152,10 +154,50 @@ onMounted(async () => {
           <!-- Date & Seats -->
           <v-row class="mb-4" dense>
             <v-col cols="12" sm="6">
-              <v-date-input v-model="search.outDate" label="Datum polaska"></v-date-input>
+              <v-date-input 
+                :rules="[search.rules.required]"
+                v-model="search.outDate"
+                :label="search.availableCities.length ? 'Datum Polaska' : 'Nema dostupnih datuma za ovu rutu, promenite grad / državu'" 
+                :disabled="!search.availableCities.length || !search.cityFrom"
+                :allowed-dates="search.isDateAllowed"
+              >
+                <template #day="{ date }">
+                  <div
+                    :class="[
+                      'v-btn',
+                      'v-size-default',
+                      {
+                        'red-darken-2 pointer-events-none' : search.allowedDays.fullyBooked.includes(date),
+                        'opacity-50 pointer-events-none': !search.isDateAllowed(date)
+                      }
+                    ]"
+                  >
+                      {{ new Date(date).getDate() }}
+                  </div>
+                </template>
+              </v-date-input>
             </v-col>
             <v-col cols="12" sm="6" v-if="search.bound === 'allbound'">
-              <v-date-input v-model="search.inDate" label="Datum povratka"></v-date-input>
+              <v-date-input  
+                v-model="search.inDate"
+                label="Datum Povratka" v-if="search.bound == 'allbound'"
+                :allowed-dates="search.isDateInAllowed"
+              >
+                <template #day="{ date }">
+                    <div
+                      :class="[
+                        'v-btn',
+                        'v-size-default',
+                        {
+                          'bg-red-darken-2 text-white pointer-events-none' : search.allowedDaysIn.fullyBooked.includes(date),
+                          'opacity-50 pointer-events-none': !search.isDateInAllowed(date)
+                        }
+                      ]"
+                    >
+                        {{ new Date(date).getDate() }}
+                    </div>
+                </template>
+              </v-date-input>
             </v-col>
           </v-row>
 

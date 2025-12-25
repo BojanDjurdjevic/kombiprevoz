@@ -5,13 +5,7 @@ import router from '@/router'
 import api from '@/api'
 
 export const useDestStore = defineStore('dest', () => {
-    const search = useSearchStore() /*
-    const destinations = [ 'Srbija', 'Hrvatska', 'Slovenija', 'Nemačka', 'Austrija' ]
-    const cities = {
-        'Srbija': ['Beograd', 'Novi Sad', 'Niš'],
-        'Hrvatska': ['Zagreb', 'Rijeka', 'Split'],
-        'Slovenija': ['Ljubljana', 'Koper', 'Maribor']
-    } */
+    const search = useSearchStore()
 
     const destinations = ref(null)
     const cities = ref(null)
@@ -21,24 +15,69 @@ export const useDestStore = defineStore('dest', () => {
     const city = ref('')
     const cityPics = ref([])
 
-    function takeCountry(n) {
-        localStorage.setItem('country', JSON.stringify({id: n.id, name: n.name}))
-        country.value = n.name
-        selectedCountryID.value = n.id
-        search.countryFrom = 'Srbija'
-        search.countryTo = n.name
+    const tourCitiesFrom = ref([])
+    async function fillFromCities(c) {
+      if(!c) return
+      console.log('poslani grad: ', c)
+      const dto = {
+        city: {
+          from: false,
+          name: c.name
+        }
+      }
+    
+      try {
+        const res = await api.getTours(dto)
+        tourCitiesFrom.value = res.data.success ? res.data.toCities : []
+        if(res.data.has_cities) {
+          console.log('Dostpni gradovi POLASKA: ', tourCitiesFrom.value)
+          search.availableCities = search.availableCities.filter(c =>
+            tourCitiesFrom.value.some(t => t.from_city === c.name)
+          )
+        } else {
+          search.availableCities = []
+        }
+        console.log(search.availableCities)
+      } catch (error) {
+        console.log(error)
+      }
+    }
+
+    function countryToLocale(n) {
+      console.log('za lokal: ', {id: n.id, name: n.name})
+      localStorage.setItem('country', JSON.stringify({id: n.id, name: n.name}))
+      return n
+    }
+
+    async function takeCountry(n) {
+        let mycountry = await countryToLocale(n)
+        country.value = mycountry.name
+        selectedCountryID.value = mycountry.id
+        if(n.name !== 'Srbija') {
+          search.countryFrom = {name: 'Srbija', id: 1}
+          search.countryTo = n
+        } else {
+          search.countryTo = {name: 'Srbija', id: 1}
+          search.countryFrom = ''
+          search.allCountries(search.allCount)
+        }
     } 
-    function pushToLocale(n) {
-      localStorage.setItem('city', JSON.stringify({id: n.id, name: n.name, pictures: n.pictures}))
-    } 
+
     function takeCity(n) {
         localStorage.setItem('city', JSON.stringify({id: n.id, name: n.name, pictures: n.pictures}))
         console.log(n)
         city.value = n.name
-        search.cityTo = n.name
-        console.log(n.pictures)
+        search.cityTo = n
+        console.log(search.cityTo)
         cityPics.value = getCityImages(n.pictures || [])
-        console.log(cityPics.value)
+        search.afterCountryFrom(search.countryFrom, true)
+        fillFromCities(search.cityTo)
+        console.log('Obj za PRETRAGU: ', {
+          countryFrom: search.countryFrom,
+          countryTo: search.countryTo,
+          cityTo: search.cityTo,
+          cities: search.availableCities  
+        })
     } 
 
     function adminCountryImage(n) {
@@ -114,8 +153,16 @@ export const useDestStore = defineStore('dest', () => {
           }
         },
         fetchCities: async () => {
+          let id
+          let cntry
+          if(selectedCountryID.value) {
+            id = selectedCountryID.value
+          } else {
+            cntry = JSON.parse(localStorage.getItem('country'))
+            id = cntry.id
+          }
           const dto = {
-              byID: selectedCountryID.value
+              byID: id
           }
 
           try {
@@ -134,6 +181,6 @@ export const useDestStore = defineStore('dest', () => {
         storedTown,
 
         takeCountry, takeCity, getCountryImage, getCityPrimaryImage, getCityImages,
-        adminCountryImage, pushToLocale, hydrateFromStorage,
+        adminCountryImage, hydrateFromStorage,
     }
 })
