@@ -36,7 +36,10 @@ const vuetify = createVuetify({
                     }
                 }
             }
-        }
+        },
+        VImg: {
+            transition: false,
+        },
     }
     
 })

@@ -87,6 +87,9 @@ import minibusImg from '@/assets/img/minibus.jpg';
     <!-- HERO IMAGE -->
     <v-img
       src="https://picsum.photos/id/314/3500/1650"
+      eager
+      fetchpriority="high"
+      transition="false"
       height="100vh"
       cover
       alt="Kombi prevoz putnika iz Srbije ka Evropi"
@@ -137,6 +140,9 @@ import minibusImg from '@/assets/img/minibus.jpg';
         >
           <v-img
             :src="minibusImg"
+            eager
+            fetchpriority="high"
+            transition="false"
             height="220"
             cover
             alt="Naša moderna kombi vozila za međunarodni prevoz"
@@ -155,6 +161,9 @@ import minibusImg from '@/assets/img/minibus.jpg';
         >
           <v-img
             src="https://picsum.photos/id/551/3500/1650"
+            eager
+            fetchpriority="high"
+            transition="false"
             height="220"
             cover
             alt="Destinacije kombi transfera širom Evrope"
