@@ -5,9 +5,7 @@ export default {
     //---------------------------- COUNTRIES ---------------------//
 
     getCountries(data) {
-        console.log(data)
-        return axios.get("", {params: {data}})
-        
+        return axios.get("", {params: {data}})   
     },
     insertCountry(formData) {
         console.log(formData)
@@ -42,7 +40,6 @@ export default {
     //---------------------------- CITIES ---------------------//
 
     getCities(cities) {
-        console.log(cities)
         return axios.get("", {params: {cities}}, {
             headers: {
                 "Content-type": "json/application"   

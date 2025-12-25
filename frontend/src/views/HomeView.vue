@@ -148,9 +148,10 @@ import minibusImg from '@/assets/img/minibus.jpg';
             alt="Naša moderna kombi vozila za međunarodni prevoz"
           >
             
-            <v-card-title class="text-white text-center">
-              Naša vozila
-            </v-card-title>
+              <v-card-title class="text-white text-center">
+                Naša vozila
+              </v-card-title>
+
           </v-img>
         </v-card>
 
@@ -168,9 +169,10 @@ import minibusImg from '@/assets/img/minibus.jpg';
             cover
             alt="Destinacije kombi transfera širom Evrope"
           >
-            <v-card-title class="text-white text-center">
+            <div class="hero-overlay">
+            <v-card-title class="text-white text-center text-shadow">
               Destinacije
-            </v-card-title>
+            </v-card-title></div>
           </v-img>
         </v-card>
       </div>

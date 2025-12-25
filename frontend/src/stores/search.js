@@ -39,7 +39,6 @@ export const useSearchStore = defineStore('search', () => {
   }
 
   function reverseCountries() {
-    console.log(countryFrom.value.name + "\n" + countryTo.value.name)
     if(countryFrom.value != '' && countryTo.value != '') {
       const temp1 = countryFrom.value
       const temp2 = countryTo.value
@@ -54,32 +53,9 @@ export const useSearchStore = defineStore('search', () => {
       }
 
       afterCountryFrom(countryFrom.value, true)
-      allCities(countryTo.value, false)
-      /*
-      // availableCountries
-      if(availableCountries.value.length && availableCountriesTo.value.length) {
-        const temp5 = availableCountries.value
-        const temp6 = availableCountriesTo.value
-        availableCountries.value = temp6
-        availableCountriesTo.value = temp5
-      }
-
-      // availableCities
-      if(availableCities.value.length && availableCitiesTo.value.length) {
-        const temp5 = availableCities.value
-        const temp6 = availableCitiesTo.value
-        availableCities.value = temp6
-        availableCitiesTo.value = temp5
-      }
-      /*
-      allCities(countryFrom.value, true)
-      
-      allCities(countryTo.value, false) */
       fillToCities(cityFrom.value)
       dateQuery()
     }
-    console.log(countryFrom.value.name + "\n" + countryTo.value.name)
-      
   } 
 
   function cityRules(val) {
@@ -129,7 +105,6 @@ export const useSearchStore = defineStore('search', () => {
         const msg = await api.getCountries(data.id)
         let input = Object.values(msg.data.drzave)
         availableCountries.value = input
-        console.log(availableCountries.value) 
       } catch (error) {
         console.log(error)
       }
@@ -138,7 +113,6 @@ export const useSearchStore = defineStore('search', () => {
         const msg = await api.getCountries(data)
         let input = Object.values(msg.data.drzave)
         availableCountries.value = input
-        console.log(availableCountries.value) 
       } catch (error) {
         console.log(error)
       }
@@ -149,7 +123,6 @@ export const useSearchStore = defineStore('search', () => {
 
   function getCountryFrom(c) {
     if(!c) return
-    console.log('Iz dostupnih država: ', c)
     availableCountriesTo.value = []
 
     if(c.name === 'Srbija') {
@@ -164,16 +137,10 @@ export const useSearchStore = defineStore('search', () => {
           availableCountriesTo.value.push(item)
         }
       });
-    } /*
-    availableCountries.value.forEach(item => {
-      if(item.id != id) {
-        availableCountriesTo.value.push(item)
-      }
-    }); */
+    }
   }
 
   async function allCities(c, from) {
-    //getCountryFrom(c)
     if(!c) return
     let dto = {
       country_id: c.id
@@ -181,12 +148,10 @@ export const useSearchStore = defineStore('search', () => {
     try {
       const msg = await api.getCities(dto)
       if(from) {
-        availableCities.value = msg.data.cities //Object.values(msg.data.cities)
+        availableCities.value = msg.data.cities 
       } else {
         availableCitiesTo.value = Object.values(msg.data.cities)
       }
-      console.log(availableCities.value)
-      console.log(availableCitiesTo.value)
     } catch (error) {
       console.log(error)
     }
@@ -198,9 +163,9 @@ export const useSearchStore = defineStore('search', () => {
   }
 
   async function fillToCities(c) {
+    cityTo.value = ''
     if(!c) return
     allCities(countryTo.value, false)
-    console.log('Objekat iz forme: ', c)
     const dto = {
       city: {
         name: c.name
@@ -209,13 +174,11 @@ export const useSearchStore = defineStore('search', () => {
 
     try {
       const res = await api.getTours(dto)
-      console.log(res.data)
       tourCitiesTo.value = res.data.success ? res.data.toCities : []
-      if(tourCitiesTo.value.length) {
+      if(res.data.has_cities) {
         availableCitiesTo.value = availableCitiesTo.value.filter(c =>
           tourCitiesTo.value.some(t => t.to_city === c.name)
         )
-        console.log("Available Cities: ", availableCitiesTo.value, "\n", "Sa Apija: ", tourCitiesTo.value)
       } else {
         availableCitiesTo.value = []
       }
@@ -247,17 +210,18 @@ export const useSearchStore = defineStore('search', () => {
         format: formD
       }
     }
-    console.log(dto)
+
     try {
       const msg = await api.checkAvailableDates(dto)
-      console.log(msg.data)
-      allowedDays.value.fullyBooked = msg.data.fullyBooked
-      allowedDays.value.allowed = msg.data.allowed
+      if(msg.data.success) {
+        allowedDays.value.fullyBooked = msg.data.fullyBooked
+        allowedDays.value.allowed = msg.data.allowed
 
-      allowedDaysIn.value.fullyBooked = msg.data.fullyBookedIn
-      allowedDaysIn.value.allowed = msg.data.allowedIn
-      console.log(dto.days.format)
-      console.log(allowedDays.value.fullyBooked + "\n" + allowedDaysIn.value.fullyBooked)
+        allowedDaysIn.value.fullyBooked = msg.data.fullyBookedIn
+        allowedDaysIn.value.allowed = msg.data.allowedIn
+      } else {
+        availableCitiesTo.value = []
+      }
     } catch (error) {
       console.log(error)
     }
@@ -314,10 +278,9 @@ export const useSearchStore = defineStore('search', () => {
               seats: seats.value
             }
         }
-        console.log(dto)
+
         try {
           const msg = await api.getTours(dto)
-          console.log(msg.data)
           tours.available = msg.data.tour 
           localStorage.setItem('avTours', JSON.stringify(tours.available))
         } catch (error) {
@@ -339,37 +302,11 @@ export const useSearchStore = defineStore('search', () => {
     }
   }
 
-  //--------------------- TESTING API
-  async function newCountry() {
-    try {
-      const msg = await api.insertCountry(exCountry)
-      console.log(msg.data)
-    } catch (error) {
-      console.log(error)
-    }
-  }
-  async function changeCountry() {
-    try {
-      const msg = await api.updateCountry(exCountry)
-      console.log(msg.data)
-    } catch (error) {
-      console.log(error)
-    }
-  }
-  async function dropCountry() {
-    try {
-      const msg = await api.deleteCountry(exCountry)
-      console.log(msg.data)
-    } catch (error) {
-      console.log(error)
-    }
-  }
-
   return { 
     dialog, bound, countryFrom, countryTo, cityFrom, cityTo,/* searchData, */ outDate, inDate, seats, destinations,
     exCountry, availableCountries, availableCountriesTo, availableCities, availableCitiesTo, rules, violated,
     allowedDays, allowedDaysIn, allCount,
-    sendSearch, reverseCountries, cityRules, allCountries, newCountry, changeCountry, dropCountry, getCountryFrom,
+    sendSearch, reverseCountries, cityRules, allCountries, getCountryFrom,
     allCities, dateQuery, isDateAllowed, isDateInAllowed, dateFormat, qDateForm, fillToCities, afterCountryFrom,
   }
 

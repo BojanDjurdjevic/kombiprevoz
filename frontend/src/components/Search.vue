@@ -113,7 +113,8 @@
               <v-date-input 
                 :rules="[search.rules.required]"
                 v-model="search.outDate"
-                label="Datum Polaska" 
+                :label="search.availableCitiesTo.length ? 'Datum Polaska' : 'Nema dostupnih datuma za ovu rutu, promenite grad / državu'" 
+                :disabled="!search.availableCitiesTo.length || !search.cityTo"
                 :allowed-dates="search.isDateAllowed"
               >
                 <template #day="{ date }">

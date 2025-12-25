@@ -24,13 +24,16 @@
     <v-container class="text-center">
         <h1>Dostupne vožnje</h1>
     </v-container>
-    
-    <v-btn 
-        class="ma-1"
-        @click="tours.active = true"
-    >
-        Otvori
-    </v-btn>
+    <v-container class="text-center">
+        <v-btn 
+            class="ma-1"
+            color="red-darken-3"
+            variant="outlined"
+            @click="tours.active = true"
+        >
+            Otvori  <v-icon icon="mdi-cart"></v-icon>
+        </v-btn>
+    </v-container>
 
     <v-container fluid class="pa-3">
         <v-row justify="center" class="ga-6">

@@ -88,7 +88,7 @@ class Tour {
                         'id' => $tour->id,
                         'seats' => $tour->seats 
                     ];
-                }
+                } else return false;
             }
         } catch (PDOException $e) {
             echo json_encode([
@@ -294,6 +294,8 @@ class Tour {
     public function fullyBooked($format)
     {
         $tour = $this->getIdAndSeats();
+
+        if(!$tour) return ['fullyBooked' => false, 'fullyBookedIn' => false];
         
         $sql = "SELECT date, SUM(places) as totall FROM order_items
                 WHERE tour_id = :tour_id AND 
@@ -305,7 +307,7 @@ class Tour {
 
         $this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
         $format = htmlspecialchars(strip_tags($format), ENT_QUOTES);
-        $stmt->bindParam(':tour_id', $this->id);
+        $stmt->bindParam(':tour_id', $this->id, PDO::PARAM_INT);
         $stmt->bindParam(':format', $format);
 
         $fullyBooked = [];
@@ -327,10 +329,16 @@ class Tour {
                 
             }
         } catch (PDOException $e) {
+            Logger::error('Failed to check fullyBooked() ', [
+                'error' => $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            http_response_code(500);
             echo json_encode([
-                'fullyBooked' => 'Došlo je do greške pri konekciji na bazu!',
-                'msg' => $e->getMessage()
+                'error' => 'Došlo je do greške pri konekciji na bazu!'
             ], JSON_PRETTY_PRINT);
+            return ['fullyBooked' => false, 'fullyBookedIn' => false];
         }
         
         $this->id = null;
@@ -339,7 +347,9 @@ class Tour {
         $this->from_city = $to;
         $this->to_city = $from;
 
-        $this->getIdAndSeats();
+        $tourIn = $this->getIdAndSeats();
+
+        if(!$tourIn) return ['fullyBooked' => false, 'fullyBookedIn' => false];
         
         $sql = "SELECT date, SUM(places) as totall FROM order_items
                 WHERE tour_id = :tour_id AND 
@@ -364,13 +374,20 @@ class Tour {
                 }
             }
         } catch (PDOException $e) {
+            Logger::error('Failed to check fullyBooked() ', [
+                'error' => $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            http_response_code(500);
             echo json_encode([
-                'fullyBooked' => 'Došlo je do greške pri konekciji na bazu!',
-                'msg' => $e->getMessage()
+                'error' => 'Došlo je do greške pri konekciji na bazu!'
             ], JSON_PRETTY_PRINT);
+            return ['fullyBooked' => false, 'fullyBookedIn' => false];
         }
 
         return [
+            'success' => true,
             'fullyBooked' => $fullyBooked,
             'availableD' => $availableDates,
             'allowed' => $allowed,

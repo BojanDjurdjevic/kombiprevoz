@@ -35,7 +35,7 @@ class TourController {
                             $this->tour->from_city = $this->data->tours->days->from;
                             $this->tour->to_city = $this->data->tours->days->to;
                             $full_days = $this->tour->fullyBooked($this->data->tours->days->format);
-                            echo json_encode($full_days, JSON_PRETTY_PRINT); 
+                            echo json_encode($full_days, JSON_UNESCAPED_UNICODE); 
                         }
                         if(isset($this->data->tours->search)) {
                             $this->tour->from_city = $this->data->tours->search->from;
