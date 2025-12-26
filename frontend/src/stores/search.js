@@ -4,10 +4,12 @@ import { useTourStore } from './tours'
 import router from '@/router'
 import api from '@/api'
 import { useUserStore } from './user'
+import { useDestStore } from './destinations'
 
 export const useSearchStore = defineStore('search', () => {
   const tours = useTourStore()
   const user = useUserStore()
+  const dest = useDestStore()
 
   const rules = {
     required: (value) => !!value || "Obavezno polje",
@@ -107,6 +109,7 @@ export const useSearchStore = defineStore('search', () => {
         const msg = await api.getCountries(data.id)
         let input = Object.values(msg.data.drzave)
         availableCountries.value = input
+        console.log('iz allCOunt sa data.id: ', availableCountries.value)
       } catch (error) {
         console.log(error)
       }
@@ -115,6 +118,7 @@ export const useSearchStore = defineStore('search', () => {
         const msg = await api.getCountries(data)
         let input = Object.values(msg.data.drzave)
         availableCountries.value = input
+        console.log('iz allCOunt bez data.id: ', availableCountries.value)
       } catch (error) {
         console.log(error)
       }
@@ -150,9 +154,10 @@ export const useSearchStore = defineStore('search', () => {
     try {
       const msg = await api.getCities(dto)
       if(from) {
+        cityFrom.value = ''
         availableCities.value = msg.data.cities 
-        console.log('Iz ALLCITIES: ', availableCities.value)
       } else {
+        cityTo.value = ''
         availableCitiesTo.value = Object.values(msg.data.cities)
       }
     } catch (error) {
@@ -161,21 +166,24 @@ export const useSearchStore = defineStore('search', () => {
   }
 
   function afterCountryFrom(c, from) {
+    console.log('Država iz Searcha: ', c)
     getCountryFrom(c)
     allCities(c, from)
+    if(cityTo.value) {
+      dest.fillFromCities(cityTo.value)
+    }
   }
 
   async function fillToCities(c) {
     cityTo.value = ''
     if(!c) return
     allCities(countryTo.value, false)
-    const dto = {
+    let dto = {
       city: {
         from: true,
         name: c.name
       }
     }
-
     try {
       const res = await api.getTours(dto)
       tourCitiesTo.value = res.data.success ? res.data.toCities : []
@@ -227,6 +235,7 @@ export const useSearchStore = defineStore('search', () => {
       } else {
         availableCitiesTo.value = []
       }
+      console.log('Date REZ: ', allowedDays.value, "\n", allowedDaysIn.value)
     } catch (error) {
       console.log(error)
     }
@@ -292,6 +301,7 @@ export const useSearchStore = defineStore('search', () => {
           tours.available = msg.data.tour 
           console.log(tours.available)
           localStorage.setItem('avTours', JSON.stringify(tours.available))
+          tours.mySearch = dto
           router.push({
             name: 'rezultati'
           })
@@ -299,9 +309,7 @@ export const useSearchStore = defineStore('search', () => {
           console.log(error)
           dialog.value = false
           user.showErr(error, 3000)
-        } finally { 
-          tours.mySearch = dto
-
+        } finally {
           countryFrom.value = ''
           countryTo.value = ''
           cityFrom.value = ''

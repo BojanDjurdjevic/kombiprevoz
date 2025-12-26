@@ -306,7 +306,15 @@ class Tour {
     {
         $tour = $this->getIdAndSeats();
 
-        if(!$tour) return ['fullyBooked' => false, 'fullyBookedIn' => false];
+        if(!$tour) return [
+            'success' => true,
+            'fullyBooked' => [],
+            'availableD' => [],
+            'allowed' => [],
+            'fullyBookedIn' => [],
+            'availableDIn' => [],
+            'allowedIn' => []
+        ];
         
         $sql = "SELECT date, SUM(places) as totall FROM order_items
                 WHERE tour_id = :tour_id AND 
@@ -360,7 +368,12 @@ class Tour {
 
         $tourIn = $this->getIdAndSeats();
 
-        if(!$tourIn) return ['fullyBooked' => false, 'fullyBookedIn' => false];
+        if(!$tourIn) return [
+            'success' => true,
+            'fullyBookedIn' => [],
+            'availableDIn' => [],
+            'allowedIn' => []
+        ];
         
         $sql = "SELECT date, SUM(places) as totall FROM order_items
                 WHERE tour_id = :tour_id AND 
@@ -538,6 +551,15 @@ class Tour {
 
     public function create() 
     {
+        $tour = $this->getIdAndSeats();
+
+        if($tour) {
+            http_response_code(403);
+            echo json_encode([
+                'error' => 'Tura sa ovim gradovima već postoji!'
+            ]);
+            exit;
+        }
         $sql = "INSERT INTO tours SET
         from_city = :from_city, to_city = :to_city, departures = :departures,
         time = :time, duration = :duration, price = :price, seats = :seats

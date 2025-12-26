@@ -40,6 +40,24 @@ onMounted(async () => {
   if (!dest.cities && dest.selectedCountryID) {
     await dest.actions.fetchCities()
   }
+
+  if(!search.countryFrom || !search.cityFrom) {
+    search.countryTo = dest.storedCountry
+    search.cityTo = dest.storedCity
+    if(dest.country !== 'Srbija') {
+      search.countryFrom = {name: 'Srbija', id: 1}
+      search.afterCountryFrom(search.countryFrom, true)
+      search.availableCountries = [{name: 'Srbija', id: 1}]
+      dest.fillFromCities(search.cityTo)
+    } else {
+      search.countryFrom = ''
+      search.allCountries(search.allCount)
+      console.log('Ava Countries iz CityBook: ', search.availableCountries)
+      /*
+      const filtered = search.availableCountries.filter(c => c.name !== 'Srbija')
+      search.availableCountries = filtered */
+    }
+  }
 })
 
 </script>
@@ -88,7 +106,12 @@ onMounted(async () => {
       <v-col cols="12" md="8">
         <h2 class="text-center mb-4">Rezerviši kombi transfer</h2>
         <v-sheet color="indigo-darken-2" class="pa-4 rounded-xl" elevation="2">
-
+          <v-alert v-if="search.violated"
+            text="Molimo Vas da popunite sva polja!"
+            title="Greška"
+            type="error"
+            @click="search.violated = false"
+          ></v-alert>
           <!-- Bound -->
           <v-row class="mb-4">
             <v-col cols="12">
@@ -109,8 +132,9 @@ onMounted(async () => {
                 item-value="id"
                 :items="search.availableCountries"
                 v-model="search.countryFrom"
-                :disabled="search.countryFrom"
+                
                 v-on:update:model-value="val => search.afterCountryFrom(val, true)"
+                return-object
               ></v-autocomplete>
             </v-col>
             <v-col cols="12" sm="6">
@@ -122,6 +146,7 @@ onMounted(async () => {
                 :items="search.availableCountriesTo"
                 v-model="search.countryTo"
                 disabled
+                return-object
               ></v-autocomplete>
             </v-col>
           </v-row>
@@ -137,6 +162,7 @@ onMounted(async () => {
                 v-model="search.cityFrom"
                 return-object
                 v-on:update:model-value="search.dateQuery"
+                :disabled="!search.countryFrom"
               ></v-autocomplete>
             </v-col>
             <v-col cols="12" sm="6">
@@ -147,6 +173,7 @@ onMounted(async () => {
                 item-value="name"
                 v-model="search.cityTo"
                 disabled
+                return-object
               ></v-autocomplete>
             </v-col>
           </v-row>
@@ -157,7 +184,8 @@ onMounted(async () => {
               <v-date-input 
                 :rules="[search.rules.required]"
                 v-model="search.outDate"
-                :label="search.availableCities.length ? 'Datum Polaska' : 'Nema dostupnih datuma za ovu rutu, promenite grad / državu'" 
+                :label="search.allowedDays.allowed.length
+                ? 'Datum Polaska' : 'Nema dostupnih datuma za ovu rutu, promenite grad / državu'" 
                 :disabled="!search.availableCities.length || !search.cityFrom"
                 :allowed-dates="search.isDateAllowed"
               >

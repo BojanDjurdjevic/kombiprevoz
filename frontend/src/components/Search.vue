@@ -17,10 +17,10 @@
 <template >
     
     <v-alert v-if="search.violated"
-      
       text="Molimo Vas da popunite sva polja!"
       title="Greška"
       type="error"
+      @click="search.violated = false"
     ></v-alert>
     
     <v-sheet color="indigo-darken-2" class="pa-1" :elevation="2" >
@@ -41,7 +41,7 @@
             >
               <v-autocomplete
                 clearable
-                label="From"
+                label="Država polaska"
                 :items="search.availableCountries"
                 item-title="name"
                 item-value="id"
@@ -56,7 +56,7 @@
               <v-spacer></v-spacer>
               <v-autocomplete
                 clearable
-                label="To"
+                label="Država dolaska"
                 :rules="[search.rules.required]"
                 :items="search.availableCountriesTo"
                 item-title="name"
@@ -75,8 +75,7 @@
             >
               <v-autocomplete
                 clearable
-                width=""
-                label="From"
+                label="Grad polaska"
                 :rules="[search.rules.required]"
                 :items="search.availableCities"
                 item-title="name"
@@ -92,7 +91,7 @@
               <v-spacer></v-spacer>
               <v-autocomplete
                 clearable
-                label="To"
+                label="Grad dolaska"
                 :rules="[search.rules.required]"
                 :items="search.availableCitiesTo"
                 item-title="name"
@@ -113,7 +112,8 @@
               <v-date-input 
                 :rules="[search.rules.required]"
                 v-model="search.outDate"
-                :label="search.availableCitiesTo.length ? 'Datum Polaska' : 'Nema dostupnih datuma za ovu rutu, promenite grad / državu'" 
+                :label="search.availableCitiesTo.length && search.allowedDays.allowed.length ? 
+                'Datum Polaska' : 'Nema dostupnih datuma za ovu rutu, promenite grad / državu'" 
                 :disabled="!search.availableCitiesTo.length || !search.cityTo"
                 :allowed-dates="search.isDateAllowed"
               >

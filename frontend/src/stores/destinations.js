@@ -60,6 +60,7 @@ export const useDestStore = defineStore('dest', () => {
           search.countryTo = {name: 'Srbija', id: 1}
           search.countryFrom = ''
           search.allCountries(search.allCount)
+          search.availableCountries.filter(c => c.name !== 'Srbija')
         }
     } 
 
@@ -68,6 +69,7 @@ export const useDestStore = defineStore('dest', () => {
         console.log(n)
         city.value = n.name
         search.cityTo = n
+        search.cityFrom = ''
         console.log(search.cityTo)
         cityPics.value = getCityImages(n.pictures || [])
         search.afterCountryFrom(search.countryFrom, true)
@@ -117,21 +119,23 @@ export const useDestStore = defineStore('dest', () => {
     }
 
     const storedTown = ref({})
+    const storedCountry = ref(null)
+    const storedCity = ref(null)
 
     function hydrateFromStorage() {
-      const storedCountry = JSON.parse(localStorage.getItem('country'))
-      const storedCity = JSON.parse(localStorage.getItem('city'))
+      storedCountry.value = JSON.parse(localStorage.getItem('country'))
+      storedCity.value = JSON.parse(localStorage.getItem('city'))
 
-      if (storedCountry) {
-        country.value = storedCountry.name
-        selectedCountryID.value = storedCountry.id
+      if (storedCountry.value) {
+        country.value = storedCountry.value.name
+        selectedCountryID.value = storedCountry.value.id
       }
 
-      if (storedCity) {
-        city.value = storedCity.name
-        cityPics.value = getCityImages(storedCity.pictures || [])
-        search.cityTo = storedCity.name
-        storedTown.value = storedCity
+      if (storedCity.value) {
+        city.value = storedCity.value.name
+        cityPics.value = getCityImages(storedCity.value.pictures || [])
+        search.cityTo = storedCity.value.name
+        storedTown.value = storedCity.value
       }
     }
 
@@ -178,9 +182,9 @@ export const useDestStore = defineStore('dest', () => {
 
     return {
         cities, country, city, destinations, actions, selectedCountryID, cityPics,
-        storedTown,
+        storedCountry, storedCity,
 
         takeCountry, takeCity, getCountryImage, getCityPrimaryImage, getCityImages,
-        adminCountryImage, hydrateFromStorage,
+        adminCountryImage, hydrateFromStorage, fillFromCities,
     }
 })

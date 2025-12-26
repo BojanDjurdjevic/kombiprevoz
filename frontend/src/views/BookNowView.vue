@@ -28,7 +28,7 @@ onload = () => {
                 elevation="3"
             >
                 <v-card-title >
-                    Ukupna cena vožnji: <h3> {{ tours.totalPrice }}  </h3> 
+                    Ukupna cena vožnji: <h3> {{ tours.totalPrice }} € </h3> 
                 </v-card-title>
                 
             </v-card>
@@ -141,7 +141,7 @@ onload = () => {
             elevation="3"
         >
             <v-card-title >
-                Ukupna cena vožnji: <h3> {{ tours.totalPrice }}  </h3> 
+                Ukupna cena vožnji: <h3> {{ tours.totalPrice }} € </h3> 
             </v-card-title>
             
         </v-card>
