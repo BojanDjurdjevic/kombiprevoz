@@ -13,6 +13,7 @@ use Controllers\OrderController;
 use Controllers\TourController;
 use Controllers\UserController;
 use Helpers\Logger;
+use Middleware\DemoMiddleware;
 use Models\User;
 use Rules\Validator;
 use Rules\Input;
@@ -34,16 +35,13 @@ $dotenv->load();
 
 $database = new Database();
 $db = $database->connect();
-/*
-$method = $_SERVER['REQUEST_METHOD'];
-if($method === 'GET' && isset($_GET['data'])) {
-    $data = json_decode(json_encode($_GET['data']));
-} else $data = json_decode((file_get_contents("php://input")), true); */
 
 $data = Input::all();
-//$get = $_GET['data'];
-//echo json_encode(['primio' => $data]);
-//die();
+
+if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE'])) {
+    DemoMiddleware::handle();
+}
+
 $user = new UserController($db, $data);
 $countries = new CountryController($db, $data);
 $cities = new CityController($db, $data);

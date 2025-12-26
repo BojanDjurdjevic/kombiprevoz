@@ -43,10 +43,6 @@ class User {
     // Check if it the User is logedin:
     public static function isLoged($db)
     {
-
-        //$logs = isset($_SESSION['user']) ? new Logger(self::$db)->getUserLogs($_SESSION['user']['id']) : [];
-
-
         if(!isset($_SESSION['user']) && isset($_COOKIE['remember_me'])) {
             $sql = "SELECT * FROM users WHERE id = :id";
             $stmt = $db->prepare($sql);
@@ -73,11 +69,9 @@ class User {
                             'city' => $user->city,
                             'address' => $user->address,
                             'phone' => $user->phone,
+                            'is_demo' => $user->is_demo,
                             'initials' => $initials
                         ];
-                        /*
-                        $logger = new Logger(self::$db);
-                        $logs = $logger->getUserLogs($user->id); */
                     }
                 }
             } catch (PDOException $e) {
@@ -452,6 +446,7 @@ class User {
                                     'city' => $user->city,
                                     'address' => $user->address,
                                     'phone' => $user->phone,
+                                    'is_demo' => $user->is_demo,
                                     'initials' => $initials
                                 ];
 
@@ -650,6 +645,7 @@ class User {
                                 'city' => $user->city,
                                 'address' => $user->address,
                                 'phone' => $user->phone,
+                                'is_demo' => $user->is_demo,
                                 'initials' => $initials
                             ];
 

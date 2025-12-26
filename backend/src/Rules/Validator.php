@@ -2,6 +2,11 @@
 
 namespace Rules;
 
+use Helpers\Logger;
+use Models\Order;
+use PDO;
+use PDOException;
+
 if (!defined('APP_ACCESS')) {
     http_response_code(403);
     die('Direct access forbidden');
@@ -59,6 +64,68 @@ class Validator {
     {
         if(isset($_SESSION['user']['status']) && $_SESSION['user']['status'] == 'Driver') return true;
         else return false;
+    }
+
+    // Current user is demo
+    public static function isDemo() 
+    {
+        return !empty($_SESSION['user']['is_demo']);
+    }
+
+    // User whos profile will be changed (or order) is demo
+    public static function custIsDemo($userID, $db)
+    {
+        $sql = "SELECT is_demo from users WHERE id = :id";
+        $stmt = $db->prepare($sql);
+        $stmt->bindParam(':id', $userID);
+
+        try {
+            $stmt->execute();
+            $user = $stmt->fetch(PDO::FETCH_OBJ);
+
+            if($user) {
+                return (bool) $user->is_demo;
+            } else {
+                return false;
+            }
+        } catch (PDOException $e) {
+            Logger::error('Failed to fetch customer-user in custIsDemo()', [
+                'error' => $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            return true;
+        }
+    }
+
+    public static function tourIsDemo($tourID, $db) 
+    {
+        $sql = "SELECT is_demo from tours WHERE id = :id";
+        $stmt = $db->prepare($sql);
+        $stmt->bindParam(':id', $tourID);
+
+        try {
+            $stmt->execute();
+            $tour = $stmt->fetch(PDO::FETCH_OBJ);
+            return $tour ? (bool) $tour->is_demo : false;
+            
+        } catch (PDOException $e) {
+            Logger::error('Failed to fetch demo tour in tourIsDemo()', [
+                'error' => $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            return true;
+        }
+    }
+
+    public static function isOrderOfDemoUser($order_itemsID, $db)
+    {
+        $order = new Order($db);
+        $order->getFromDB($order_itemsID);
+        if(!$order->user_id) return false;
+
+        return self::custIsDemo($order->user_id, $db);
     }
 
     public static function mailerTemplate($html, $code, ? string $name)
