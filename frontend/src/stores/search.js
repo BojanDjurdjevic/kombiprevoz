@@ -104,6 +104,12 @@ export const useSearchStore = defineStore('search', () => {
   const tourCitiesTo = ref([])
 
   async function allCountries(data) {
+    countryFrom.value = ''
+    countryTo.value = ''
+    cityFrom.value = ''
+    cityTo.value = ''
+    outDate.value = null
+    inDate.value = null
     if(data && data.id) {
       try {
         const msg = await api.getCountries(data.id)

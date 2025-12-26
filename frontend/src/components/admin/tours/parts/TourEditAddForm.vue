@@ -54,7 +54,7 @@ const tourDays = [
         item-value="id"
         return-object
         clearable
-        v-on:update:model-value="val => search.allCities(val.id, true)"
+        v-on:update:model-value="val => search.allCities(val, true)"
       />
 
       <v-select
@@ -76,7 +76,7 @@ const tourDays = [
         item-value="id"
         return-object
         clearable
-        v-on:update:model-value="val => search.allCities(val.id, false)"
+        v-on:update:model-value="val => search.allCities(val, false)"
       />
 
       <v-select

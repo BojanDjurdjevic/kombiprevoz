@@ -26,35 +26,35 @@ const route = useRoute()
     <Header />
     <v-main>
       <v-fade-transition mode="out-in">
-        <v-alert v-if="user.successMsg"
-          :text="user.successMsg"
-          title="Pozdrav!"
-          type="success"
-          class="position-sticky top-0 pa-3"
-          elevation="12"
-        ></v-alert>
+        <v-overlay
+          :model-value="!!user.successMsg || !!user.errorMsg"
+          class="d-flex align-center justify-center"
+          z-index="9999"
+        >
+          <v-alert
+            v-if="user.successMsg"
+            type="success"
+            title="Pozdrav!"
+            :text="user.successMsg"
+            elevation="12"
+            class="alert-full"
+          />
+
+          <v-alert
+            v-if="user.errorMsg"
+            type="error"
+            title="Greška!"
+            :text="user.errorMsg"
+            elevation="12"
+            class="alert-full"
+          />
+        </v-overlay>
+
       </v-fade-transition>
-      <v-fade-transition mode="out-in">
-        <v-alert v-if="user.errorMsg"
-          :text="user.errorMsg"
-          title="Greška!"
-          type="error"
-          class="position-sticky top-0 pa-3"
-          elevation="12"
-          z-index="6"
-        ></v-alert>
-      </v-fade-transition>
+      
       <v-fade-transition mode="out-in">
         <RouterView />
       </v-fade-transition>
-      <!--
-      <router-view v-slot="{ HomeView, MyBookings, Destinations,
-        CitiesView, CityBook, BookNow, SearchResult }">
-        <transition >
-          <component :is="SearchResult" />
-        </transition>
-      </router-view>
-      -->
     </v-main>
     <Footer v-if="!route.path.startsWith('/admin')" />
   </v-app>
@@ -64,4 +64,11 @@ const route = useRoute()
   * {
     font-family: Verdana, Geneva, Tahoma, sans-serif;
   }
+
+  .alert-full {
+    width: 80vw;       
+    max-width: 100%;
+    border-radius: 0; 
+  }
+
 </style>
