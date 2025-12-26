@@ -3,6 +3,8 @@
 namespace Controllers;
 
 //use Database;
+
+use Middleware\DemoMiddleware;
 use Models\Country;
 
 if (!defined('APP_ACCESS')) {
@@ -24,6 +26,9 @@ class CountryController {
 
     public function handleRequest() {
         $request = $_SERVER['REQUEST_METHOD'];
+        if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE'])) {
+            DemoMiddleware::handle();
+        }
 
         if($request === 'GET') {
             if(empty($this->data->country->country_id)) {

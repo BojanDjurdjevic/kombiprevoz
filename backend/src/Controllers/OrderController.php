@@ -2,6 +2,7 @@
 
 namespace Controllers;
 
+use Middleware\DemoMiddleware;
 use Models\Order;
 use PDOException;
 use Rules\Validator;

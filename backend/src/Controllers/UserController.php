@@ -3,6 +3,7 @@
 namespace Controllers;
 
 use Helpers\Logger;
+use Middleware\DemoMiddleware;
 use Models\User;
 use Rules\Validator;
 
@@ -63,6 +64,10 @@ class UserController {
         }
 
         $request = $_SERVER['REQUEST_METHOD'];
+
+        if (in_array($_SERVER['REQUEST_METHOD'], ['PUT', 'DELETE'])) {
+            DemoMiddleware::handle();
+        }
 
         switch($request) {
             case 'GET':

@@ -13,7 +13,7 @@ use Controllers\OrderController;
 use Controllers\TourController;
 use Controllers\UserController;
 use Helpers\Logger;
-use Middleware\DemoMiddleware;
+
 use Models\User;
 use Rules\Validator;
 use Rules\Input;
@@ -38,9 +38,7 @@ $db = $database->connect();
 
 $data = Input::all();
 
-if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE'])) {
-    DemoMiddleware::handle();
-}
+
 
 $user = new UserController($db, $data);
 $countries = new CountryController($db, $data);
@@ -60,15 +58,9 @@ Logger::rotateLog('audit.log', 50);
 
 
 if(isset($data->users) && !empty($data->users)) {
+    
     $user->handleRequest();
 }
-if(isset($data->country) && !empty($data->country)) {
-    $countries->handleRequest();
-} elseif(isset($data->cities) && !empty($data->cities)) {
-    $cities->handleRequest();
-} elseif(isset($data->tours) && !empty($data->tours)) {
-    $tours->handleRequest();
-} 
 if(isset($data->orders) && !empty($data->orders) /* || (isset($data->adminOrders) && !empty($data->adminOrders)) */) {
     if(isset($_SESSION['user'])) $orders->handleRequest();
     else {
@@ -79,6 +71,15 @@ if(isset($data->orders) && !empty($data->orders) /* || (isset($data->adminOrders
         ], JSON_PRETTY_PRINT);
     }
 }
+
+if(isset($data->country) && !empty($data->country)) {
+    $countries->handleRequest();
+} elseif(isset($data->cities) && !empty($data->cities)) {
+    $cities->handleRequest();
+} elseif(isset($data->tours) && !empty($data->tours)) {
+    $tours->handleRequest();
+} 
+
 if(isset($data->departure) && !empty($data->departure)) {
     if(isset($_SESSION['user']) && Validator::isDriver() || Validator::isAdmin() || Validator::isSuper()) 
     $departures->handleRequest();

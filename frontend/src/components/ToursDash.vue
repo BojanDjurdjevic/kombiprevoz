@@ -119,7 +119,9 @@ const openTour = (tour) => {
                     :items="admin.filteredTours"
                     @open="openTour"
                   />
-                  
+                  <v-container class="w-50 h-100" v-if="!admin.filteredTours.length">
+                    <p><b>Kliknite gore desno na "Filteri" da biste pretražili ture</b></p>  
+                  </v-container>
               </div>
             </v-card-text>
           </v-card>

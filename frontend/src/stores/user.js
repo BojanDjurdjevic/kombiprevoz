@@ -12,15 +12,7 @@ export const useUserStore = defineStore('user', () => {
     const isLoggedUser = ref({
         user: true
     })
-    const user = ref(null /*{
-        id: 10,
-        initials: 'BD',
-        fullName: 'Bojan Đurđević',
-        email: 'pininfarina164@gmail.com',
-        town: 'Novi Sad',
-        address: 'Gavrila Principa 6',
-        phone: '062640273'
-    } */)
+    const user = ref(null)
     
     const logs = ref([])
 
@@ -219,6 +211,9 @@ export const useUserStore = defineStore('user', () => {
                 if(res.data.success) {
                     user.value = null
                     showSucc(res, 4000)
+                    router.push({
+                        path: '/'
+                    })
                 } else {
                     console.log(res.data)
                 }
@@ -226,7 +221,7 @@ export const useUserStore = defineStore('user', () => {
                 console.dir(error, {depth: null})
             } finally {
                 loading.value = false
-                user.value = null
+                user.value = null               
             }  
         },
         requestPassReset: async (users) => {

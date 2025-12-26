@@ -10,6 +10,8 @@ if (!defined('APP_ACCESS')) {
     die('Direct access forbidden');
 }
 
+use Middleware\DemoMiddleware;
+
 class TourController {
     public $db;
     public $data;
@@ -24,6 +26,9 @@ class TourController {
 
     public function handleRequest() {
         $request = $_SERVER['REQUEST_METHOD'];
+        if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE'])) {
+            DemoMiddleware::handle();
+        }
 
         switch($request) {
             case 'GET':

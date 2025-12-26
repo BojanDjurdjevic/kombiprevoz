@@ -233,7 +233,7 @@ export const useAdminStore = defineStore("admin", () => {
   const toursFrom = ref(null);
   const toursTo = ref(null);
 
-  const filteredTours = ref(null)
+  const filteredTours = ref([])
 
   // existing tours:
 

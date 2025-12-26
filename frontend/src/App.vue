@@ -28,7 +28,7 @@ const route = useRoute()
       <v-fade-transition mode="out-in">
         <v-overlay
           :model-value="!!user.successMsg || !!user.errorMsg"
-          class="d-flex align-center justify-center"
+          class="d-flex align-start justify-center"
           z-index="9999"
         >
           <v-alert

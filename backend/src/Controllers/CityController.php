@@ -2,6 +2,7 @@
 
 namespace Controllers;
 
+use Middleware\DemoMiddleware;
 use Models\City;
 
 if (!defined('APP_ACCESS')) {
@@ -24,6 +25,9 @@ class CityController {
     public function handleRequest()
     {
         $request = $_SERVER['REQUEST_METHOD'];
+        if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE'])) {
+            DemoMiddleware::handle();
+        }
 
         switch($request) {
             case 'GET':

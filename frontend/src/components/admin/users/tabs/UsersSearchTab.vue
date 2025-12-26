@@ -22,4 +22,7 @@ const admin = useAdminStore();
       </v-card-actions>
     </v-card>
   </div>
+  <v-container class="text-center" v-else>
+    <p><b>Kliknite gore desno na "Filteri" da biste pretražili korisnike</b></p>
+  </v-container>
 </template>

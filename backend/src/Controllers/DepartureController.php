@@ -2,6 +2,7 @@
 
 namespace Controllers;
 
+use Middleware\DemoMiddleware;
 use Models\Departure;
 use Models\Order;
 use Models\User;
@@ -32,6 +33,9 @@ class DepartureController {
     public function handleRequest()
     {
         $request = $_SERVER['REQUEST_METHOD'];
+        if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE'])) {
+            DemoMiddleware::handle();
+        }
 
         if(isset($this->data->departure->id)) $this->departure->id = $this->data->departure->id; else $this->departure->id = null;
         if(isset($this->data->departure->driver_id)) $this->departure->driver_id = $this->data->departure->driver_id; else $this->departure->driver_id = null;

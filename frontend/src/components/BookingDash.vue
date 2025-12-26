@@ -361,6 +361,9 @@ watch(() => bookings48.value, (val) => {
                 <v-container class="w-50 h-100" v-if="admin.filteredOrders && !admin.filteredOrders.has_orders">
                   <p><b>Nema vožnji po zadatim filterima</b></p>  
                 </v-container>
+                <v-container class="w-50 h-100" v-else>
+                  <p><b>Kliknite gore desno na "Filteri" da biste pretražili rezervacije</b></p>  
+                </v-container>
               </div>
               <div class="w-100" v-if="admin.tab_bookings == 'U narednih 24h'">
                 <v-card title="Rezervacije u narednih 24h" flat 
