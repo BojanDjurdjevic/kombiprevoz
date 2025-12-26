@@ -66,7 +66,7 @@ const route = useRoute()
   }
 
   .alert-full {
-    width: 80vw;       
+    width: 90vw;       
     max-width: 100%;
     border-radius: 0; 
   }

@@ -2,9 +2,10 @@
 import { ref } from 'vue';
 import { useTourStore } from '@/stores/tours';
 import { useMyOrdersStore } from '@/stores/myorders';
+import { useUserStore } from '@/stores/user';
 
 const orders = useMyOrdersStore()
-
+const user = useUserStore()
 
 
 </script>
@@ -19,12 +20,14 @@ const orders = useMyOrdersStore()
         
             <v-card height="21rem" width="21rem" elevation="9"
                 class="d-flex flex-column justify-space-evenly align-center ma-6 rounded-xl"
-                
+                v-if="!user.user?.is_demo"
                 v-for="order in orders.myorders.orders"
             >
-                <v-card class="w-100 text-center
-                d-flex flex-column justify-space-evenly align-center
-                " height="66%">
+                <v-card v-if="!user.user?.is_demo"
+                    class="w-100 text-center
+                    d-flex flex-column justify-space-evenly align-center" 
+                    height="66%"
+                >
                     <v-card-title> {{ order.items[0].from }} - {{ order.items[0].to }} </v-card-title>
                     <v-divider></v-divider>
                     <v-card-subtitle v-if="order.items[0] && order.items[0].deleted == 0">Odlazak: {{ order.items[0].date }} </v-card-subtitle>
@@ -32,7 +35,7 @@ const orders = useMyOrdersStore()
                     <v-divider></v-divider>
                     <v-card-title> {{ order.total }} EUR</v-card-title>
                 </v-card>
-                <v-card-actions class="w-50 ">
+                <v-card-actions class="w-50 " v-if="!user.user?.is_demo">
                     <v-btn
                         variant="elevated"
                         color="red-darken-4"
@@ -44,6 +47,33 @@ const orders = useMyOrdersStore()
                     </v-btn>
                 </v-card-actions>
             </v-card>
-    
+            <v-card height="21rem" width="21rem" elevation="9"
+                class="d-flex flex-column justify-space-evenly align-center ma-6 rounded-xl"
+                v-else
+                v-for="order in orders.myorders"
+            >
+                <v-card v-if="user.user?.is_demo"
+                    class="w-100 text-center
+                    d-flex flex-column justify-space-evenly align-center" 
+                    height="66%"
+                >
+                    <v-card-title> {{ order.orders.create[0].from }} - {{ order.orders.create[0].to }} </v-card-title>
+                    <v-divider></v-divider>
+                    <v-card-subtitle >Polazak: {{ order.orders.create[0].date }} </v-card-subtitle>
+                    <v-divider></v-divider>
+                    
+                </v-card>
+                <v-card-actions class="w-50 " v-if="user.user?.is_demo">
+                    <v-btn
+                        variant="elevated"
+                        color="red-darken-4"
+                        class="w-100"
+                        @click="orders.takeOrder(order)"
+                        :to="{name: 'uredi'}"
+                    >
+                        Uredi
+                    </v-btn>
+                </v-card-actions>
+            </v-card>
     </v-container>
 </template>

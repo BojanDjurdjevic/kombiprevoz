@@ -29,6 +29,8 @@ export const useMyOrdersStore = defineStore('myorders', () => {
     const myorders = ref([])
     const oneOrder = ref({})
 
+    const demoOrdersLS = ref(JSON.parse(localStorage.getItem('demoOrders') || '[]'))
+
     function takeOrder(order) {
         if(myorders.value) {
             myorders.value.orders.forEach(item => {
@@ -181,7 +183,13 @@ export const useMyOrdersStore = defineStore('myorders', () => {
             if(user.user) {
                 addedOrders.value.orders.user_id = user.user.id
             } else return
-            user.loading = true
+
+            // DEMO read
+            if(user.user?.is_demo) {
+                myorders.value = demoOrdersLS.value
+                return
+            }
+
             try {
                 const res = await api.getOrder(orders) 
                 if(res.data.success) {
@@ -208,6 +216,16 @@ export const useMyOrdersStore = defineStore('myorders', () => {
             }
         },
         createOrder: async (tour) => {
+            // DEMO FAKE create
+            if(user.user?.is_demo) {
+                const fakeOrder = { id: Date.now(), ...tour }
+                demoOrdersLS.value.push(fakeOrder)
+                localStorage.setItem('demoOrders', JSON.stringify(demoOrdersLS.value))
+                myorders.value.push(fakeOrder)
+                user.successMsg = 'Demo rezervacija kreirana lokalno i privremeno.'
+                return;
+            }
+
             try {
                 const res = await api.makeOrder(tour)
                 console.log(res)
@@ -228,7 +246,18 @@ export const useMyOrdersStore = defineStore('myorders', () => {
             }
         },
         addUpdate: async (order, old) => {
-            console.log(old)
+            // demo fake update
+            if(user.user?.is_demo) { 
+                const idx = demoOrdersLS.value.findIndex(o => o.id === order.id)
+                if(idx > -1) {
+                    demoOrdersLS.value[idx] = { ...demoOrdersLS.value[idx], ...order }
+                    localStorage.setItem('demoOrders', JSON.stringify(demoOrdersLS.value))
+                    myorders.value.orders[idx] = demoOrdersLS.value[idx]
+                    user.successMsg = 'Demo update izvršen lokalno.'
+                }
+                return
+            }
+
             if(!user.user) {
                 return router.push({
                     name: "login",
@@ -281,6 +310,19 @@ export const useMyOrdersStore = defineStore('myorders', () => {
             
         },
         changePlaces: async () => {
+            //demo fake changePlaces
+            if(user.user?.is_demo) { 
+                const idx = demoOrdersLS.value.findIndex(o => o.id === seatsUp.value.id)
+                if(idx > -1) {
+                    demoOrdersLS.value[idx].places = seatsUp.value.seats
+                    localStorage.setItem('demoOrders', JSON.stringify(demoOrdersLS.value))
+                    myorders.value.orders[idx] = demoOrdersLS.value[idx]
+                    user.successMsg = 'Demo promena mesta izvršena lokalno'
+                }
+                clsSeats()
+                return
+            }
+
             user.loading = true
             const dto = {
                 orders: {
@@ -307,7 +349,20 @@ export const useMyOrdersStore = defineStore('myorders', () => {
             }
         },
         reschedule: async () => {
-            user.loading = true
+            // DEMO fake reschedule
+            if(user.user?.is_demo) { 
+                const idx = demoOrdersLS.value.findIndex(o => o.id === itemID.value)
+                if(idx > -1) {
+                    demoOrdersLS.value[idx].date = requestDate.value
+                    demoOrdersLS.value[idx].dateIn = requestDateIn.value
+                    localStorage.setItem('demoOrders', JSON.stringify(demoOrdersLS.value))
+                    myorders.value.orders[idx] = demoOrdersLS.value[idx]
+                    user.successMsg = 'Demo update datuma izvršen lokalno.'
+                }
+                clsReschedule()
+                return
+            }
+
             const dto = {
                 orders: {
                     user_id: user.user.id,
@@ -335,7 +390,19 @@ export const useMyOrdersStore = defineStore('myorders', () => {
             }
         }, 
         cancel: async () => {
-            user.loading = true
+            // DEMO fake cancel
+            if(user.user?.is_demo) { 
+                const idx = demoOrdersLS.value.findIndex(o => o.id === item_id.value)
+                if(idx > -1) {
+                    demoOrdersLS.value.splice(idx, 1)
+                    localStorage.setItem('demoOrders', JSON.stringify(demoOrdersLS.value))
+                    myorders.value.orders = [...demoOrdersLS.value]
+                    user.successMsg = 'Demo rezervacija obrisana lokalno'
+                }
+                deleteDeny()
+                return
+            }
+
             const dto = {
                 orders: {
                     user_id: user.user.id,
@@ -364,6 +431,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
         myorders, oneOrder, actions, addedOrders, addressDialog, plsDialog, dateDialog, pickup, seatsUp,
         currentPrice, newPrice, pricePerUnit, plsConfDialog, dateConfDialog, currentDate, currentDateIn,
         requestDate, requestDateIn, requestDateView, requestDateInView, delDialog, myOrderLogs,
+        demoOrdersLS,
 
         takeOrder, clearPickup, populatePickup, places, clsSeats, calculateNewPrice, clsReschedule,
         prepareDates, onRequestDate, onRequestDateIn, dateFormat, checkDates, deleteRequest, deleteDeny,

@@ -2,6 +2,7 @@
 
 namespace Controllers;
 
+use Guards\DemoGuard;
 use Middleware\DemoMiddleware;
 use Models\Order;
 use PDOException;
@@ -29,6 +30,8 @@ class OrderController {
     public function handleRequest()
     {
         if(isset($_SESSION['user']) && $this->data->orders->user_id == $_SESSION['user']['id'] || Validator::isSuper() || Validator::isAdmin()) {
+            $isDemo = !empty($_SESSION['user']['is_demo']);
+
             $request = $_SERVER['REQUEST_METHOD'];
 
             switch($request) {
@@ -117,37 +120,36 @@ class OrderController {
                             'error' => 'Proverite podatke. Nisu pronađene rezervacije.'
                         ]);
                     }
-                    /*
-                    if(isset($this->data->adminOrders) && !empty($this->data->adminOrders)) {
-
-                    } */
                     break;
                 case 'POST':
-                    if(isset($this->data->orders->create) && !empty($this->data->orders->create)) { /*
-                        $this->order->tour_id = $this->data->orders->create->tour_id;
-                        $this->order->user_id = $this->data->orders->create->user_id;
-                        $this->order->places = $this->data->orders->create->places;
-                        $this->order->add_from = $this->data->orders->create->add_from;
-                        $this->order->add_to = $this->data->orders->create->add_to;
-                        $this->order->date = $this->data->orders->create->date;
-                        if(isset($this->data->orders->create->price) && !empty($this->data->orders->create->price))
-                        $this->order->price = $this->data->orders->create->price; */
+                    if(isset($this->data->orders->create) && !empty($this->data->orders->create)) {
+                        if($isDemo) { // NOVO: demo fake create
+                            echo json_encode([
+                                'success' => true,
+                                'msg' => 'Demo rezervacija je kreirana lokalno i privremeno.',
+                                'fake' => true
+                            ]);
+                            exit();
+                        }
                         $this->order->items = $this->data->orders;
                         $this->order->create();
                     }
                     break;
                 case 'PUT':
                     if(isset($this->data->orders->update)) {
+                        if($isDemo) {
+                            echo json_encode([
+                                'success' => true,
+                                'msg' => 'Demo update izvršen lokalno i privremeno.',
+                                'fake' => true
+                            ]);
+                            exit();
+                        }
+
                         if(isset($this->data->orders->update->id) && !empty($this->data->orders->update->id)) {
                             $this->order->id = $this->data->orders->update->id;
                             $this->order->getFromDB($this->order->id);
-                        } /*
-                        if(isset($this->data->orders->update->tour_id) && !empty($this->data->orders->update->tour_id)) {
-                            $this->order->tour_id = $this->data->orders->update->tour_id;
                         }
-                        if(isset($this->data->orders->update->user_id) && !empty($this->data->orders->update->user_id)) {
-                            $this->order->user_id = $this->data->orders->update->user_id;
-                        } */
                         if(isset($this->data->orders->address->add_from) && !empty($this->data->orders->address->add_from)) {
                             $this->order->new_add_from = $this->data->orders->address->add_from;
                         }
@@ -164,13 +166,7 @@ class OrderController {
                             if(isset($this->data->orders->reschedule->inDate) && !empty($this->data->orders->reschedule->inDate))
                             $this->order->newDateIn = $this->data->orders->reschedule->inDate;
                             else $this->order->newDateIn = null;
-                        } /*
-                        if(isset($this->data->orders->update->total) && !empty($this->data->orders->update->total)) {
-                            $this->order->price = $this->data->orders->update->total;
                         }
-                        if(isset($this->data->orders->update->ord_code) && !empty($this->data->orders->update->ord_code)) {
-                            $this->order->code = $this->data->orders->update->ord_code;
-                        } */
 
                         if($this->order->findUserId() || Validator::isAdmin() || Validator::isSuper()) {
                             if($this->order->checkDeadline()) {
@@ -265,6 +261,7 @@ class OrderController {
                     }
                     if(isset($this->data->orders->selected) && !empty($this->data->orders->selected)
                         && isset($this->data->orders->driver) && !empty($this->data->orders->driver)) {
+                            DemoGuard::denyIfDemo();
                             $this->order->selected = $this->data->orders->selected;
                             $this->order->driver = $this->data->orders->driver;
                             $this->order->tour_id = $this->data->orders->tour_id;
@@ -272,6 +269,7 @@ class OrderController {
                             $this->order->assignDriverTo();
                     }
                     if(isset($this->data->orders->voucher) && !empty($this->data->orders->voucher)) {
+                        DemoGuard::denyIfDemo();
                         $this->order->id = $this->data->orders->voucher->item_id;
                         $this->order->getFromDB($this->order->id);
                         try {
@@ -295,6 +293,14 @@ class OrderController {
                     break;
                 case 'DELETE':
                     if(isset($this->data->orders->delete) && !empty($this->data->orders->delete)) {
+                        if($isDemo) {
+                            echo json_encode([
+                                'success' => true,
+                                'msg' => 'Demo update izvršen lokalno i privremeno.',
+                                'fake' => true
+                            ]);
+                            exit();
+                        }
                         $this->order->id = $this->data->orders->delete->item_id;
                         //$this->order->user_id = $this->data->orders->delete->user_id;
                         if($this->order->findUserId() || Validator::isAdmin() || Validator::isSuper()) {
