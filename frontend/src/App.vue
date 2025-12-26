@@ -69,6 +69,7 @@ const route = useRoute()
     width: 90vw;       
     max-width: 100%;
     border-radius: 0; 
+    margin-top: 7vh;
   }
 
 </style>

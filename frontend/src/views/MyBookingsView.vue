@@ -60,8 +60,10 @@ const user = useUserStore()
                     <v-card-title> {{ order.orders.create[0].from }} - {{ order.orders.create[0].to }} </v-card-title>
                     <v-divider></v-divider>
                     <v-card-subtitle >Polazak: {{ order.orders.create[0].date }} </v-card-subtitle>
+                    <v-card-subtitle v-if="order.orders.create[1]">Povratak: {{ order.orders.create[1].date }} </v-card-subtitle>
                     <v-divider></v-divider>
-                    
+                    <v-card-title> {{ order.orders.create[0].price }} EUR</v-card-title>
+                    <p> {{ order.id }} </p>
                 </v-card>
                 <v-card-actions class="w-50 " v-if="user.user?.is_demo">
                     <v-btn

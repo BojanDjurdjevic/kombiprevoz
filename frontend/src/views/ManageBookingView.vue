@@ -15,17 +15,31 @@ const search = useSearchStore();
   <!---->
   
   <OrderHeader
-    :code="orders.oneOrder.code"
-    :total="orders.oneOrder.total"
+    :code="user.user.is_demo ? orders.oneOrder.id : orders.oneOrder.code"
+    :total=" orders.oneOrder.total"
   />
 
   <v-divider class="my-4" />
 
-  <v-container>
+  <v-container v-if="!user.user.is_demo">
     <v-row dense>
       <v-col
         v-for="order in orders.oneOrder.items"
         :key="order.id"
+        cols="12"
+        md="6"
+        lg="4"
+      >
+        <OrderCard :order="order" />
+      </v-col>
+    </v-row>
+  </v-container>
+
+  <v-container v-else>
+    <v-row dense>
+      <v-col
+        v-for="order in orders.oneOrder.orders.create"
+        :key="order.tour_id"
         cols="12"
         md="6"
         lg="4"

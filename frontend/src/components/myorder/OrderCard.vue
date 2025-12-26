@@ -1,9 +1,12 @@
 <script setup>
+import { useUserStore } from "@/stores/user";
 import OrderActions from "./OrderActions.vue";
 
 defineProps({
   order: Object
 })
+
+const user = useUserStore()
 </script>
 
 <template>
@@ -16,8 +19,8 @@ defineProps({
     <v-divider class="my-2" />
 
     <v-list density="compact">
-      <v-list-item title="Polazak" :subtitle="order.pickup" />
-      <v-list-item title="Dolazak" :subtitle="order.dropoff" />
+      <v-list-item title="Polazak" :subtitle="user.user.is_demo ? order.add_from : order.pickup" />
+      <v-list-item title="Dolazak" :subtitle="user.user.is_demo ? order.add_to : order.dropoff" />
       <v-list-item title="Datum" :subtitle="order.date" />
       <v-list-item title="Vreme" :subtitle="order.time" />
       <v-list-item title="Broj mesta" :subtitle="order.places" />
@@ -27,7 +30,7 @@ defineProps({
     <v-divider class="my-3" />
 
     <OrderActions
-      v-if="order.deleted === 0"
+      v-if="user.user.is_demo || order.deleted === 0"
       :order="order"
     />
 

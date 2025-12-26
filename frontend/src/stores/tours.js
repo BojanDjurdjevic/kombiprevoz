@@ -146,11 +146,12 @@ export const useTourStore = defineStore('tours', () => {
     }
 
     function finishBooking() {
-        user.loading = true
+        //user.loading = true
         let sum = 0
         bookedTours.value.forEach(item => {
             if(item.add_from == "" || item.add_to == "") {
                 sum++
+                return
             }
         })
         if(sum) return

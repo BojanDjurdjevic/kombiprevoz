@@ -1,9 +1,12 @@
 <script setup>
 import { useMyOrdersStore } from "@/stores/myorders";
 import { useSearchStore } from "@/stores/search";
+import { useUserStore } from "@/stores/user";
+import { VDateInput } from 'vuetify/labs/VDateInput'
 
 const orders = useMyOrdersStore();
 const search = useSearchStore();
+const user = useUserStore()
 
 defineProps({ order: Object })
 </script>
@@ -12,10 +15,20 @@ defineProps({ order: Object })
   <v-dialog v-model="orders.dateDialog" max-width="600">
     <template #activator="{ props }">
       <v-btn
+        v-if="!user.user.is_demo"
         v-bind="props"
         block
         color="indigo-darken-4"
         @click="orders.prepareDates(order.from, order.to, order.id)"
+      >
+        Promeni datum
+      </v-btn>
+      <v-btn
+        v-else
+        v-bind="props"
+        block
+        color="indigo-darken-4"
+        @click="orders.prepareDates(order.from, order.to, order.tour_id)"
       >
         Promeni datum
       </v-btn>

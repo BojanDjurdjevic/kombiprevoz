@@ -32,7 +32,16 @@ export const useMyOrdersStore = defineStore('myorders', () => {
     const demoOrdersLS = ref(JSON.parse(localStorage.getItem('demoOrders') || '[]'))
 
     function takeOrder(order) {
-        if(myorders.value) {
+        if(myorders.value.length) {
+            if(user.user.is_demo) {
+                myorders.value.forEach(item => {
+                    if(item.id == order.id) {
+                        oneOrder.value = item
+                    }
+                })
+                console.log(oneOrder.value)
+                return;
+            }
             myorders.value.orders.forEach(item => {
                 if(item.id == order.id) {
                     oneOrder.value = item
@@ -74,9 +83,9 @@ export const useMyOrdersStore = defineStore('myorders', () => {
     }
     function populatePickup(order) {
         console.log('Iz propsa: ', order)
-        pickup.value.id = order.id
-        pickup.value.add_from = order.pickup
-        pickup.value.add_to = order.dropoff
+        pickup.value.id = !user.user.is_demo ? order.id : order.tour_id
+        pickup.value.add_from = !user.user.is_demo ? order.pickup : order.add_from
+        pickup.value.add_to = !user.user.is_demo ? order.dropoff : order.add_to
     }
 
     // ---------------------- UPDATE PLACES ------------------------ //
@@ -129,8 +138,8 @@ export const useMyOrdersStore = defineStore('myorders', () => {
     function prepareDates(cityFrom, cityTo, id) {
         search.cityFrom = {name: cityFrom}
         search.cityTo = {name: cityTo}
-        currentDate.value = oneOrder.value.items[0].date
-        currentDateIn.value = oneOrder.value.items[1].date
+        currentDate.value = !user.user.is_demo ? oneOrder.value.items[0].date : oneOrder.value.orders.create[0].date
+        currentDateIn.value = !user.user.is_demo ? oneOrder.value.items[1].date : oneOrder.value.orders.create[1].date
         itemID.value = id
         search.dateQuery()
     }
@@ -216,13 +225,23 @@ export const useMyOrdersStore = defineStore('myorders', () => {
             }
         },
         createOrder: async (tour) => {
+            console.log('Tura iz carta: ', tour)
             // DEMO FAKE create
             if(user.user?.is_demo) {
-                const fakeOrder = { id: Date.now(), ...tour }
+                let fakeOrder = { id: Date.now(), total: 0, ...tour}
+                fakeOrder.orders.create[0].tour_id = fakeOrder.id
+                if(fakeOrder.orders.create[1]) {
+                    fakeOrder.orders.create[1].tour_id = fakeOrder.id + 1
+                    fakeOrder.total = fakeOrder.orders.create[0].price + fakeOrder.orders.create[1].price
+                } else {
+                    fakeOrder.total = fakeOrder.orders.create[0].price
+                }
                 demoOrdersLS.value.push(fakeOrder)
+                console.log('Tura za Lokal: ', demoOrdersLS.value)
                 localStorage.setItem('demoOrders', JSON.stringify(demoOrdersLS.value))
                 myorders.value.push(fakeOrder)
                 user.successMsg = 'Demo rezervacija kreirana lokalno i privremeno.'
+                user.loading = false
                 return;
             }
 
@@ -248,6 +267,9 @@ export const useMyOrdersStore = defineStore('myorders', () => {
         addUpdate: async (order, old) => {
             // demo fake update
             if(user.user?.is_demo) { 
+                if(!pickup.value.id || !pickup.value.add_from || !pickup.value.add_to) return
+                console.log('iz fake UPDATE: ', order, old)
+                return
                 const idx = demoOrdersLS.value.findIndex(o => o.id === order.id)
                 if(idx > -1) {
                     demoOrdersLS.value[idx] = { ...demoOrdersLS.value[idx], ...order }
