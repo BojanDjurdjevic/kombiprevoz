@@ -38,6 +38,7 @@ const route = useRoute()
             :text="user.successMsg"
             elevation="12"
             class="alert-full"
+            @click="user.successMsg = false"
           />
 
           <v-alert
@@ -47,6 +48,7 @@ const route = useRoute()
             :text="user.errorMsg"
             elevation="12"
             class="alert-full"
+            @click="user.errorMsg = false"
           />
         </v-overlay>
 

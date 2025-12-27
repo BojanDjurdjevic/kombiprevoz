@@ -164,9 +164,13 @@ export const useTourStore = defineStore('tours', () => {
             item.add_from = item.add_from.trim()
             item.add_to = item.add_to.trim()
         })
-
-        orders.addedOrders.orders.create = bookedTours.value
-        orders.addedOrders.orders.user_id = user.user.id
+        if(!user.user.is_demo) {
+            orders.addedOrders.orders.create = bookedTours.value
+            orders.addedOrders.orders.user_id = user.user.id
+        } else {
+            orders.addedOrders.orders = bookedTours.value
+        }
+        
         bookedTours.value = []
         
         if(orders.actions.createOrder(orders.addedOrders)) {

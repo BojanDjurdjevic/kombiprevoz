@@ -38,7 +38,7 @@ const search = useSearchStore();
   <v-container v-else>
     <v-row dense>
       <v-col
-        v-for="order in orders.oneOrder.orders.create"
+        v-for="order in orders.oneOrder.orders"
         :key="order.tour_id"
         cols="12"
         md="6"

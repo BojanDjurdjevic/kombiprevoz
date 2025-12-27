@@ -9,6 +9,21 @@ import { useAdminStore } from "./admin";
 
 
 export const useMyOrdersStore = defineStore('myorders', () => {
+    function displayError(
+        str = "Došlo je do greške! Neke akcije nisu dozvoljene u Demo režimu"
+    ) {
+        user.errorMsg = str;
+        user.clearMsg(3000)
+    }
+
+    function displaySuccess(
+        str = "Akcija je uspešno izvršena!"
+    ) {
+        user.successMsg = str;
+        user.clearMsg(3000)
+    }
+
+
     function dateFormat(date, view) {
         let d = new Date(date)
         let year = String(d.getFullYear()) 
@@ -30,9 +45,10 @@ export const useMyOrdersStore = defineStore('myorders', () => {
     const oneOrder = ref({})
 
     const demoOrdersLS = ref(JSON.parse(localStorage.getItem('demoOrders') || '[]'))
+    if(user.user?.is_demo) myorders.value = demoOrdersLS.value
 
     function takeOrder(order) {
-        if(myorders.value.length) {
+        if(myorders.value) {
             if(user.user.is_demo) {
                 myorders.value.forEach(item => {
                     if(item.id == order.id) {
@@ -72,20 +88,47 @@ export const useMyOrdersStore = defineStore('myorders', () => {
     const pickup = ref({
         id: '',
         add_from: '',
-        add_to: ''
+        add_to: '',
+        date: null,
+        from: null,
+        places: null,
+        price: null,
+        time: null,
+        to: null,
+        tour_id: null,
+        user_id: null
     })
     function clearPickup() {
         pickup.value = {
             id: pickup.value.id,
             add_from: '',
-            add_to: ''
+            add_to: '',
+            date: null,
+            from: null,
+            places: null,
+            price: null,
+            time: null,
+            to: null,
+            tour_id: null,
+            user_id: null
         }
     }
     function populatePickup(order) {
         console.log('Iz propsa: ', order)
-        pickup.value.id = !user.user.is_demo ? order.id : order.tour_id
+        pickup.value.id = order.id
         pickup.value.add_from = !user.user.is_demo ? order.pickup : order.add_from
         pickup.value.add_to = !user.user.is_demo ? order.dropoff : order.add_to
+
+        if(user.user.is_demo) {
+            pickup.value.date = order.date
+            pickup.value.from = order.from
+            pickup.value.places = order.places
+            pickup.value.price = order.price
+            pickup.value.time = order.time
+            pickup.value.to = order.to
+            pickup.value.tour_id = order.tour_id
+            pickup.value.user_id = order.user_id
+        }
     }
 
     // ---------------------- UPDATE PLACES ------------------------ //
@@ -225,23 +268,27 @@ export const useMyOrdersStore = defineStore('myorders', () => {
             }
         },
         createOrder: async (tour) => {
-            console.log('Tura iz carta: ', tour)
             // DEMO FAKE create
             if(user.user?.is_demo) {
-                let fakeOrder = { id: Date.now(), total: 0, ...tour}
-                fakeOrder.orders.create[0].tour_id = fakeOrder.id
-                if(fakeOrder.orders.create[1]) {
-                    fakeOrder.orders.create[1].tour_id = fakeOrder.id + 1
-                    fakeOrder.total = fakeOrder.orders.create[0].price + fakeOrder.orders.create[1].price
+                let fakeOrder = { id: Date.now(), total: 0, ...tour} 
+
+                fakeOrder.orders[0].tour_id = fakeOrder.id
+                fakeOrder.orders[0].id = fakeOrder.id
+                if(fakeOrder.orders[1]) {
+                    fakeOrder.orders[1].tour_id = fakeOrder.id + 1
+                    fakeOrder.orders[1].id = fakeOrder.id
+                    fakeOrder.total = fakeOrder.orders[0].price + fakeOrder.orders[1].price
                 } else {
-                    fakeOrder.total = fakeOrder.orders.create[0].price
+                    fakeOrder.total = fakeOrder.orders[0].price
                 }
+                //
                 demoOrdersLS.value.push(fakeOrder)
                 console.log('Tura za Lokal: ', demoOrdersLS.value)
                 localStorage.setItem('demoOrders', JSON.stringify(demoOrdersLS.value))
-                myorders.value.push(fakeOrder)
+                //myorders.value.push(fakeOrder)
                 user.successMsg = 'Demo rezervacija kreirana lokalno i privremeno.'
                 user.loading = false
+                router.push('/rezervacije')
                 return;
             }
 
@@ -264,18 +311,22 @@ export const useMyOrdersStore = defineStore('myorders', () => {
                 user.clearMsg(4000)
             }
         },
-        addUpdate: async (order, old) => {
+        addUpdate: async (order, tour_id) => {
             // demo fake update
             if(user.user?.is_demo) { 
                 if(!pickup.value.id || !pickup.value.add_from || !pickup.value.add_to) return
-                console.log('iz fake UPDATE: ', order, old)
-                return
                 const idx = demoOrdersLS.value.findIndex(o => o.id === order.id)
-                if(idx > -1) {
-                    demoOrdersLS.value[idx] = { ...demoOrdersLS.value[idx], ...order }
+                const itemIdx = demoOrdersLS.value[idx].orders.findIndex(i => i.tour_id === tour_id)
+                console.log('iz fake UPDATE: ', "\n", 'Order OBJ: ', demoOrdersLS.value, 
+                    "\n", 'order: ', order, "\n", 'Order index: ', idx, "\n", 'Item index: ', itemIdx, "\n", 'tour_id: ', tour_id)
+                
+                if(idx > -1 && itemIdx > -1) {
+                    demoOrdersLS.value[idx].orders[itemIdx] = { ...order }
                     localStorage.setItem('demoOrders', JSON.stringify(demoOrdersLS.value))
-                    myorders.value.orders[idx] = demoOrdersLS.value[idx]
-                    user.successMsg = 'Demo update izvršen lokalno.'
+                    myorders.value[idx].orders[itemIdx] = demoOrdersLS.value[idx].orders[itemIdx]
+                    addressDialog.value = false  
+                    displaySuccess('Promena adresa je uspešno izvršena i sačuvana lokalno.')
+                    router.push({path: '/rezervacije'})
                 }
                 return
             }
@@ -287,7 +338,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
                 })
             }
             if(!pickup.value.id || !pickup.value.add_from || !pickup.value.add_to) return
-            user.loading = true
+
             try {
                 const dto = {
                     orders: {
@@ -307,7 +358,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
                 
                 router.push({
                     name: 'rezervacije'
-                })
+                }) /*
                 setTimeout(() => {
                     myorders.value.orders.forEach(item => {
                         if(item.id == old.id) {
@@ -318,7 +369,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
                     router.push({
                         name: 'uredi'
                     })
-                }, 3000)
+                }, 3000) */
             } catch (error) {
                 console.dir(error, {depth: null})
                 user.showErr(error, 3000)

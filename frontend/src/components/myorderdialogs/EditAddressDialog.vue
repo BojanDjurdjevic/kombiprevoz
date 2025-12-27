@@ -22,7 +22,7 @@ defineProps({ order: Object })
     </template>
 
     <v-card>
-      <v-form @submit.prevent="orders.actions.addUpdate(orders.pickup, order)">
+      <v-form @submit.prevent="orders.actions.addUpdate(orders.pickup, orders.pickup.tour_id)">
         <v-card-title>Izmena adrese</v-card-title>
 
         <v-card-text>
