@@ -132,6 +132,19 @@ export const useMyOrdersStore = defineStore('myorders', () => {
     }
 
     // ---------------------- UPDATE PLACES ------------------------ //
+    const demoOrderItemLS = ref({
+        add_from: '',
+        add_to: '',
+        date: null,
+        from: '',
+        id: null,
+        places: null,
+        price: null,
+        time: '',
+        to: '',
+        tour_id: null,
+        user_id: null
+    })
     const currentPrice = ref(0)
     const pricePerUnit = ref(0)
     const newPrice = ref(0)
@@ -144,8 +157,24 @@ export const useMyOrdersStore = defineStore('myorders', () => {
         //currSeats.value = order.places
         //seatsUp.value.seats = currSeats.value
         seatsUp.value.id = order.id
+        seatsUp.value.seats = order.places
         currentPrice.value = order.price 
         pricePerUnit.value = order.price / order.places
+        if(user.user?.is_demo) {
+            demoOrderItemLS.value = {
+                add_from: order.add_from,
+                add_to: order.add_to,
+                date: order.date,
+                from: order.from,
+                id: order.id,
+                places: order.places,
+                price: order.price,
+                time: order.time,
+                to: order.to,
+                tour_id: order.tour_id,
+                user_id: order.user_id
+            }
+        }
     }
     function clsSeats() {
         seatsUp.value = {
@@ -156,10 +185,29 @@ export const useMyOrdersStore = defineStore('myorders', () => {
         newPrice.value = 0
         plsDialog.value = false
         plsConfDialog.value = false
+
+        demoOrderItemLS.value = {
+            add_from: '',
+            add_to: '',
+            date: null,
+            from: '',
+            id: null,
+            places: null,
+            price: null,
+            time: '',
+            to: '',
+            tour_id: null,
+            user_id: null
+        }
     }
 
     function calculateNewPrice() {
         newPrice.value = pricePerUnit.value * seatsUp.value.seats
+
+        if(user.user?.is_demo) {
+            demoOrderItemLS.value.price = newPrice.value
+            demoOrderItemLS.value.places = seatsUp.value.seats
+        }
     }
 
     //--------------------- RESCHEDULE -----------------------//
@@ -317,9 +365,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
                 if(!pickup.value.id || !pickup.value.add_from || !pickup.value.add_to) return
                 const idx = demoOrdersLS.value.findIndex(o => o.id === order.id)
                 const itemIdx = demoOrdersLS.value[idx].orders.findIndex(i => i.tour_id === tour_id)
-                console.log('iz fake UPDATE: ', "\n", 'Order OBJ: ', demoOrdersLS.value, 
-                    "\n", 'order: ', order, "\n", 'Order index: ', idx, "\n", 'Item index: ', itemIdx, "\n", 'tour_id: ', tour_id)
-                
+
                 if(idx > -1 && itemIdx > -1) {
                     demoOrdersLS.value[idx].orders[itemIdx] = { ...order }
                     localStorage.setItem('demoOrders', JSON.stringify(demoOrdersLS.value))
@@ -385,6 +431,8 @@ export const useMyOrdersStore = defineStore('myorders', () => {
         changePlaces: async () => {
             //demo fake changePlaces
             if(user.user?.is_demo) { 
+                console.log('changePlaces - ORD: ', demoOrderItemLS.value)
+                return
                 const idx = demoOrdersLS.value.findIndex(o => o.id === seatsUp.value.id)
                 if(idx > -1) {
                     demoOrdersLS.value[idx].places = seatsUp.value.seats
@@ -396,7 +444,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
                 return
             }
 
-            user.loading = true
+            
             const dto = {
                 orders: {
                     user_id: user.user.id,

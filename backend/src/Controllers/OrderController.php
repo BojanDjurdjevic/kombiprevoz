@@ -33,6 +33,9 @@ class OrderController {
             $isDemo = !empty($_SESSION['user']['is_demo']);
 
             $request = $_SERVER['REQUEST_METHOD'];
+            if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE'])) {
+                DemoMiddleware::handle();
+            }
 
             switch($request) {
                 case 'GET':
