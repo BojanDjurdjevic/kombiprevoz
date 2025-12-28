@@ -351,7 +351,7 @@ class Order {
         $pdf->loadHtml($html);
 
         $pdf->render(); // Obavezno!!!
-        $pdf->addInfo("Title", "Kombiprevoz - rezervacija: ". $drive[0]->code);
+        $pdf->addInfo("Title", "Kombitransfer - rezervacija: ". $drive[0]->code);
         //$pdf->stream("Rezervacija.pdf");
         $file_path = "src/assets/pdfs/". $drive[0]->code . ".pdf";
                     
@@ -391,12 +391,12 @@ class Order {
         if($myOrder != NULL) {
            $formated = date_create($myOrder['items'][0]['order']['date']); 
         } else 
-        $formated = date_create($this->date); 
+        $formated = date_create($this->date);  // BUG
         $d = date("d.m.Y", date_timestamp_get($formated));
-        if($myOrder != NULL) {
-           $formated2 = date_create($myOrder['items'][0]['order']['date']); 
+        if($myOrder != NULL && isset($myOrder['items'][1]['order']['date'])) {
+           $formated2 = date_create($myOrder['items'][1]['order']['date']); 
         } else 
-        $formated2 = date_create($this->date); 
+        $formated2 = $formated; // SAME BUG - corrected
         $d2 = date("d.m.Y", date_timestamp_get($formated2));
         // In the title
         if($myOrder != NULL) {
@@ -446,14 +446,15 @@ class Order {
         
             $html = str_replace("{{ address2 }}", $myOrder['items'][1]['order']['pickup'], $html);
 
-            $html = str_replace("{{ address2 }}", $this->add_from, $html);
+            //$html = str_replace("{{ address2 }}", $this->add_from, $html);
             $html = str_replace("{{ city2 }}", $tourObj[0]['to_city'], $html);
 
             $html = str_replace("{{ address_to2 }}", $myOrder['items'][1]['order']['dropoff'], $html);
 
-            $html = str_replace("{{ address_to2 }}", $this->add_to, $html);
+            //$html = str_replace("{{ address_to2 }}", $this->add_to, $html);
+
             $html = str_replace("{{ city_to2 }}", $tourObj[0]['from_city'], $html);
-            $html = str_replace("{{ date2 }}", $d, $html);
+            $html = str_replace("{{ date2 }}", $d2, $html);
             $html = str_replace("{{ time2 }}", $tourObj[0]['time'], $html);
             
             $html = str_replace("{{ price2 }}", $myOrder['items'][1]['order']['price'], $html);
@@ -475,9 +476,9 @@ class Order {
 
         $pdf->render();
         if($myOrder != NULL) {
-            $pdf->addInfo("Title", "Kombiprevoz - rezervacija: ". $myOrder['items'][0]['order']['code']);
+            $pdf->addInfo("Title", "Kombitransfer - rezervacija: ". $myOrder['items'][0]['order']['code']);
         } else
-        $pdf->addInfo("Title", "Kombiprevoz - rezervacija: ". $this->code);
+        $pdf->addInfo("Title", "Kombitransfer - rezervacija: ". $this->code);
         if($myOrder != NULL) {
             $file_path = $myOrder['items'][0]['order']['voucher'];
         } else
@@ -529,7 +530,7 @@ class Order {
             <br>
             <p> U prilogu Vam šaljemo potvrdu rezervacije. </p>
             <br><br>
-            <p> Srdačan pozdrav od KombiPrevoz tima! </p>";
+            <p> Srdačan pozdrav od Kombitransfer tima! </p>";
         } elseif($goal === 'update') {
             $template = "<p> Poštovani/a {$name}, </p>
             <br>
@@ -539,7 +540,7 @@ class Order {
             <br>
             <p> U prilogu Vam šaljemo ažuriranu potvrdu rezervacije. </p>
             <br><br>
-            <p> Srdačan pozdrav od KombiPrevoz tima! </p>";
+            <p> Srdačan pozdrav od Kombitransfer tima! </p>";
         } else {
             $template = "<p> Poštovani/a {$name}, </p>
             <br>
@@ -547,7 +548,7 @@ class Order {
             <br>
             <p> U prilogu Vam šaljemo ažuriranu potvrdu rezervacije. </p>
             <br><br>
-            <p> Srdačan pozdrav od KombiPrevoz tima! </p>";
+            <p> Srdačan pozdrav od Kombitransfer tima! </p>";
         }
 
         $mail = new PHPMailer(true);
@@ -561,14 +562,14 @@ class Order {
         $mail->Username = $_ENV["SMTP_USER"];
         $mail->Password = $_ENV["SMTP_PASS"];
 
-        $mail->setFrom("noreply-kombiprevoz@gmail.com", "Bojan");
+        $mail->setFrom("noreply-info@kombitransfer.com", "Bojan");
         $mail->addAddress($email, $name);
 
         $mail->CharSet = 'UTF-8';
         $mail->Encoding = 'base64';
 
         $mail->isHTML(true);
-        $mail->addAttachment($path, "Kombiprevoz - rezervacija: ". $new_code);
+        $mail->addAttachment($path, "Kombitransfer - rezervacija: ". $new_code);
         $mail->Subject = "Potvrda Rezervacije";
         $mail->setLanguage('sr');
         $mail->Body = <<<END
@@ -613,7 +614,7 @@ class Order {
         $pdf->loadHtml($html);
 
         $pdf->render();
-        $pdf->addInfo("Title", "Kombiprevoz - vožnja: ". $new_code);
+        $pdf->addInfo("Title", "Kombitransfer - vožnja: ". $new_code);
         $file_path = "src/assets/pdfs/". $new_code . ".pdf";
                     
         $output = $pdf->output();
@@ -636,7 +637,7 @@ class Order {
         svim putnicima blagovremeno javite okvirno vreme kada ćete po njih doći. </p>
         <p>Hvala!</p>
         <br><br>
-        <p> Srdačan pozdrav od KombiPrevoz tima! </p>";
+        <p> Srdačan pozdrav od Kombitransfer tima! </p>";
 
         $mail = new PHPMailer(true);
         //$mail->SMTPDebug = SMTP::DEBUG_SERVER;
@@ -649,14 +650,14 @@ class Order {
         $mail->Username = $_ENV["SMTP_USER"];
         $mail->Password = $_ENV["SMTP_PASS"];
 
-        $mail->setFrom("noreply-kombiprevoz@gmail.com", "Bojan");
+        $mail->setFrom("noreply-info@kombitransfer.com", "Bojan");
         $mail->addAddress($email, $name);
 
         $mail->CharSet = 'UTF-8';
         $mail->Encoding = 'base64';
 
         $mail->isHTML(true);
-        $mail->addAttachment($path, "Kombiprevoz - rezervacija: ". $new_code);
+        $mail->addAttachment($path, "Kombitransfer - rezervacija: ". $new_code);
         $mail->Subject = "Potvrda Rezervacije";
         $mail->setLanguage('sr');
         $mail->Body = <<<END
@@ -1724,9 +1725,6 @@ class Order {
                 if($this->items->items[1]->places <= $this->availability($this->newDateIn)) {
                     $sql = "UPDATE order_items SET date = :date WHERE id = :id";
                     $stmt = $this->db->prepare($sql);
-                    
-                    $this->id = htmlspecialchars(strip_tags($this->items->items[1]->id));
-                    $this->newDate = htmlspecialchars(strip_tags($this->newDateIn));
 
                     $stmt->bindParam(':id', $this->items->items[1]->id);
                     $stmt->bindParam(':date', $this->newDateIn);
@@ -1769,9 +1767,22 @@ class Order {
         try {
             if(isset($this->newDate) && !empty($this->newDate) && isset($this->newDateIn) && !empty($this->newDateIn)) {
                 $this->db->beginTransaction();
-                $this->outbound(false);
-                $this->inbound(true);
+
+                $outb = $this->outbound(false);
+                if(!isset($outb['success'])) {
+                $this->db->rollBack();
+                return $outb; 
+                }
+
+                $inb = $this->inbound(false);
+                    if(!isset($inb['success'])) {
+                    $this->db->rollBack();
+                    return $inb; 
+                }
                 $this->db->commit();
+
+                $mydata = $this->reGenerateVoucher();
+                $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
 
                 return [
                     'success' => true,
@@ -1779,33 +1790,11 @@ class Order {
                 ];
             } elseif(isset($this->newDate) && !empty($this->newDate) && (!isset($this->newDateIn) || empty($this->newDateIn))) {
                 $outb = $this->outbound(true);
-
-                if(isset($outb['success'])) {
-                    if($outb['success'] == true)
-                        return [
-                            'success' => true,
-                            'msg' => "Uspešno ste promenili datum vaše vožnje na: $this->newDate",
-                            
-                        ];
-                    else return ['error' => $outb['error']];
-                }  else {
-                    if(isset($outb['error'])) return ['error' => $outb['error']];
-                    if(isset($outb['db'])) return ['error' => $outb['db']];
-                    
-                } 
+                return $outb;
+                
             } elseif(isset($this->newDateIn) && !empty($this->newDateIn) && (empty($this->newDate) || !isset($this->newDate))) {
                 $inb = $this->inbound(true);
-                if(isset($inb['success'])) {
-                    if($inb['success'] == true)
-                    return [
-                        'success' => true,
-                        'msg' => "Uspešno ste promenili datum vaše vožnje na: $this->newDateIn"
-                    ]; 
-                    else return ['error' => $inb['error']];
-                }  else {
-                        if(isset($inb['error'])) return ['error' => $inb['error']];
-                        if(isset($inb['db'])) return ['error' => $inb['db']];
-                } 
+                return $inb;
             } else { 
                 return ['error' => 'Unesite bar jedan datum'];
             }
@@ -1813,10 +1802,13 @@ class Order {
             if($this->db->inTransaction()) {
                 $this->db->rollBack();
             }
-            return [
-                'error' => 'Došlo je do greške prilikom konekcije na bazu podataka',
-                'db' => $e
-            ];
+            $this->logger->error("Reschedule failed", [
+                'user_id' => $_SESSION['user']['id'],
+                'error' => $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            return ['error' => 'Greška pri promeni datuma'];
         }
         
         

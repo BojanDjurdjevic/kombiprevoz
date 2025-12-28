@@ -48,9 +48,11 @@
     </style>
 </head>
 <body>
-    <h1>Kombi Prevoz</h1>
+    <h1>Kombi transfer</h1>
 
     <h2>Rezervacija <span>{{ order }}</span>  </h2>
+    <br>
+    <h2>Ruta: <span>{{ city }}</span> -   <span>{{ city_to }}</span></h2>
     <br>
     <p>Ime glavnog putnika: <span>{{ name }}</span> </p>
     <br>
@@ -104,7 +106,7 @@
     <p class="{{ view }}">Ukupna Cena: <span>{{ price3 }} EUR</span> </p>
 
     <footer>
-        <p>&copy; KombiPrevoz {{ year }}</p>
+        <p>&copy; Kombi transfer {{ year }}</p>
         <br>
         <p><b>* Napomena: </b> Ovaj dokument kao i ceo sajt je napravljen u svrhu ucenja programiranja.
         Svaka slicnost sa stvarnim rezervacijama je slucajna!</p>
