@@ -648,9 +648,9 @@ class Order {
             $html = str_replace("{{ view }}", "visible", $html);
             $html = str_replace("{{ places2 }}", $item2['places'], $html);
             $html = str_replace("{{ address2 }}", $item2['pickup'], $html);
-            $html = str_replace("{{ city2 }}", $tourObj[0]['from_city'], $html); // Obrnuto od polaska
+            $html = str_replace("{{ city2 }}", $tourObj[0]['from_city'], $html); 
             $html = str_replace("{{ address_to2 }}", $item2['dropoff'], $html);
-            $html = str_replace("{{ city_to2 }}", $tourObj[0]['to_city'], $html); // Obrnuto
+            $html = str_replace("{{ city_to2 }}", $tourObj[0]['to_city'], $html); 
             $html = str_replace("{{ date2 }}", $d2, $html);
             $html = str_replace("{{ time2 }}", $tourObj[0]['time'], $html);
             $html = str_replace("{{ price2 }}", $item2['price'], $html);
@@ -1578,7 +1578,7 @@ class Order {
                 INNER JOIN tours on order_items.tour_id = tours.id
                 
                 WHERE orders.id = :id
-                ORDER BY order_items.date"
+                ORDER BY order_items.date ASC"
         ;
 
         $stmt = $this->db->prepare($sql);
