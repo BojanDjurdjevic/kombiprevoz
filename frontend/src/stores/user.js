@@ -111,7 +111,7 @@ export const useUserStore = defineStore('user', () => {
             } catch (error) {
                 console.log(error)
                 if(error.response.data.error) {
-                    successMsg.value = "Dobrodošli na sajt Kombiprevoz!"
+                    successMsg.value = "Dobrodošli na sajt Kombitransfer!"
                     user.value = null
                     setTimeout(() => {
                         successMsg.value = false

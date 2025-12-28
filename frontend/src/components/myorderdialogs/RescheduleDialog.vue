@@ -1,4 +1,5 @@
 <script setup>
+import { ref } from 'vue'
 import { useMyOrdersStore } from "@/stores/myorders";
 import { useSearchStore } from "@/stores/search";
 import { useUserStore } from "@/stores/user";
@@ -8,6 +9,10 @@ const orders = useMyOrdersStore();
 const search = useSearchStore();
 const user = useUserStore()
 
+const myOrder = ref([])
+
+myOrder.value = user.user?.is_demo ? orders.oneOrder.items : orders.oneOrder.orders
+
 defineProps({ order: Object })
 </script>
 
@@ -15,7 +20,7 @@ defineProps({ order: Object })
   <v-dialog v-model="orders.dateDialog" max-width="600">
     <template #activator="{ props }">
       <v-btn
-        v-if="!user.user.is_demo"
+        v-if="!user.user?.is_demo"
         v-bind="props"
         block
         color="indigo-darken-4"
@@ -28,7 +33,7 @@ defineProps({ order: Object })
         v-bind="props"
         block
         color="indigo-darken-4"
-        @click="orders.prepareDates(order.from, order.to, order.tour_id)"
+        @click="orders.prepareDemoDates(order)"
       >
         Promeni datum
       </v-btn>
@@ -44,6 +49,7 @@ defineProps({ order: Object })
           @update:model-value="orders.onRequestDate"
         />
         <v-date-input
+          
           label="Povratak"
           :allowed-dates="search.isDateInAllowed"
           @update:model-value="orders.onRequestDateIn"

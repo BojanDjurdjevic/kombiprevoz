@@ -30,7 +30,7 @@ const user = useUserStore()
     <v-divider class="my-3" />
 
     <OrderActions
-      v-if="user.user.is_demo || order.deleted === 0"
+      v-if="!order.deleted"
       :order="order"
     />
 

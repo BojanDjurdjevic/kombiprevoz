@@ -18,8 +18,9 @@ const user = useUserStore()
 
     <EditAddressDialog :order="order" />
     <EditPlacesDialog :order="order" />
-    <RescheduleDialog :order="order" />
-    <DeleteDialog :orderId="!user.user.is_demo ? order.id : order.tour_id" />
+    <RescheduleDialog :order="order" /> <!--
+    <DeleteDialog :orderId="!user.user.is_demo ? order.id : order.tour_id" />-->
+    <DeleteDialog :order="order" />
     <OrderHistoryDialog v-if="!user.user.is_demo" :order="order" />
 
   </v-card-actions>

@@ -2,7 +2,10 @@
 import { useMyOrdersStore } from "@/stores/myorders";
 const orders = useMyOrdersStore();
 
-defineProps({ orderId: Number })
+defineProps({ order: Object })
+//defineProps({ orderId: Number })
+
+//@click="orders.deleteRequest(orderId)"
 </script>
 
 <template>
@@ -12,7 +15,7 @@ defineProps({ orderId: Number })
         v-bind="props"
         block
         color="red-darken-4"
-        @click="orders.deleteRequest(orderId)"
+        @click="orders.deleteRequest(order)"
       >
         Obriši
       </v-btn>
@@ -20,7 +23,7 @@ defineProps({ orderId: Number })
 
     <v-card>
       <v-card-title>
-        Da li ste sigurni?
+        Da li ste sigurni da želite da obrišete rezervaciju?
       </v-card-title>
 
       <v-card-actions>

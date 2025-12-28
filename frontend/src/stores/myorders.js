@@ -229,9 +229,42 @@ export const useMyOrdersStore = defineStore('myorders', () => {
     function prepareDates(cityFrom, cityTo, id) {
         search.cityFrom = {name: cityFrom}
         search.cityTo = {name: cityTo}
-        currentDate.value = !user.user.is_demo ? oneOrder.value.items[0].date : oneOrder.value.orders.create[0].date
-        currentDateIn.value = !user.user.is_demo ? oneOrder.value.items[1].date : oneOrder.value.orders.create[1].date
+        currentDate.value = oneOrder.value.items[0].date
+        currentDateIn.value = oneOrder.value.items[1].date
         itemID.value = id
+        search.dateQuery()
+    }
+
+    const demoOrdIndex = ref(null)
+    const indIn = ref(null)
+    const indOut = ref(null)
+
+    function prepareDemoDates(item) {
+        demoOrderItemLS.value = {
+            add_from: item.add_from,
+            add_to: item.add_to,
+            date: item.date,
+            from: item.from,
+            id: item.id,
+            places: item.places,
+            price: item.price,
+            time: item.time,
+            to: item.to,
+            tour_id: item.tour_id,
+            user_id: item.user_id
+        }
+        search.cityFrom = {name: item.from}
+        search.cityTo = {name: item.to}
+        currentDate.value = item.date
+        demoOrdIndex.value = demoOrdersLS.value.findIndex(o => o.id === item.id)
+        indIn.value = demoOrdersLS.value[demoOrdIndex.value].orders.findIndex(i => i.tour_id === item.tour_id)
+        if(demoOrdersLS.value[demoOrdIndex.value].orders.length > 1) {
+            indOut.value = demoOrdersLS.value[demoOrdIndex.value].orders.findIndex(i => i.tour_id !== item.tour_id)
+            currentDateIn.value = demoOrdersLS.value[demoOrdIndex.value].orders[indOut.value].date
+        } else {
+            currentDateIn.value = currentDate.value
+        }
+        itemID.value = item.id
         search.dateQuery()
     }
 
@@ -243,6 +276,20 @@ export const useMyOrdersStore = defineStore('myorders', () => {
         requestDateView.value = null
         requestDateInView.value = null
         itemID.value = null
+
+        demoOrderItemLS.value = {
+            add_from: '',
+            add_to: '',
+            date: null,
+            from: '',
+            id: null,
+            places: null,
+            price: null,
+            time: '',
+            to: '',
+            tour_id: null,
+            user_id: null
+        }
     }
 
     function checkDates() {
@@ -265,15 +312,55 @@ export const useMyOrdersStore = defineStore('myorders', () => {
 
     // --------------------------- DELETE ----------------------- //
     const item_id = ref(null)
-
+    const demo_order_id = ref(null)
+    /*
     function deleteRequest(id) {
         delDialog.value = true
         item_id.value = id
+    } */
+
+    function deleteRequest(order) {
+        delDialog.value = true
+        item_id.value = !user.user?.is_demo ? order.id : order.tour_id
+        demo_order_id.value = user.user?.is_demo ? order.id : null
+
+        if(user.user?.is_demo) {
+            demoOrderItemLS.value = {
+                add_from: order.add_from,
+                add_to: order.add_to,
+                date: order.date,
+                from: order.from,
+                id: order.id,
+                places: order.places,
+                price: order.price,
+                time: order.time,
+                to: order.to,
+                tour_id: order.tour_id,
+                user_id: order.user_id,
+                deleted: 0
+            }
+        }
+        
     }
 
     function deleteDeny() {
         delDialog.value = false
         item_id.value = null
+
+        demoOrderItemLS.value = {
+            add_from: '',
+            add_to: '',
+            date: null,
+            from: '',
+            id: null,
+            places: null,
+            price: null,
+            time: '',
+            to: '',
+            tour_id: null,
+            user_id: null,
+            deleted: 0
+        }
     }
 
     
@@ -334,7 +421,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
                 console.log('Tura za Lokal: ', demoOrdersLS.value)
                 localStorage.setItem('demoOrders', JSON.stringify(demoOrdersLS.value))
                 //myorders.value.push(fakeOrder)
-                user.successMsg = 'Demo rezervacija kreirana lokalno i privremeno.'
+                displaySuccess('Vaša rezervacija je uspešno kreirana i sačuvana lokalno.')
                 user.loading = false
                 router.push('/rezervacije')
                 return;
@@ -432,15 +519,23 @@ export const useMyOrdersStore = defineStore('myorders', () => {
             //demo fake changePlaces
             if(user.user?.is_demo) { 
                 console.log('changePlaces - ORD: ', demoOrderItemLS.value)
-                return
-                const idx = demoOrdersLS.value.findIndex(o => o.id === seatsUp.value.id)
-                if(idx > -1) {
-                    demoOrdersLS.value[idx].places = seatsUp.value.seats
+                const idx = demoOrdersLS.value.findIndex(o => o.id === demoOrderItemLS.value.id)
+                const itemIdx = demoOrdersLS.value[idx].orders.findIndex(i => i.tour_id === demoOrderItemLS.value.tour_id)
+
+                if(idx > -1 && itemIdx > -1) {
+                    let total = 0
+
+                    demoOrdersLS.value[idx].orders[itemIdx] = demoOrderItemLS.value
+                    demoOrdersLS.value[idx].orders.forEach(i => {
+                        total = total + i.price
+                    })
+                    demoOrdersLS.value[idx].total = total
                     localStorage.setItem('demoOrders', JSON.stringify(demoOrdersLS.value))
-                    myorders.value.orders[idx] = demoOrdersLS.value[idx]
-                    user.successMsg = 'Demo promena mesta izvršena lokalno'
+                    myorders.value = demoOrdersLS.value
+                    plsDialog.value = false  
+                    displaySuccess('Promena broja mesta je uspešno izvršena i sačuvana lokalno.')
+                    router.push({path: '/rezervacije'})
                 }
-                clsSeats()
                 return
             }
 
@@ -471,15 +566,32 @@ export const useMyOrdersStore = defineStore('myorders', () => {
         },
         reschedule: async () => {
             // DEMO fake reschedule
-            if(user.user?.is_demo) { 
-                const idx = demoOrdersLS.value.findIndex(o => o.id === itemID.value)
-                if(idx > -1) {
-                    demoOrdersLS.value[idx].date = requestDate.value
-                    demoOrdersLS.value[idx].dateIn = requestDateIn.value
+            if(user.user?.is_demo) {
+                if(demoOrdIndex.value > -1 && indIn.value > -1 && indOut.value != null) {
+                    if(!requestDate.value || !requestDateIn.value) {
+                        return displayError('Datum polaska je uvek obavezno polje! Datum povratka, samo ukoliko imate rezervaciju sa povratkom! Molimo vas da popunite odgovarajuća polja.')
+                    }
+                    demoOrdersLS.value[demoOrdIndex.value].orders[indIn.value].date = requestDate.value
+                    demoOrdersLS.value[demoOrdIndex.value].orders[indOut.value].date = requestDateIn.value
+
                     localStorage.setItem('demoOrders', JSON.stringify(demoOrdersLS.value))
-                    myorders.value.orders[idx] = demoOrdersLS.value[idx]
-                    user.successMsg = 'Demo update datuma izvršen lokalno.'
+                    myorders.value= demoOrdersLS.value
+                    displaySuccess('Demo update datuma je uspešno izvršen lokalno.')
                 }
+                if(demoOrdIndex.value > -1 && indIn.value > -1) {
+                    if(!requestDate.value) {
+                        return displayError('Datum polaska je uvek obavezno polje! Datum povratka, samo ukoliko imate rezervaciju sa povratkom! Molimo vas da popunite odgovarajuća polja.')
+                    }
+                    demoOrdersLS.value[demoOrdIndex.value].orders[indIn.value].date = requestDate.value
+
+                    localStorage.setItem('demoOrders', JSON.stringify(demoOrdersLS.value))
+                    myorders.value = demoOrdersLS.value
+                    displaySuccess('Demo update datuma je uspešno izvršen lokalno.')
+                    
+                } else {
+                    displayError('Datum polaska je uvek obavezno polje! Datum povratka, samo ukoliko imate rezervaciju sa povratkom! Molimo vas da popunite odgovarajuća polja.')
+                }
+                router.push({path: '/rezervacije'})
                 clsReschedule()
                 return
             }
@@ -513,14 +625,36 @@ export const useMyOrdersStore = defineStore('myorders', () => {
         cancel: async () => {
             // DEMO fake cancel
             if(user.user?.is_demo) { 
-                const idx = demoOrdersLS.value.findIndex(o => o.id === item_id.value)
-                if(idx > -1) {
-                    demoOrdersLS.value.splice(idx, 1)
+                const idx = demoOrdersLS.value.findIndex(o => o.id === demo_order_id.value)
+                const itemIdx = demoOrdersLS.value[idx].orders.findIndex(i => i.tour_id === item_id.value)
+                console.log(
+                    'Item: ', demoOrderItemLS.value, "\n",
+                    'idx: ', idx, "\n",
+                    'itemIdx: ', itemIdx, "\n",
+                    'Item_id: ', item_id.value, "\n",
+                    'Items arr: ', demoOrdersLS.value[idx].orders, "\n",
+                )
+                
+                if(idx > -1 && itemIdx > -1) {
+                    demoOrdersLS.value[idx].orders[itemIdx] = demoOrderItemLS.value
+                    demoOrdersLS.value[idx].orders[itemIdx].deleted = 1
+                    let totalItems = 0
+                    let totalDeleted = 0
+                    demoOrdersLS.value[idx].orders.forEach(item => {
+                        totalItems++
+                        if(item.deleted) totalDeleted++
+                    })
+                    if(totalItems === totalDeleted) {
+                        demoOrdersLS.value.splice(idx, 1)
+                    }
                     localStorage.setItem('demoOrders', JSON.stringify(demoOrdersLS.value))
-                    myorders.value.orders = [...demoOrdersLS.value]
-                    user.successMsg = 'Demo rezervacija obrisana lokalno'
+                    myorders.value = demoOrdersLS.value
+                    displaySuccess('Uspešno ste obrisali rezervaciju!')
+                } else {
+                    displayError('Nije moguće obrisati rezervaciju!')
                 }
                 deleteDeny()
+                router.push({path: '/rezervacije'})
                 return
             }
 
@@ -556,6 +690,6 @@ export const useMyOrdersStore = defineStore('myorders', () => {
 
         takeOrder, clearPickup, populatePickup, places, clsSeats, calculateNewPrice, clsReschedule,
         prepareDates, onRequestDate, onRequestDateIn, dateFormat, checkDates, deleteRequest, deleteDeny,
-        openMyOrderLogs,
+        openMyOrderLogs, prepareDemoDates,
     }
 })
