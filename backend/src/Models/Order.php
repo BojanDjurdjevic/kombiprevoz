@@ -238,9 +238,9 @@ class Order {
     public function updateTotalPrice() 
     {
         $find = "SELECT SUM(price) as total FROM order_items WHERE order_id = :order_id";
-        $this->order_id = htmlspecialchars($this->order_id);
+        
         $stmtF = $this->db->prepare($find);
-        $stmtF->bindParam(':order_id', $this->order_id);
+        $stmtF->bindParam(':order_id', $this->order_id, PDO::PARAM_INT);
         $total = 0;
         try {
             $stmtF->execute();
@@ -408,7 +408,11 @@ class Order {
         $html = str_replace("{{ order }}", $this->code, $html);
 
         $html = str_replace("{{ name }}", $owner[0]['name'], $html);
+        
         // First Item
+
+        if($myOrder != NULL && isset($myOrder['items'][0])) {
+        //if($myOrder['items'][0]['deleted'] === 0) {
         if($myOrder != NULL) {
             $html = str_replace("{{ places }}", $myOrder['items'][0]['order']['places'], $html);
         } else
@@ -438,36 +442,48 @@ class Order {
         } else {
             $html = str_replace("{{ driver_view }}", "invisible", $html);
         }
+        //} else $html = str_replace("{{ view_first }}", "invisible", $html);
+        } else $html = str_replace("{{ view_first }}", "invisible", $html);
 
         // 2nd Item - Inbound
         if($myOrder != NULL && isset($myOrder['items'][1])) {
-            $html = str_replace("{{ view }}", "visible", $html);
-            $html = str_replace("{{ places2 }}", $myOrder['items'][1]['order']['places'], $html);
-        
-            $html = str_replace("{{ address2 }}", $myOrder['items'][1]['order']['pickup'], $html);
+            //if(count($myOrder['items']) > 1) {  
+                //$items = $myOrder['items'];
 
-            //$html = str_replace("{{ address2 }}", $this->add_from, $html);
-            $html = str_replace("{{ city2 }}", $tourObj[0]['to_city'], $html);
+                ////$deleted = !array_filter($items, fn($i) => $i['deleted'] == 0);
 
-            $html = str_replace("{{ address_to2 }}", $myOrder['items'][1]['order']['dropoff'], $html);
+                //$hasDeleted = in_array(1, array_column($items, 'deleted'));
 
-            //$html = str_replace("{{ address_to2 }}", $this->add_to, $html);
+                //if($myOrder['items'][1]['deleted'] === 0) {
+                    $html = str_replace("{{ view }}", "visible", $html);
+                    $html = str_replace("{{ places2 }}", $myOrder['items'][1]['order']['places'], $html);
+                
+                    $html = str_replace("{{ address2 }}", $myOrder['items'][1]['order']['pickup'], $html);
 
-            $html = str_replace("{{ city_to2 }}", $tourObj[0]['from_city'], $html);
-            $html = str_replace("{{ date2 }}", $d2, $html);
-            $html = str_replace("{{ time2 }}", $tourObj[0]['time'], $html);
-            
-            $html = str_replace("{{ price2 }}", $myOrder['items'][1]['order']['price'], $html);
-            $html = str_replace("{{ price3 }}", $myOrder['items'][0]['order']['total'], $html);
-            
-            if($myOrder != NULL && $myDriver2) {
-                $html = str_replace("{{ driver2 }}", $myDriver2, $html);
-                $html = str_replace("{{ drphone2 }}", $myOrder['items'][1]['driver']['dr_phone'], $html);
-                $html = str_replace("{{ drmail2 }}", $myOrder['items'][1]['driver']['dr_email'], $html);
-                $html = str_replace("{{ driver_view2 }}", "visible", $html);
-            } else {
-                $html = str_replace("{{ driver_view2 }}", "invisible", $html);
-            }
+                    //$html = str_replace("{{ address2 }}", $this->add_from, $html);
+                    $html = str_replace("{{ city2 }}", $tourObj[0]['to_city'], $html);
+
+                    $html = str_replace("{{ address_to2 }}", $myOrder['items'][1]['order']['dropoff'], $html);
+
+                    //$html = str_replace("{{ address_to2 }}", $this->add_to, $html);
+
+                    $html = str_replace("{{ city_to2 }}", $tourObj[0]['from_city'], $html);
+                    $html = str_replace("{{ date2 }}", $d2, $html);
+                    $html = str_replace("{{ time2 }}", $tourObj[0]['time'], $html);
+                    
+                    $html = str_replace("{{ price2 }}", $myOrder['items'][1]['order']['price'], $html);
+                    $html = str_replace("{{ price3 }}", $myOrder['items'][0]['order']['total'], $html);
+                    
+                    if($myOrder != NULL && $myDriver2) {
+                        $html = str_replace("{{ driver2 }}", $myDriver2, $html);
+                        $html = str_replace("{{ drphone2 }}", $myOrder['items'][1]['driver']['dr_phone'], $html);
+                        $html = str_replace("{{ drmail2 }}", $myOrder['items'][1]['driver']['dr_email'], $html);
+                        $html = str_replace("{{ driver_view2 }}", "visible", $html);
+                    } else {
+                        $html = str_replace("{{ driver_view2 }}", "invisible", $html);
+                    }
+                //} else $html = str_replace("{{ view }}", "invisible", $html);
+            //} else $html = str_replace("{{ view }}", "invisible", $html);
         } else $html = str_replace("{{ view }}", "invisible", $html);
         //In footer
         $html = str_replace("{{ year }}", date("Y"), $html);
@@ -1375,7 +1391,7 @@ class Order {
     public function getDriverOfTour()
     {
         $sql = "SELECT orders.id, order_items.id as item_id, order_items.tour_id, 
-                order_items.driver_id, order_items.places, tours.from_city, 
+                order_items.driver_id, order_items.places, order_items.deleted, tours.from_city, 
                 order_items.add_from as pickup, tours.to_city, order_items.add_to as dropoff,
                 order_items.date, tours.time as pickuptime, tours.duration,
                 order_items.price, orders.total, orders.code, orders.file_path as voucher
@@ -1970,6 +1986,8 @@ class Order {
                 $stmt->bindParam(':order_id', $this->order_id);
                 $stmt->execute();
 
+                $this->updateTotalPrice();
+
                 $this->logger->logOrderChange($this->id, $_SESSION['user']['id'], 'Otkazivanje', 
                     'deleted', 0, 1);
 
@@ -2014,6 +2032,8 @@ class Order {
                         $stmt = $this->db->prepare($ordSql);
                         $stmt->bindParam(':order_id', $this->order_id);
                         $stmt->execute();
+
+                        $this->updateTotalPrice();
 
                         $mydata = $this->reGenerateVoucher();
                         $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
