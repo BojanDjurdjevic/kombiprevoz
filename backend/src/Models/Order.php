@@ -285,8 +285,8 @@ class Order {
         $drive = [];
 
         $stmt = $this->db->prepare($sql);
-        $this->id = htmlspecialchars($this->id);
-        $stmt->bindParam(':id', $this->id);
+        
+        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
 
         try {
             if($stmt->execute()) {
@@ -365,6 +365,8 @@ class Order {
         ];
     }
 
+    /*
+
     public function reGenerateVoucher() 
     {
         $this->user->id = $this->user_id;
@@ -412,7 +414,7 @@ class Order {
         // First Item
 
         if($myOrder != NULL && isset($myOrder['items'][0])) {
-        //if($myOrder['items'][0]['deleted'] === 0) {
+        if($myOrder['items'][0]['deleted'] === 0) {
         if($myOrder != NULL) {
             $html = str_replace("{{ places }}", $myOrder['items'][0]['order']['places'], $html);
         } else
@@ -442,7 +444,7 @@ class Order {
         } else {
             $html = str_replace("{{ driver_view }}", "invisible", $html);
         }
-        //} else $html = str_replace("{{ view_first }}", "invisible", $html);
+        } else $html = str_replace("{{ view_first }}", "invisible", $html);
         } else $html = str_replace("{{ view_first }}", "invisible", $html);
 
         // 2nd Item - Inbound
@@ -454,7 +456,7 @@ class Order {
 
                 //$hasDeleted = in_array(1, array_column($items, 'deleted'));
 
-                //if($myOrder['items'][1]['deleted'] === 0) {
+                if($myOrder['items'][1]['deleted'] === 0) {
                     $html = str_replace("{{ view }}", "visible", $html);
                     $html = str_replace("{{ places2 }}", $myOrder['items'][1]['order']['places'], $html);
                 
@@ -482,7 +484,7 @@ class Order {
                     } else {
                         $html = str_replace("{{ driver_view2 }}", "invisible", $html);
                     }
-                //} else $html = str_replace("{{ view }}", "invisible", $html);
+                } else $html = str_replace("{{ view }}", "invisible", $html);
             //} else $html = str_replace("{{ view }}", "invisible", $html);
         } else $html = str_replace("{{ view }}", "invisible", $html);
         //In footer
@@ -532,6 +534,181 @@ class Order {
             'path' => $file_path,
             'code' => $this->code
         ];
+    } */
+
+    public function reGenerateVoucher() 
+    {
+        $this->user->id = $this->user_id;
+        $this->tour->id = $this->tour_id;
+        
+        $owner = $this->user->getByID();          
+        $tourObj = $this->tour->getByID();
+        $myOrder = $this->getDriverOfTour();
+                    
+        $options = new Options();
+        $options->setChroot("src/assets/img");
+        $pdf = new Dompdf($options);
+        $pdf->setPaper("A4", "Portrait");
+        
+        //======================================== PRIPREMA PODATAKA
+        
+        // Drivers
+        $myDriver = null;
+        $myDriver2 = null;
+        
+        if ($myOrder != NULL && isset($myOrder['items'][0]['driver']['dr_name'])) {
+            $arr = explode(" ", $myOrder['items'][0]['driver']['dr_name']);
+            $myDriver = $arr[0];
+        }
+        
+        if ($myOrder != NULL && isset($myOrder['items'][1]['driver']['dr_name'])) {
+            $arr = explode(" ", $myOrder['items'][1]['driver']['dr_name']);
+            $myDriver2 = $arr[0];
+        }
+        
+        // Datum polaska (prvi item)
+        if ($myOrder != NULL && isset($myOrder['items'][0]['order']['date'])) {
+            $d = date("d.m.Y", strtotime($myOrder['items'][0]['order']['date']));
+        } else {
+            $d = date("d.m.Y", strtotime($this->date));
+        }
+        
+        // Datum povratka (drugi item)
+        if ($myOrder != NULL && isset($myOrder['items'][1]['order']['date'])) {
+            $d2 = date("d.m.Y", strtotime($myOrder['items'][1]['order']['date']));
+        } else {
+            $d2 = $d; // Ako nema povratak, koristi isti datum
+        }
+        
+        // Order code
+        $orderCode = ($myOrder != NULL) ? $myOrder['items'][0]['order']['code'] : $this->code;
+        
+        // File path
+        $file_path = ($myOrder != NULL) ? $myOrder['items'][0]['order']['voucher'] : $this->voucher;
+        
+        // =====================  TEMPLATE  ===================  
+
+        $html = ($myOrder != NULL) 
+            ? file_get_contents("src/updated.html") 
+            : file_get_contents("src/template.html");
+        
+        // =================== HEADER - Order code i putnik =====================
+
+        $html = str_replace("{{ order }}", $orderCode, $html);
+        $html = str_replace("{{ name }}", $owner[0]['name'], $html);
+        
+        // ==================  PRVI ITEM - POLAZAK  ======================
+        
+        $hasFirstItem = $myOrder != NULL && isset($myOrder['items'][0]) && $myOrder['items'][0]['order']['deleted'] == 0;
+        
+        if ($hasFirstItem) {
+            $item1 = $myOrder['items'][0]['order'];
+            
+            $html = str_replace("{{ view_first }}", "visible", $html);
+            $html = str_replace("{{ places }}", $item1['places'], $html);
+            $html = str_replace("{{ address }}", $item1['pickup'], $html);
+            $html = str_replace("{{ city }}", $tourObj[0]['from_city'], $html);
+            $html = str_replace("{{ address_to }}", $item1['dropoff'], $html);
+            $html = str_replace("{{ city_to }}", $tourObj[0]['to_city'], $html);
+            $html = str_replace("{{ date }}", $d, $html);
+            $html = str_replace("{{ time }}", $tourObj[0]['time'], $html);
+            $html = str_replace("{{ price }}", $item1['price'], $html);
+            
+            // Driver za polazak
+            if ($myDriver) {
+                $html = str_replace("{{ driver }}", $myDriver, $html);
+                $html = str_replace("{{ drphone }}", $myOrder['items'][0]['driver']['dr_phone'], $html);
+                $html = str_replace("{{ drmail }}", $myOrder['items'][0]['driver']['dr_email'], $html);
+                $html = str_replace("{{ driver_view }}", "visible", $html);
+            } else {
+                $html = str_replace("{{ driver_view }}", "invisible", $html);
+            }
+            
+        } else {
+            // Fallback ako nema myOrder
+            $html = str_replace("{{ view_first }}", "visible", $html);
+            $html = str_replace("{{ places }}", $this->places, $html);
+            $html = str_replace("{{ address }}", $this->add_from, $html);
+            $html = str_replace("{{ city }}", $tourObj[0]['from_city'], $html);
+            $html = str_replace("{{ address_to }}", $this->add_to, $html);
+            $html = str_replace("{{ city_to }}", $tourObj[0]['to_city'], $html);
+            $html = str_replace("{{ date }}", $d, $html);
+            $html = str_replace("{{ time }}", $tourObj[0]['time'], $html);
+            $html = str_replace("{{ price }}", $this->price, $html);
+            $html = str_replace("{{ driver_view }}", "invisible", $html);
+        }
+        
+        // ====================  DRUGI ITEM - POVRATAK  ====================
+
+        $hasSecondItem = ($myOrder != NULL && isset($myOrder['items'][1]) && $myOrder['items'][1]['order']['deleted'] == 0);
+        
+        if ($hasSecondItem) {
+            $item2 = $myOrder['items'][1]['order'];
+            
+            $html = str_replace("{{ view }}", "visible", $html);
+            $html = str_replace("{{ places2 }}", $item2['places'], $html);
+            $html = str_replace("{{ address2 }}", $item2['pickup'], $html);
+            $html = str_replace("{{ city2 }}", $tourObj[0]['to_city'], $html); // Obrnuto od polaska
+            $html = str_replace("{{ address_to2 }}", $item2['dropoff'], $html);
+            $html = str_replace("{{ city_to2 }}", $tourObj[0]['from_city'], $html); // Obrnuto
+            $html = str_replace("{{ date2 }}", $d2, $html);
+            $html = str_replace("{{ time2 }}", $tourObj[0]['time'], $html);
+            $html = str_replace("{{ price2 }}", $item2['price'], $html);
+            
+            // Total price (iz prvog item-a jer je to total za celu order)
+            $html = str_replace("{{ price3 }}", $myOrder['items'][0]['order']['total'], $html);
+            
+            // Driver za povratak
+            if ($myDriver2) {
+                $html = str_replace("{{ driver2 }}", $myDriver2, $html);
+                $html = str_replace("{{ drphone2 }}", $myOrder['items'][1]['driver']['dr_phone'], $html);
+                $html = str_replace("{{ drmail2 }}", $myOrder['items'][1]['driver']['dr_email'], $html);
+                $html = str_replace("{{ driver_view2 }}", "visible", $html);
+            } else {
+                $html = str_replace("{{ driver_view2 }}", "invisible", $html);
+            }
+            
+        } else {
+            // If no return
+            $html = str_replace("{{ view }}", "invisible", $html);
+        }
+        
+        // ==================  FOOTER  ======================
+        
+        $html = str_replace("{{ year }}", date("Y"), $html);
+        
+        // ====================  GENERATE PDF   ====================
+        
+        $pdf->loadHtml($html);
+        $pdf->render();
+        $pdf->addInfo("Title", "Kombitransfer - rezervacija: " . $orderCode);
+        
+        $output = $pdf->output();
+        file_put_contents($file_path, $output);
+        
+        // ==================  RETURN DATA  ======================
+        
+        $result = [
+            'email' => $owner[0]['email'],
+            'name' => $owner[0]['name'],
+            'path' => $file_path,
+            'code' => $orderCode
+        ];
+        
+        // Dodaj driver info ako postoji
+        if ($myDriver) {
+            $result['driver'] = $myDriver;
+            $result['driver_phone'] = $myOrder['items'][0]['driver']['dr_phone'];
+            $result['driver_email'] = $myOrder['items'][0]['driver']['dr_email'];
+        }
+        
+        if ($myDriver2) {
+            $result['driver2'] = $myDriver2;
+            $result['driver_phone2'] = $myOrder['items'][1]['driver']['dr_phone'];
+            $result['driver_email2'] = $myOrder['items'][1]['driver']['dr_email'];
+        }
+        
+        return $result;
     }
 
     public function sendVoucher($email, $name, $path, $new_code, $goal)
@@ -1400,43 +1577,53 @@ class Order {
                 INNER JOIN orders on order_items.order_id = orders.id
                 INNER JOIN tours on order_items.tour_id = tours.id
                 
-                WHERE orders.id = '$this->order_id' AND order_items.deleted = 0"
+                WHERE orders.id = :id
+                ORDER BY order_items.date"
         ;
-        /**
-        users.name as driver, users.email as dr_email, users.phone as dr_phone
-        INNER JOIN users on orders.driver_id = users.id
-         */
-        $res = $this->db->query($sql);
-        $orders = $res->fetchAll(PDO::FETCH_ASSOC);
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':id', $this->order_id, PDO::PARAM_INT);
+        try {
+            $stmt->execute();
+            $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (empty($orders)) {
+                return null;
+            }
         
-        $items = [];
-        //if($order) {
+            $items = [];
+        
             foreach($orders as $order) {
+                $driver = null;
+
                 if($order['driver_id']) {
                     $sdr = "SELECT users.name as dr_name, users.email as dr_email, 
-                            users.phone as dr_phone FROM users
-                            WHERE id = {$order['driver_id']}"
-                    ;
-                    $sdRes = $this->db->query($sdr);
-                    $driver = $sdRes->fetch(PDO::FETCH_ASSOC);
-                    if($driver) 
-                    array_push($items, [
-                        'order' => $order,
-                        'driver' => $driver
-                    ]);
-                    else array_push($items, ['order' => $order, 'driver' => null]);
+                        users.phone as dr_phone 
+                        FROM users
+                        WHERE id = :driver_id";
+                
+                    $stmtDriver = $this->db->prepare($sdr);
+                    $stmtDriver->bindParam(':driver_id', $order['driver_id'], PDO::PARAM_INT);
+                    $stmtDriver->execute();
+                    $driver = $stmtDriver->fetch(PDO::FETCH_ASSOC);
                 }
-                else array_push($items, ['order' => $order, 'driver' => null]);
+                $items[] = [
+                    'order' => $order,
+                    'driver' => $driver
+                ];
             }
             
             return [
                 'items' => $items
             ];
-        //} else {
-            //$this->getFromDB($this->id);
-            //echo json_encode(['msg_drIsNull' => $order]);
-          //  return null;
-        //} 
+        } catch(PDOException $e) {
+            $this->logger->error('Failed to fetch driver of tour for generate Voucher in getDriverOfTour()', [
+                'error' => $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+        }
+        
     }
 
     //------------------------------- FUNCTIONS OF POST METHOD --------------------------------//
@@ -1592,7 +1779,57 @@ class Order {
     }
 
     //------------------------------- FUNCTIONS OF PUT METHOD --------------------------------// 
+    public function updateAddress()
+    {
+        // Ako nema šta da se ažurira
+        if (empty($this->new_add_from) && empty($this->new_add_to)) {
+            return ['msg' => '']; 
+        }
 
+        if (empty($this->new_add_from) || empty($this->new_add_to)) {
+            return ['error' => 'Molimo unesite obe adrese (polazak i dolazak)'];
+        }
+
+        $sql = "UPDATE order_items SET add_from = :add_from, add_to = :add_to WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+
+        $stmt->bindParam(":id", $this->id, PDO::PARAM_INT);
+        $stmt->bindParam(':add_from', $this->new_add_from);
+        $stmt->bindParam(':add_to', $this->new_add_to);
+
+        try {
+            if ($stmt->execute()) {
+                $this->logger->logOrderChange(
+                    $this->id, 
+                    $_SESSION['user']['id'], 
+                    'Ažuriranje', 
+                    'Adresa od/do', 
+                    "Polazak: $this->add_from / Dolazak: $this->add_to", 
+                    "Polazak: $this->new_add_from / Dolazak: $this->new_add_to"
+                );
+                
+                return [
+                    'success' => true,
+                    'msg' => 'Uspešno ste izmenili adrese rezervacije.'
+                ];
+            } else {
+                return ['error' => 'Nije moguće ažurirati adrese'];
+            }
+            
+        } catch (PDOException $e) {
+            $this->logger->error("Failed to update addresses", [
+                'user_id' => $_SESSION['user']['id'],
+                'order_item_id' => $this->id,
+                'error' => $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            
+            return ['error' => 'Greška pri ažuriranju adresa'];
+        }
+    }
+
+    /*
     public function updateAddress()
     {
         if(empty($this->new_add_from) && empty($this->new_add_to) && 
@@ -1638,6 +1875,7 @@ class Order {
     }
 
     // Update ONLY number of places:
+    
     public function updatePlaces() 
     {
         $this->getFromDB($this->id);
@@ -1682,6 +1920,66 @@ class Order {
             ];
         }
     }
+        */
+
+    public function updatePlaces() 
+    {
+        $this->getFromDB($this->id);
+        
+        // Proveri dostupnost
+        $diff = $this->newPlaces - $this->places;
+        
+        if ($diff > $this->availability($this->date)) {
+            return [
+                'error' => "Nema dovoljno slobodnih mesta. Dostupno: " . ($this->availability($this->date) + $this->places)
+            ];
+        }
+
+        $sql = "UPDATE order_items SET places = :places, price = :total WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+
+        $new_total = $this->totalPrice($this->db, $this->tour_id, $this->newPlaces);
+
+        $stmt->bindParam(':places', $this->newPlaces, PDO::PARAM_INT);
+        $stmt->bindParam(':total', $new_total);
+        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
+        
+        try {
+            if ($stmt->execute()) {
+                $this->updateTotalPrice();
+                
+                $mydata = $this->reGenerateVoucher();
+                $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update'); 
+                
+                $this->logger->logOrderChange(
+                    $this->id, 
+                    $_SESSION['user']['id'], 
+                    'Ažuriranje',
+                    'Broj mesta', 
+                    $this->places, 
+                    $this->newPlaces
+                );
+                
+                return [
+                    'success' => true,
+                    'msg' => "Uspešno ste izmenili broj mesta na {$this->newPlaces}."
+                ];
+            } else {
+                return ['error' => 'Nije moguće ažurirati broj mesta'];
+            } 
+            
+        } catch (PDOException $e) {
+            $this->logger->error("Failed to update places", [
+                'user_id' => $_SESSION['user']['id'],
+                'order_item_id' => $this->id,
+                'error' => $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            
+            return ['error' => 'Greška pri ažuriranju broja mesta'];
+        } 
+    }
 
     // RESCHEDULE outbound
 
@@ -1714,7 +2012,7 @@ class Order {
                             'line' => __LINE__
                         ]);
                         return [
-                            'error' => 'Došlo je do greške pri konekciji na bazu podataka.'
+                            'error' => 'Došlo je do greške pri pokušaju promene polaska.'
                         ];
                     }
                 } else {
@@ -1757,9 +2055,13 @@ class Order {
                             return ['success' => true];
                         }
                     } catch (PDOException $e) {
+                        $this->logger->error('Failed to change the inbound in inbound()', [
+                            'error' => $e->getMessage(),
+                            'file' => __FILE__,
+                            'line' => __FILE__
+                        ]);
                         return [
-                            'error' => 'Došlo je do greške pri konekciji na bazu podataka.',
-                            'db' => $e->getMessage()
+                            'error' => 'Došlo je do greške pri pokušaju promene povratka.',
                         ];
                     } 
                 } else {
@@ -1782,7 +2084,7 @@ class Order {
     {
         try {
             if(isset($this->newDate) && !empty($this->newDate) && isset($this->newDateIn) && !empty($this->newDateIn)) {
-                $this->db->beginTransaction();
+                //$this->db->beginTransaction();
 
                 $outb = $this->outbound(false);
                 if(!isset($outb['success'])) {
@@ -1815,9 +2117,11 @@ class Order {
                 return ['error' => 'Unesite bar jedan datum'];
             }
         } catch (Exception $e) {
+            /*
             if($this->db->inTransaction()) {
                 $this->db->rollBack();
             }
+            */
             $this->logger->error("Reschedule failed", [
                 'user_id' => $_SESSION['user']['id'],
                 'error' => $e->getMessage(),
