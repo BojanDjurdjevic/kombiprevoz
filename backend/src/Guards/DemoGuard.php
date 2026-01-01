@@ -4,12 +4,6 @@ namespace Guards;
 
 class DemoGuard
 {
-    /**
-     * Blokira akciju ako je korisnik demo
-     * 
-     * @param string $message Poruka koja će biti prikazana
-     * @throws void Terminira izvršavanje sa 403 statusom
-     */
     public static function denyIfDemo(string $message = 'Akcija nije dozvoljena u demo režimu.'): void
     {
         if (!isset($_SESSION['user'])) {
