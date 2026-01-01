@@ -2,6 +2,7 @@
 
 namespace Controllers;
 
+use Guards\DemoGuard;
 use PDO;
 use PDOException;
 use Helpers\Logger;
@@ -25,6 +26,10 @@ class ChatController {
     }
 
     public function handleRequest() {
+        if(Validator::isAdmin() && Validator::isDemo()) {
+            DemoGuard::denyIfDemo('Demo Admin nema pristup live chat-u.');
+        }
+
         $this->chat->ticket_id = $this->data->chat->ticket_id ?? null;
         $this->chat->ticket_number = $this->data->chat->ticket_number ?? null;
         $this->chat->ticket_status = $this->data->chat->ticket_status ?? null;

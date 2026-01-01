@@ -100,7 +100,7 @@ const openChat = () => {
 }
 
 const minimizeChat = () => {
-  chatStore.isOpen = fals
+  chatStore.isOpen = false
   chatStore.stopMessagePolling()
   stopTypingPolling()
 }
