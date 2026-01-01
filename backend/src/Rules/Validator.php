@@ -219,7 +219,7 @@ class Validator {
     
     // ======================== STRING VALIDATION ========================
     
-    public static function validateString($str, $min = 2, $max = 100) 
+    public static function validateString($str, $min = 2, $max = 100): bool 
     {
         $length = mb_strlen($str, 'UTF-8');
         

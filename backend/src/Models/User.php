@@ -48,7 +48,8 @@ class User {
             $sql = "SELECT * FROM users WHERE id = :id";
             $stmt = $db->prepare($sql);
 
-            $stmt->bindParam(':id', $_COOKIE['remember_token']);
+            $cookieId = (int) $_COOKIE['remember_token'];
+            $stmt->bindParam(':id', $cookieId, PDO::PARAM_INT);
 
             try {
                 if($stmt->execute()) {
@@ -334,10 +335,11 @@ class User {
     public function getByName(): void
     {
         $sql = "SELECT id, name, email, status, city, address, phone 
-        FROM users WHERE deleted = 0 and name LIKE '%:name%'"
-        ;
+        FROM users WHERE deleted = 0 and name LIKE :name";
+
+        $searchTerm = "%{$this->name}%";
         $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(':name', $this->name);
+        $stmt->bindParam(':name', $searchTerm);
 
         try {
             $stmt->execute();
@@ -365,9 +367,10 @@ class User {
     public function getByCity(): void
     {
         $sql = "SELECT id, name, email, status, city, address, phone 
-        FROM users WHERE deleted = 0 and city LIKE '%:city%'";
+        FROM users WHERE deleted = 0 and city LIKE :city";
         $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(':city', $this->city);
+        $searchTerm = "%{$this->city}%";
+        $stmt->bindParam(':city', $searchTerm, PDO::PARAM_STR);
 
         try {
             $num = $stmt->rowCount();
@@ -390,14 +393,18 @@ class User {
         }
     }
 
-    public function getAvailableDrivers($date)
+    public function getAvailableDrivers($date): array
     {
         $sql = "SELECT id, name, email, phone FROM users
                 WHERE status = 'Driver'
                 and id NOT IN (SELECT driver_id FROM order_items WHERE date = :date)
         ";
         $stmt = $this->db->prepare($sql);
-        $date = htmlspecialchars(strip_tags($date), ENT_QUOTES);
+        
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            throw new \InvalidArgumentException('Invalid date format');
+        }
+        
         $stmt->bindParam(':date', $date);
 
         $drivers = [];
@@ -407,10 +414,11 @@ class User {
                 while($row = $stmt->fetch(PDO::FETCH_OBJ)) {
                     array_push($drivers, $row);
                 }
-                return $drivers;
+                // return je bio ovde
             }
+            return $drivers;
         } catch (PDOException $e) {
-            Logger::error("Database error in userUpdateByAdmin()", [
+            Logger::error("Database error in getAvailableDrivers()", [
                             'user_id' => $this->id,
                             'error' => $e->getMessage(),
                             'file' => __FILE__,
@@ -419,17 +427,17 @@ class User {
 
             http_response_code(500);
             echo json_encode(['error' => 'Došlo je do greške pri ažuriranju!'], JSON_UNESCAPED_UNICODE);
+            return ['success' => false];
         }
     }
 
     // -------------------------  POST --------------------------------- // 
 
     // SIGNIN - create new User
-    public function create()
+    public function create(): void
     {
         if(Validator::validateString($this->name) && Validator::validatePassword($this->pass)
-            && filter_var($this->email, FILTER_VALIDATE_EMAIL) /* && Validator::validateString($this->address)
-            && Validator::validateString($this->city) && filter_var($this->phone, FILTER_VALIDATE_INT) */) {
+            && filter_var($this->email, FILTER_VALIDATE_EMAIL)) {
             $sql = "INSERT INTO users SET name = :name, email = :email, pass = :pass, status = :status,
                     city = :city, address = :address, phone = :phone"
             ;
@@ -544,7 +552,7 @@ class User {
     }
 
     // Admin can choose the role while creating
-    public function createByAdmin()
+    public function createByAdmin(): void
     {
         if(Validator::validateString($this->name) /* && Validator::validatePassword($this->pass) */
             && filter_var($this->email, FILTER_VALIDATE_EMAIL) && Validator::validateString($this->address)
@@ -585,12 +593,6 @@ class User {
                             ";
                             $this->sendEmail($html, $generated, $this->name, 'Kreiran Nalog',
                             "Email sa kredencijalima je poslat novom korisniku po imenu: $this->name !");
-                            /*
-                            echo json_encode(['user' => [
-                                'msg' => 'Novi korisnik je uspešno kreiran.',
-                                'user_id' => $this->db->lastInsertId()
-                                ]
-                            ]); */
                         }
                     } catch (PDOException $e) {
                         http_response_code(500);
@@ -626,7 +628,7 @@ class User {
         
     }
 
-    public function login()
+    public function login(): void
     {
         //$logs = [];
         $find = "SELECT * FROM users WHERE email = :email AND deleted = 0";
@@ -668,7 +670,7 @@ class User {
                             ];
 
                             if($this->remember) {
-                                setcookie('remember_token', $user->id, [
+                                setcookie('remember_token', (string)$user->id, [
                                     'expires' => time() + (86400 * 30),
                                     'path' => "/",
                                     'secure' => false,
@@ -677,11 +679,7 @@ class User {
                                 ]);
                             }
                             $name = $_SESSION['user']['name'];
-                            /*
-                            $logger = new Logger($this->db);
-                            $logs = $logger->getUserLogs($user->id);
-                            'logs' => $logs,
-                            */
+
                             echo json_encode([
                                 'success' => true,
                                 'user' => $_SESSION['user'],
@@ -733,7 +731,7 @@ class User {
         }
     }
 
-    public function logout()
+    public function logout(): void
     {
         $name = $_SESSION['user']['name'];
         session_unset();
@@ -748,7 +746,7 @@ class User {
     // -------------------------  PUT --------------------------------- // 
 
     // Update User general data:
-    public function update() 
+    public function update(): void 
     {   
         $findSql = "SELECT * FROM users WHERE id = :id";
 
@@ -857,68 +855,82 @@ class User {
     }
 
     // PASSWORD Update
-    public function updatePassword()
+    public function updatePassword(): void
     {
-        $find = "SELECT * FROM users WHERE id = '$this->id' AND deleted = 0";
-        $res = $this->db->query($find);
-        $user = $res->fetch(PDO::FETCH_OBJ);
+        $find = "SELECT * FROM users WHERE id = :id AND deleted = 0";
+        $stmt = $this->db->prepare($find);
+        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
 
-        if($user) {
-            if(password_verify($this->pass, $user->pass)) {
-                if($this->new_pass == $this->new_pass_confirm) {
-                    if(Validator::validatePassword($this->new_pass)) {
-                        $sql = "UPDATE users SET pass = :pass WHERE id = :id";
-                        $stmt = $this->db->prepare($sql);
-                        
-                        //$this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
-                        $hashed = password_hash($this->new_pass, PASSWORD_DEFAULT);
+        try {
+            $stmt->execute();
+            $user = $stmt->fetch(PDO::FETCH_OBJ);
 
-                        $stmt->bindParam(':id', $this->id);
-                        $stmt->bindParam(':pass', $hashed);
+            if($user) {
+                if(password_verify($this->pass, $user->pass)) {
+                    if($this->new_pass == $this->new_pass_confirm) {
+                        if(Validator::validatePassword($this->new_pass)) {
+                            $sql = "UPDATE users SET pass = :pass WHERE id = :id";
+                            $stmt = $this->db->prepare($sql);
+                            
+                            //$this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
+                            $hashed = password_hash($this->new_pass, PASSWORD_DEFAULT);
 
-                        try {
-                            if($stmt->execute()) {
-                                http_response_code(200);
-                                echo json_encode([
-                                    'success' => true,
-                                    'msg' => 'Vaša lozinka je uspešno izmenjena!'
+                            $stmt->bindParam(':id', $this->id);
+                            $stmt->bindParam(':pass', $hashed);
+
+                            try {
+                                if($stmt->execute()) {
+                                    http_response_code(200);
+                                    echo json_encode([
+                                        'success' => true,
+                                        'msg' => 'Vaša lozinka je uspešno izmenjena!'
+                                    ]);
+                                }
+                            } catch (PDOException $e) {
+                                Logger::error("Database error in User updatePassword()", [
+                                    'user_id' => $this->id,
+                                    'error' => $e->getMessage(),
+                                    'file' => __FILE__,
+                                    'line' => __LINE__
                                 ]);
-                            }
-                        } catch (PDOException $e) {
-                            Logger::error("Database error in User updatePassword()", [
-                                'user_id' => $this->id,
-                                'error' => $e->getMessage(),
-                                'file' => __FILE__,
-                                'line' => __LINE__
-                            ]);
 
-                            http_response_code(500);
-                            echo json_encode(['error' => 'Došlo je do greške pri ažuriranju!'], JSON_UNESCAPED_UNICODE);
-                            }
+                                http_response_code(500);
+                                echo json_encode(['error' => 'Došlo je do greške pri ažuriranju!'], JSON_UNESCAPED_UNICODE);
+                                }
+                        } else {
+                            http_response_code(401);
+                            echo json_encode([
+                                'error' => 'Nedovoljno jaka lozinka! Lozinka mora sadržati najmenje: 1 karakter, 1 malo/veliko slovo i 1 broj.'
+                            ], JSON_PRETTY_PRINT);
+                        }
                     } else {
                         http_response_code(401);
                         echo json_encode([
-                            'error' => 'Nedovoljno jaka lozinka! Lozinka mora sadržati najmenje: 1 karakter, 1 malo/veliko slovo i 1 broj.'
+                            'error' => 'Lozinka i potvrda lozinke se ne poklapaju. Molimo pokušajte ponovo.'
                         ], JSON_PRETTY_PRINT);
-                    }
+                    } 
                 } else {
                     http_response_code(401);
-                    echo json_encode([
-                        'error' => 'Lozinka i potvrda lozinke se ne poklapaju. Molimo pokušajte ponovo.'
-                    ], JSON_PRETTY_PRINT);
+                    echo json_encode(['error' => 'Pogrešana trenutna lozinka! Molimo Vas da unesete važeću lozinku'], JSON_PRETTY_PRINT);
                 } 
             } else {
                 http_response_code(401);
-                echo json_encode(['error' => 'Pogrešana trenutna lozinka! Molimo Vas da unesete važeću lozinku'], JSON_PRETTY_PRINT);
-            } 
-        } else {
-            http_response_code(401);
-            echo json_encode(['error' => 'Nije pronađen korisnik, molimo da nas kontaktirate.'], JSON_PRETTY_PRINT);
-        }       
+                echo json_encode(['error' => 'Nije pronađen korisnik, molimo da nas kontaktirate.'], JSON_PRETTY_PRINT);
+            }     
+        } catch (PDOException $e) {
+            Logger::error('Failed to User-update updatePassford()', [
+                'DB_message'=> $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            http_response_code(500);
+            echo json_encode(['error' => 'Došlo je do greške prilikom ažuriranja lozinke korisnika!']);
+        }
+          
     }
 
     // Reset Password
-    public function resetPassword() 
+    public function resetPassword(): void 
     {
         $token = bin2hex(random_bytes(16));
         $token_hash = hash("sha256", $token);
@@ -967,7 +979,7 @@ class User {
         }
     }
 
-    public function processResetPassword()
+    public function processResetPassword(): void
     {
         if($this->checkToken($this->token)) {
             if(Validator::validatePassword($this->new_pass)) {
@@ -1017,7 +1029,7 @@ class User {
         }
     }
 
-    public function userUpdateByAdmin() 
+    public function userUpdateByAdmin(): void 
     {
         if(!(Validator::isAdmin() || Validator::isSuper())) {
             http_response_code(403);
@@ -1137,8 +1149,6 @@ class User {
             }
 
         } catch(PDOException $e) {
-            //error_log("Admin update failed for user {$this->id}: " . $e->getMessage());
-
             Logger::error("Database error in userUpdateByAdmin()", [
                 'user_id' => $this->id,
                 'error' => $e->getMessage(),
@@ -1151,7 +1161,7 @@ class User {
         }
     }
 
-    public function changeRole() 
+    public function changeRole(): void 
     {
         $sql = "UPDATE users SET status = :status WHERE id = :id";
         if(Validator::validateString($this->status)) {
@@ -1179,7 +1189,7 @@ class User {
      // -------------------------  DELETE --------------------------------- // 
 
      // Delete User
-     public function delete()
+     public function delete(): void
      {
         $sql = "UPDATE users SET deleted = 1 WHERE id = :id";
         $stmt = $this->db->prepare($sql);
@@ -1206,12 +1216,11 @@ class User {
      }
 
      // Restore User
-     public function restore()
+     public function restore(): void
      {
         $sql = "UPDATE users SET deleted = 0 WHERE id = :id";
         $stmt = $this->db->prepare($sql);
 
-        //$this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
 
         try {
@@ -1232,145 +1241,5 @@ class User {
         
      }
 }
-
-/*
-    "users": true,
-    "user": {
-        "id": null, 
-        "name": "Bojan Djurdjevic",
-        "email": "pininfarina164@gmail.com",
-        "pass": "Ljubavsonmojija!369",
-        "pass_confirm": "",
-        "city": "Sremska Kamenica",
-        "address": "Gavrila Principa 6",
-        "phone": "0641178898"
-    },
-    "new_pass": {
-        "password": "Ljubavsonmojija!369",
-        "confirmation_pass": "Ljubavsonmojija!369"
-    },
-    "all": null,
-    "byID": null,
-    "byEmail": null,
-    "byName": null,
-    "byCity": null,
-    "signin": null,
-    "login": null,
-    "logout": null,
-    "updateProfile": null,
-    "updatePass": null,
-    "delete": null,
-    "restore": null,
-    "resetPass": null,
-    "token": null
-
-    ------------------------------------------------
-
-    "pass": "Ljubavsonmojija!369",
-    "password": "EniBaneni!123",
-    Valentina - LjubavicBuljavi!123
-
-    --------------------------------------
-
-    "user_id": 10,
-    "user": {
-        "id": 10,
-        "email": "pininfarina164@gmail.com"
-    },
-    "orders": {
-        "create": {
-            "tour_id": 1,
-            "user_id": 10,
-            "places": 2,
-            "add_from": "Ise Bajića 9",
-            "add_to": "Stipice Jelavića 15",
-            "date": "2025-07-25",
-            "price": null
-        },
-        "ord_code": null
-    }
-
-    ---------------------------
-
-    giuliano: Giuliano!999
-
-    ---------------------------
-    create ByAdmin
-    "users": true,
-    "user": {
-        "id": null,
-        "name": "Bojan Giuliano",
-        "email": "bojan.giuliano@gmail.com",
-        "pass": "Giuliano!999",
-        "status": "Deiver",
-        "city": "Novi Sad",
-        "address": "Seljačkih Buna 29",
-        "phone": "062640227"
-    },
-    "byAdmin": true,
-    "role": null
-
-    -----------------------
-
-    "users": false,
-    "user": {
-        "id": 10,
-        "name": "Valentina",
-        "email": "pininfarina164@gmail.com",
-        "pass": "Ljubavsonmojija!369",
-        "status": "Driver",
-        "city": "Novi Sad",
-        "address": "Seljačkih Buna 29",
-        "phone": "062640227"
-    },
-    "orders": {
-        "selected": [
-            {
-                "id": 2,
-                "tour_id": 1,
-                "user_id": 12,
-                "places": 2,
-                "from_city": "Novi Sad",
-                "pickup": "Kočićeva 9",
-                "to_city": "Rijeka",
-                "dropoff": "Zadarska 33",
-                "date": "2025-07-15",
-                "pickuptime": "06:45:00",
-                "duration": 6,
-                "price": 100,
-                "code": "3693692KP",
-                "voucher": "src/assets/pdfs/3693692KP.pdf",
-                "user": "Valentina Djurdjevic",
-                "email": "valentajndj@gmail.com",
-                "phone": "0641178898"
-            },
-            {
-                "id": 83,
-                "tour_id": 1,
-                "user_id": 10,
-                "places": 2,
-                "from_city": "Novi Sad",
-                "pickup": "Gajeva 9",
-                "to_city": "Rijeka",
-                "dropoff": "Primorska 18",
-                "date": "2025-07-15",
-                "pickuptime": "06:45:00",
-                "duration": 6,
-                "price": 100,
-                "code": "1016996KP",
-                "voucher": "src/assets/pdfs/1016996KP.pdf",
-                "user": "Bojan",
-                "email": "pininfarina164@gmail.com",
-                "phone": "062640273"
-            }
-        ],
-        "driver": {
-            "id": 15,
-            "name": "Bojan Giuliano",
-            "email": "bojan.giuliano@gmail.com",
-            "phone": "062640227"
-        }
-    }
-*/
 
 ?>
