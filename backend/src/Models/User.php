@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Models;
 
+use Guards\DemoGuard;
 use Helpers\Logger;
 use PDO;
 use PDOException;
@@ -42,13 +43,24 @@ class User {
     // -------------------------  FUNCTIONS BEFORE ACTION --------------------------------- //
 
     // Check if it the User is logedin:
-    public static function isLoged($db)
+    public static function isLoged(PDO $db): bool
     {
         if(!isset($_SESSION['user']) && isset($_COOKIE['remember_token'])) {
-            $sql = "SELECT * FROM users WHERE id = :id";
+            $sql = "SELECT * FROM users WHERE id = :id AND deleted = 0";
             $stmt = $db->prepare($sql);
 
-            $cookieId = (int) $_COOKIE['remember_token'];
+            $cookieId = filter_var((int) $_COOKIE['remember_token'], FILTER_VALIDATE_INT);
+
+            if ($cookieId === false) {
+                // Invalid cookie - delete it
+                setcookie('remember_token', '', time() - 3600, '/', '', false, true);
+                http_response_code(422);
+                echo json_encode([
+                    'error' => 'Korisnik nije prepoznat, molimo Vas da se ulogujete'
+                ], JSON_UNESCAPED_UNICODE);
+                return false;
+            }
+
             $stmt->bindParam(':id', $cookieId, PDO::PARAM_INT);
 
             try {
@@ -56,24 +68,24 @@ class User {
                     $user = $stmt->fetch(PDO::FETCH_OBJ);
 
                     if($user) {
-                        session_regenerate_id();
+                        session_regenerate_id(true); /*
                         $splited = explode(" ", $user->name);
                         $arr = [];
                         foreach($splited as $s) {
                             array_push($arr, mb_strtoupper(mb_substr($s, 0,1, "UTF-8")));
-                        }
-                        $initials = implode("", $arr);
+                        } 
+                        $initials = implode("", $arr); */
 
                         $_SESSION['user'] = [
-                            'id' => $user->id,
+                            'id' => (int) $user->id,
                             'name' => $user->name,
                             'email' => $user->email,
                             'status' => $user->status,
                             'city' => $user->city,
                             'address' => $user->address,
                             'phone' => $user->phone,
-                            'is_demo' => $user->is_demo,
-                            'initials' => $initials
+                            'is_demo' => (bool) $user->is_demo,
+                            'initials' => self::generateInitials($user->name)
                         ];
                     }
                 }
@@ -109,6 +121,52 @@ class User {
     {
         if(isset($_SESSION['user']) && !empty($this->id) && $this->id == $_SESSION['user']['id']) return true;
         else return false;
+    }
+
+    private static function generateInitials(string $name): string
+    {
+        $parts = explode(" ", $name);
+        $initials = [];
+        
+        foreach ($parts as $part) {
+            if (!empty($part)) {
+                $initials[] = mb_strtoupper(mb_substr($part, 0, 1, "UTF-8"), "UTF-8");
+            }
+        }
+        
+        return implode("", $initials);
+    }
+
+    // create session data for User
+    private function createUserSession(object $user): void
+    {
+        session_regenerate_id(true);
+        
+        $_SESSION['user'] = [
+            'id' => (int) $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'status' => $user->status,
+            'city' => $user->city,
+            'address' => $user->address,
+            'phone' => $user->phone,
+            'is_demo' => (bool) $user->is_demo,
+            'initials' => self::generateInitials($user->name)
+        ];
+    }
+
+    //Set remember cookie
+    private function setRememberCookie(int $userId): void
+    {
+        $isProduction = $_ENV['APP_ENV'] === 'production';
+        
+        setcookie('remember_token', (string) $userId, [
+            'expires' => time() + (86400 * 30), // 30 dana
+            'path' => "/",
+            'secure' => $isProduction, 
+            'httponly' => true,
+            'samesite' => 'Lax'
+        ]);
     }
 
     public function getLogs(): mixed 
@@ -393,7 +451,7 @@ class User {
         }
     }
 
-    public function getAvailableDrivers($date): array
+    public function getAvailableDrivers(string $date): array
     {
         $sql = "SELECT id, name, email, phone FROM users
                 WHERE status = 'Driver'
@@ -402,21 +460,19 @@ class User {
         $stmt = $this->db->prepare($sql);
         
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
-            throw new \InvalidArgumentException('Invalid date format');
+            Logger::error('Invalid date format in getAvailableDrivers', [
+                'date' => $date,
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            return [];
         }
-        
+
         $stmt->bindParam(':date', $date);
 
-        $drivers = [];
-
         try {
-            if($stmt->execute()) {
-                while($row = $stmt->fetch(PDO::FETCH_OBJ)) {
-                    array_push($drivers, $row);
-                }
-                // return je bio ovde
-            }
-            return $drivers;
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (PDOException $e) {
             Logger::error("Database error in getAvailableDrivers()", [
                             'user_id' => $this->id,
@@ -554,12 +610,19 @@ class User {
     // Admin can choose the role while creating
     public function createByAdmin(): void
     {
+        DemoGuard::requireRole(['Admin', 'Superadmin'], 'Samo Admin može kreirati korisnike');
+        DemoGuard::denyIfDemo('Demo Admin ne može kreirati novog korisnika!');
+
         if(Validator::validateString($this->name) /* && Validator::validatePassword($this->pass) */
             && filter_var($this->email, FILTER_VALIDATE_EMAIL) && Validator::validateString($this->address)
-            && Validator::validateString($this->city) && Validator::validateString($this->phone)) {
+            && Validator::validateString($this->city) && Validator::validateString($this->phone) && Validator::validateString($this->status)) {
             
-            if(Validator::validateString($this->status)) {
-                if($this->status === 'Admin' || $this->status === 'Driver' || $this->status === 'User') {
+                $allowedRoles = ['Admin', 'Driver', 'User'];
+                if (!in_array($this->status, $allowedRoles, true)) {
+                    http_response_code(400);
+                    echo json_encode(['error' => 'Korisnik može imati samo Admin, Driver ili User ulogu!']);
+                    exit;
+                }
                     $sql = "INSERT INTO users SET name = :name, email = :email, pass = :pass, status = :status,
                             city = :city, address = :address, phone = :phone"
                     ;
@@ -580,19 +643,26 @@ class User {
                     
                     try {
                         if($stmt->execute()) {
+                            $userId = (int) $this->db->lastInsertId();
+                            $safeEmail = htmlspecialchars($this->email, ENT_QUOTES, 'UTF-8');
+                            $frontendUrl = $_ENV['FRONTEND_URL'] ?? 'http://localhost:5173';
+
                             $html = "
                                 <p>Poštovani {{ name }}, </p><br>
                                 <p>Vaš nalog je uspešno kreiran.</p>
-                                <p>Vaš korisnički email je {$this->email} a Vaša lozinka je: {{ code }} </p>
+                                <p>Vaš korisnički email je <strong>{$safeEmail}</strong> a Vaša privremena lozinka je:</p>
+                                <p><strong>{{ code }}</strong></p>
                                 <br>
-                                <p>Molimo Vas da uđete na našu platformu, ulogujete se a zatim odmah promenite Vašu lozinku.</p>
+                                <p>Molimo Vas da uđete na našu platformu, ulogujete se a zatim <strong>odmah promenite Vašu lozinku</strong>.</p>
                                 <br>
-                                <p>Da biste to uradili, kliknite na link: http://localhost:5173/login </p>
+                                <p><a href='{$frontendUrl}/login'>Kliknite ovde za login</a></p>
                                 <br><br>
-                                <p>Srdačan pozdrav od KombiPrevoz tima!</p>
+                                <p>Srdačan pozdrav od KombiTransfer tima!</p>
                             ";
                             $this->sendEmail($html, $generated, $this->name, 'Kreiran Nalog',
                             "Email sa kredencijalima je poslat novom korisniku po imenu: $this->name !");
+
+                            Logger::audit("Admin created new user", $_SESSION['user']['id']);
                         }
                     } catch (PDOException $e) {
                         http_response_code(500);
@@ -612,25 +682,22 @@ class User {
                             echo json_encode(['error' => 'Došlo je do greške pri ažuriranju!'], JSON_UNESCAPED_UNICODE);
                         }
                     }
-                } else {
-                    http_response_code(403);
-                    echo json_encode(['error' => 'Korisnik može imati samo jednu od 3 uloge!']);
-                } 
             } else {
                 http_response_code(422);
                 echo json_encode(['error' => 'Molimo Vas da pravilno unesete podatke!']);
             } 
-            
-        } else {
-            http_response_code(422);
-            echo json_encode(['error' => 'Molimo Vas da pravilno unesete podatke!']);
-        }
-        
     }
 
     public function login(): void
     {
-        //$logs = [];
+        if (!filter_var($this->email, FILTER_VALIDATE_EMAIL)) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Neispravan email format'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
         $find = "SELECT * FROM users WHERE email = :email AND deleted = 0";
         $stmt = $this->db->prepare($find);
         if(filter_var($this->email, FILTER_VALIDATE_EMAIL)) {
@@ -644,9 +711,9 @@ class User {
                     
                     if($user) {
                         if(password_verify($this->pass, $user->pass)) {
+                            /*
+                            session_regenerate_id(true);
                             
-                            session_regenerate_id();
-
                             $splited = explode(" ", $user->name);
                             $arr = [];
                             
@@ -654,21 +721,29 @@ class User {
                                 array_push($arr, mb_strtoupper(mb_substr($s, 0,1, "UTF-8")));
                             }
                             
-                            $initials = implode("", $arr);
+                            $initials = implode("", $arr); 
                             
 
                             $_SESSION['user'] = [
-                                'id' => $user->id,
+                                'id' => (int) $user->id,
                                 'name' => $user->name,
                                 'email' => $user->email,
                                 'status' => $user->status,
                                 'city' => $user->city,
                                 'address' => $user->address,
                                 'phone' => $user->phone,
-                                'is_demo' => $user->is_demo,
-                                'initials' => $initials
+                                'is_demo' => (bool) $user->is_demo,
+                                'initials' => self::generateInitials($user->name)
                             ];
+                            */
 
+                            $this->createUserSession($user);
+                            if ($this->remember) {
+                                $this->setRememberCookie((int) $user->id);
+                            }
+
+                            Logger::info('Successful login');
+                            /*
                             if($this->remember) {
                                 setcookie('remember_token', (string)$user->id, [
                                     'expires' => time() + (86400 * 30),
@@ -678,6 +753,7 @@ class User {
                                     'samesite' => 'Lax'
                                 ]);
                             }
+                            */
                             $name = $_SESSION['user']['name'];
 
                             echo json_encode([
@@ -733,7 +809,7 @@ class User {
 
     public function logout(): void
     {
-        $name = $_SESSION['user']['name'];
+        $name = $_SESSION['user']['name'] ?? 'Posetioče';
         session_unset();
         session_destroy();
         setcookie('remember_token', '', time() - 3600, '/', '', false, true);
@@ -932,10 +1008,18 @@ class User {
     // Reset Password
     public function resetPassword(): void 
     {
+        if (!filter_var($this->email, FILTER_VALIDATE_EMAIL)) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Neispravan email format!'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
         $token = bin2hex(random_bytes(16));
         $token_hash = hash("sha256", $token);
 
-        $expiry = date("Y-m-d H:i:s", time() + 60 * 1440);
+        $expiry = date("Y-m-d H:i:s", time() + (60 * 60 * 24));
 
         $sql = "UPDATE users SET 
         reset_token_hash = :token, reset_token_expires = :expiry
@@ -950,15 +1034,17 @@ class User {
         try {
             if($stmt->execute()) {
                 if($stmt->rowCount() == 1) {
+                    $resetUrl = $_ENV['FRONTEND_URL'] ?? 'http://localhost:5173';
                     $html = "
                         <p>Poštovani/a <? echo $this->name ?></p>
                         <br>
                         <p>Da biste promenili vašu zaboravljenu lozinku, molimo Vas da kliknete na link: </p>
-                        <p>http://localhost:5173/password-reset?token={{ code }}</p>
+                        <p><a href='{$resetUrl}/password-reset?token={{ code }}'>{$resetUrl}/password-reset?token={{ code }}</a></p>
+                        
                         <br>
                         <p>Srdačan pozdrav od KombiPrevoz tima!</p>
                     ";
-                    $output = 'Link je upravo poslat na Vašu email adresu. Molimo proverite Vaš email!';
+                    $output = 'Link je upravo poslat na email adresu koju ste priložili. Molimo proverite Vaš email!';
                     
                     $this->sendEmail($html, $token, $this->name, 'Ponistavanje Lozinke', $output);
                     
@@ -975,7 +1061,7 @@ class User {
             ]);
 
             http_response_code(500);
-            echo json_encode(['error' => 'Došlo je do greške pri ažuriranju!'], JSON_UNESCAPED_UNICODE);
+            echo json_encode(['error' => 'Došlo je do greške pri slanju email-a!'], JSON_UNESCAPED_UNICODE);
         }
     }
 
