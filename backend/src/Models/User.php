@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Models;
 
@@ -16,22 +17,22 @@ if (!defined('APP_ACCESS')) {
 }
 
 class User {
-    public $id;
-    public $name;
-    public $email;
-    public $pass;
-    public $new_pass;
-    public $new_pass_confirm;
-    public $remember;
-    public $status;
-    public $city;
-    public $address;
-    public $phone;
-    public $verified;
-    public $token;
-    public $expiry;
-    public $db;
-    public $sid;
+    public ?int $id = null;
+    public ?string $name = null;
+    public ?string $email = null;
+    public ?string $pass = null;
+    public ?string $new_pass = null;
+    public ?string $new_pass_confirm = null;
+    public bool $remember = false;
+    public ?string $status = null;
+    public ?string $city = null;
+    public ?string $address = null;
+    public ?string $phone = null;
+    public ?string $verified = null;
+    public ?string $token = null;
+    public ?string $expiry = null;
+    private PDO $db;
+    //public $sid;
 
     public function __construct($db)
     {
@@ -43,17 +44,18 @@ class User {
     // Check if it the User is logedin:
     public static function isLoged($db)
     {
-        if(!isset($_SESSION['user']) && isset($_COOKIE['remember_me'])) {
+        if(!isset($_SESSION['user']) && isset($_COOKIE['remember_token'])) {
             $sql = "SELECT * FROM users WHERE id = :id";
             $stmt = $db->prepare($sql);
 
-            $stmt->bindParam(':id', $_COOKIE['remember_me']);
+            $stmt->bindParam(':id', $_COOKIE['remember_token']);
 
             try {
                 if($stmt->execute()) {
                     $user = $stmt->fetch(PDO::FETCH_OBJ);
 
                     if($user) {
+                        session_regenerate_id();
                         $splited = explode(" ", $user->name);
                         $arr = [];
                         foreach($splited as $s) {
@@ -87,12 +89,7 @@ class User {
             }
         }
         
-        if(isset($_SESSION['user'])) { /*
-            if (empty($logs)) {
-                $logger = new Logger(self::$db);
-                $logs = $logger->getUserLogs($_SESSION['user']['id']);
-            } */
-
+        if(isset($_SESSION['user'])) {
             echo json_encode([
                 'success' => true,
                 'user' => $_SESSION['user']
@@ -107,13 +104,13 @@ class User {
         } 
     }
     // Check if the User is owner of account
-    public function isOwner()
+    public function isOwner(): bool
     {
         if(isset($_SESSION['user']) && !empty($this->id) && $this->id == $_SESSION['user']['id']) return true;
         else return false;
     }
 
-    public function getLogs() 
+    public function getLogs(): mixed 
     {
         $logger = new Logger($this->db);
         return $logger->getUserLogs($this->id);
@@ -162,7 +159,7 @@ class User {
                 return true;
             }
         } catch (PDOException $e) {
-            Logger::error("Database error in userUpdateByAdmin()", [
+            Logger::error("Database error in checkToken()", [
                             'user_id' => $this->id,
                             'error' => $e->getMessage(),
                             'file' => __FILE__,
@@ -175,7 +172,7 @@ class User {
     }
 
     // Email to the user:
-    public function sendEmail($html, $code, $name, $subject, $output) 
+    public function sendEmail($html, $code, $name, $subject, $output): void 
     {
         $template = Validator::mailerTemplate($html, $code, $name);
         $mail = new PHPMailer(true);
@@ -224,7 +221,7 @@ class User {
     // -------------------------  GET --------------------------------- // 
     
     //all users
-    public function getAll() 
+    public function getAll(): void 
     {
         $sql = "SELECT id, name, email, status, city, address, phone FROM users WHERE deleted = 0";
         $res = $this->db->query($sql);
@@ -237,121 +234,160 @@ class User {
             }
             echo json_encode(["user" => $users], JSON_PRETTY_PRINT);
         } else
-        echo json_encode(["user" => 'Trenutno nema registrovanih korisnika.'], JSON_PRETTY_PRINT);
+        echo json_encode(["msg" => 'Trenutno nema registrovanih korisnika.'], JSON_PRETTY_PRINT);
     }
 
     // By ID
-    public function getByID() 
+    public function getByID(): array 
     {
         $sql = "SELECT id, name, email, status, city, address, phone 
-        FROM users WHERE deleted = 0 and id = '$this->id'"
+        FROM users WHERE deleted = 0 and id = :id"
         ;
-        $res = $this->db->query($sql);
-        $num = $res->rowCount();
-        if($num > 0) {
-            $user = [];
-            while($row = $res->fetch(PDO::FETCH_OBJ)) {
-                array_push($user, [
-                    "id" => $row->id,
-                    "name" => $row->name,
-                    "email" => $row->email,
-                    "status" => $row->status,
-                    "city" => $row->city,
-                    "address" => $row->address,
-                    "phone" => $row->phone
-                ]);
-            }
-            //echo json_encode(["user" => $user], JSON_PRETTY_PRINT);
-            return $user;
-        } else
-        echo json_encode(["user" => 'Nema registrovanih korisnika sa poslatim ID-em.'], JSON_PRETTY_PRINT);
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':id', $this->id);
+        try {
+            $stmt->execute();
+            $num = $stmt->rowCount();
+            if($num > 0) {
+                $user = [];
+                while($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+                    array_push($user, [
+                        "id" => $row->id,
+                        "name" => $row->name,
+                        "email" => $row->email,
+                        "status" => $row->status,
+                        "city" => $row->city,
+                        "address" => $row->address,
+                        "phone" => $row->phone
+                    ]);
+                }
+                
+                return $user;
+            } else {
+                echo json_encode(["user" => 'Nema registrovanih korisnika sa poslatim ID-em.'], JSON_PRETTY_PRINT);
+                return ['success' => false];
+            } 
+        } catch (PDOException $e) {
+            Logger::error('Failed to get User at getById()', [
+                'DB_message'=> $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            echo json_encode(['error' => 'Došlo je do greške prilikom pretrage korisnika!'], JSON_UNESCAPED_UNICODE);
+            return ['success' => false];
+        }
+        
     }
 
     // By EMAIL
-    public function getByEmail() 
+    public function getByEmail(): array 
     {
-        if(filter_var($this->email, FILTER_VALIDATE_EMAIL)) {
-            $sql = "SELECT id, name, email, status, city, address, phone 
-            FROM users WHERE deleted = 0 and email = :email"
-            ;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bindParam(":email", $this->email);
-            try {
-                $stmt->execute();
-                $user = $stmt->fetch(PDO::FETCH_OBJ);
-
-                $logger = new Logger($this->db);
-                $logs = $logger->getUserLogs($user->id);
-
-                if($user) {
-                    return [
-                        'success' => true,
-                        'user' => $user,
-                        'logs'=> $logs
-                    ];
-                } else {
-                    return [
-                        'success' => false,
-                        'error' => 'not_found',
-                        'message' => "Korisnik sa email-om $this->email nije pronađen"
-                    ];
-                }
-            } catch (PDOException $e) {
-                Logger::error("Database error in userUpdateByAdmin()", [
-                            'user_id' => $this->id,
-                            'error' => $e->getMessage(),
-                            'file' => __FILE__,
-                            'line' => __LINE__
-                ]);
-                return [
-                    'success' => false,
-                    'error' => 'database_error',
-                    'message' => 'Greška pri pristupu bazi podataka'
-                ];
-            }
-        } else {
+        if(!filter_var($this->email, FILTER_VALIDATE_EMAIL)) {
             return [
                 'success' => false,
                 'error' => 'invalid_email',
-                'message' => 'Neispravan email format'
+                'message' => 'Neispravan email format! Molimo da uneste validan email.'
+            ];
+        }
+
+        $sql = "SELECT id, name, email, status, city, address, phone 
+        FROM users WHERE deleted = 0 and email = :email"
+        ;
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(":email", $this->email);
+        try {
+            $stmt->execute();
+            $user = $stmt->fetch(PDO::FETCH_OBJ);
+
+            $logger = new Logger($this->db);
+            $logs = $logger->getUserLogs($user->id);
+
+            if($user) {
+                return [
+                    'success' => true,
+                    'user' => $user,
+                    'logs'=> $logs
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'error' => 'not_found',
+                    'message' => "Korisnik sa email-om $this->email nije pronađen"
+                ];
+            }
+        } catch (PDOException $e) {
+            Logger::error("Database error in userUpdateByAdmin()", [
+                        'user_id' => $this->id,
+                        'error' => $e->getMessage(),
+                        'file' => __FILE__,
+                        'line' => __LINE__
+            ]);
+            return [
+                'success' => false,
+                'error' => 'database_error',
+                'message' => 'Greška pri pristupu bazi podataka'
             ];
         }
     }
 
     // By NAME
-    public function getByName()
+    public function getByName(): void
     {
         $sql = "SELECT id, name, email, status, city, address, phone 
-        FROM users WHERE deleted = 0 and name LIKE '%$this->name%'"
+        FROM users WHERE deleted = 0 and name LIKE '%:name%'"
         ;
-        $res = $this->db->query($sql);
-        $num = $res->rowCount();
-        if($num > 0) {
-            $users = [];
-            while($row = $res->fetch(PDO::FETCH_OBJ)) {
-                array_push($users, $row);
-            }
-            echo json_encode(["user" => $users], JSON_PRETTY_PRINT);
-        } else
-        echo json_encode(["user" => 'Nema registrovanih korisnika sa naznačenim imenom.'], JSON_PRETTY_PRINT);
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':name', $this->name);
+
+        try {
+            $stmt->execute();
+            $num = $stmt->rowCount();
+            if($num > 0) {
+                $users = [];
+                while($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+                    array_push($users, $row);
+                }
+                echo json_encode(["user" => $users], JSON_PRETTY_PRINT);
+            } else
+            echo json_encode(["msg" => 'Nema registrovanih korisnika sa naznačenim imenom.'], JSON_PRETTY_PRINT);
+        } catch (PDOException $e) {
+            Logger::error('Failed to User getByName()', [
+                'DB_message'=> $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            http_response_code(500);
+            echo json_encode(['error' => 'Došlo je do greške prilikom pretrage korisnika!']);
+        }
     }
 
     // By CITY
-    public function getByCity()
+    public function getByCity(): void
     {
         $sql = "SELECT id, name, email, status, city, address, phone 
-        FROM users WHERE deleted = 0 and city LIKE '%$this->city%'"
-        ;
-        $res = $this->db->query($sql);
-        $num = $res->rowCount();
-        if($num > 0) {
-            $users = [];
-            while($row = $res->fetch(PDO::FETCH_OBJ)) {
-                array_push($users, $row);
-            }
-            echo json_encode(["user" => $users], JSON_PRETTY_PRINT);
-        } else
-        echo json_encode(["user" => 'Nema registrovanih korisnika sa naznačenim mestom stanovanja.'], JSON_PRETTY_PRINT);
+        FROM users WHERE deleted = 0 and city LIKE '%:city%'";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':city', $this->city);
+
+        try {
+            $num = $stmt->rowCount();
+            if($num > 0) {
+                $users = [];
+                while($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+                    array_push($users, $row);
+                }
+                echo json_encode(["user" => $users], JSON_PRETTY_PRINT);
+            } else
+            echo json_encode(["user" => 'Nema registrovanih korisnika sa naznačenim mestom stanovanja.'], JSON_PRETTY_PRINT);
+        } catch (PDOException $e) {
+            Logger::error('Failed to User getByCity()', [
+                'DB_message'=> $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            http_response_code(500);
+            echo json_encode(['error' => 'Došlo je do greške prilikom pretrage korisnika!']);
+        }
     }
 
     public function getAvailableDrivers($date)
@@ -399,15 +435,6 @@ class User {
             ;
             $stmt = $this->db->prepare($sql);
 
-            $this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
-            $this->name = htmlspecialchars(strip_tags(trim($this->name)), ENT_QUOTES);
-            $this->email = htmlspecialchars(strip_tags(trim($this->email)), ENT_QUOTES);
-            //$this->pass = htmlspecialchars(strip_tags($this->pass), ENT_QUOTES);
-            $this->status = htmlspecialchars(strip_tags('User'), ENT_QUOTES);
-            $this->city = htmlspecialchars(strip_tags(trim($this->city)), ENT_QUOTES);
-            $this->address = htmlspecialchars(strip_tags(trim($this->address)), ENT_QUOTES);
-            $this->phone = htmlspecialchars(strip_tags(trim($this->phone)), ENT_QUOTES);
-
             $hashed = password_hash($this->pass, PASSWORD_DEFAULT);
 
             $stmt->bindParam(':name', $this->name);
@@ -420,7 +447,7 @@ class User {
             
             try {
                 if($stmt->execute()) {
-                    $this->id = $this->db->lastInsertId(); 
+                    $this->id = (int) $this->db->lastInsertId(); 
                     $sql = "SELECT * FROM users WHERE id = :id";
                     $stmt = $this->db->prepare($sql);
                     $stmt->bindParam(':id', $this->id);
@@ -529,16 +556,7 @@ class User {
                             city = :city, address = :address, phone = :phone"
                     ;
                     $stmt = $this->db->prepare($sql);
-                    /*
-                    $this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
-                    $this->name = htmlspecialchars(strip_tags($this->name), ENT_QUOTES);
-                    $this->email = htmlspecialchars(strip_tags($this->email), ENT_QUOTES);
-                    //$this->pass = htmlspecialchars(strip_tags($this->pass), ENT_QUOTES);
-                    $this->status = htmlspecialchars(strip_tags($this->status), ENT_QUOTES);
-                    $this->city = htmlspecialchars(strip_tags($this->city), ENT_QUOTES);
-                    $this->address = htmlspecialchars(strip_tags($this->address), ENT_QUOTES);
-                    $this->phone = htmlspecialchars(strip_tags($this->phone), ENT_QUOTES);
-                    */
+
                     $generated = bin2hex(random_bytes(6));
 
                     $hashed = password_hash($generated, PASSWORD_DEFAULT);
@@ -720,7 +738,7 @@ class User {
         $name = $_SESSION['user']['name'];
         session_unset();
         session_destroy();
-        setcookie('remember_me', '', time() - 3600, '/', '', false, true);
+        setcookie('remember_token', '', time() - 3600, '/', '', false, true);
         echo json_encode([
             'success' => true,
             'msg' => "Doviđenja $name"
@@ -852,7 +870,7 @@ class User {
                         $sql = "UPDATE users SET pass = :pass WHERE id = :id";
                         $stmt = $this->db->prepare($sql);
                         
-                        $this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
+                        //$this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
                         $hashed = password_hash($this->new_pass, PASSWORD_DEFAULT);
 
                         $stmt->bindParam(':id', $this->id);
@@ -905,7 +923,7 @@ class User {
         $token = bin2hex(random_bytes(16));
         $token_hash = hash("sha256", $token);
 
-        $expiry = date("Y-m-d H:i:s", time() + 60 * 31);
+        $expiry = date("Y-m-d H:i:s", time() + 60 * 1440);
 
         $sql = "UPDATE users SET 
         reset_token_hash = :token, reset_token_expires = :expiry
@@ -1140,9 +1158,9 @@ class User {
             if($this->status === 'Admin' || $this->status === 'Driver' || $this->status === 'User') {
                 $stmt = $this->db->prepare($sql);
                 $this->status = htmlspecialchars(strip_tags($this->status), ENT_QUOTES);
-                $this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
+                //$this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
                 $stmt->bindParam(':status', $this->status);
-                $stmt->bindParam(':id', $this->id);
+                $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
 
                 try {
                     if($stmt->execute()) {
@@ -1166,7 +1184,7 @@ class User {
         $sql = "UPDATE users SET deleted = 1 WHERE id = :id";
         $stmt = $this->db->prepare($sql);
 
-        $this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
+        //$this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
         $stmt->bindParam(':id', $this->id);
 
         try {
@@ -1193,8 +1211,8 @@ class User {
         $sql = "UPDATE users SET deleted = 0 WHERE id = :id";
         $stmt = $this->db->prepare($sql);
 
-        $this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
-        $stmt->bindParam(':id', $this->id);
+        //$this->id = htmlspecialchars(strip_tags($this->id), ENT_QUOTES);
+        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
 
         try {
             if($stmt->execute()) {
