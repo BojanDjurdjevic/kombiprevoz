@@ -448,7 +448,7 @@ class Order {
             $html = str_replace("{{ date2 }}", $dIn, $html);
             $html = str_replace("{{ time2 }}", $tourObj[0]['time'], $html);
             $html = str_replace("{{ price2 }}", $drive[1]->price, $html);
-            if($total) $html = str_replace("{{ total }}", $total, $html);
+            if($total) $html = str_replace("{{ total }}", (string) $total, $html);
             else $html = str_replace("{{ total }}", 'N/A', $html);
         } else {
             $html = str_replace("{{ view }}", "invisible", $html);
@@ -744,14 +744,14 @@ class Order {
         } else {
             // Fallback ako nema myOrder
             $html = str_replace("{{ view_first }}", "visible", $html);
-            $html = str_replace("{{ places }}", $this->places, $html);
+            $html = str_replace("{{ places }}", (string) $this->places, $html);
             $html = str_replace("{{ address }}", $this->add_from, $html);
             $html = str_replace("{{ city }}", $tourObj[0]['from_city'], $html);
             $html = str_replace("{{ address_to }}", $this->add_to, $html);
             $html = str_replace("{{ city_to }}", $tourObj[0]['to_city'], $html);
             $html = str_replace("{{ date }}", $d, $html);
             $html = str_replace("{{ time }}", $tourObj[0]['time'], $html);
-            $html = str_replace("{{ price }}", $this->price, $html);
+            $html = str_replace("{{ price }}", (string) $this->price, $html);
             $html = str_replace("{{ driver_view }}", "invisible", $html);
         }
         
@@ -1631,7 +1631,7 @@ class Order {
     }
 
     //GET order from DB by item ID
-    public function getFromDB(int $id): ?object
+    public function getFromDB(int $id)
     {
         $sql = "SELECT order_items.*, orders.* FROM order_items 
         INNER JOIN orders on order_items.order_id = orders.id
@@ -1670,7 +1670,7 @@ class Order {
         }
     }
 
-    public function getByTour() {
+    public function getByTour(): void {
         $sql = "SELECT orders.id, orders.tour_id, orders.user_id, orders.places, tours.from_city, 
                 orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
                 orders.date, tours.time as pickuptime, tours.duration,
@@ -1818,7 +1818,7 @@ class Order {
                 } catch (PDOException $e) {
                     throw new Error($e->getMessage() . " / " . Validator::cleanParams($params));
                 }
-                $this->id = $this->db->lastInsertId();
+                $this->id = (int)$this->db->lastInsertId();
                 
                 foreach($this->items->create as $item) {
                     $this->add_from = $item->add_from;
@@ -1836,16 +1836,12 @@ class Order {
                                         add_from = :add_from, add_to = :add_to, date = :date, price = :price
                                 ";
                                 $stmt = $this->db->prepare($sql);
-
-                                $this->tour_id = htmlspecialchars(strip_tags($this->tour_id));
-                                $this->id = htmlspecialchars(strip_tags($this->id));
-                                $this->places = htmlspecialchars(strip_tags($this->places));
+                                /* NEPOTREBNO
                                 $this->add_from = htmlspecialchars(strip_tags($this->add_from));
                                 $this->add_to = htmlspecialchars(strip_tags($this->add_to));
                                 $this->date = htmlspecialchars(strip_tags($this->date));
                                 $this->price = $this->totalPrice($this->db, $this->tour_id, $this->places);
-                                $this->price = htmlspecialchars(strip_tags($this->price));
-
+                                */
                                 if($this->price != null) {
                                     $stmt->bindParam(':order_id', $this->id);
                                     $stmt->bindParam(':tour_id', $this->tour_id);
@@ -2300,11 +2296,12 @@ class Order {
                 if($this->newPlaces <= $this->availability($this->newDate)) {
                     $sql = "UPDATE orders SET places = :places, total = :total, date = :date WHERE id = :id";
                     $stmt = $this->db->prepare($sql);
-                    
+                    /* NEPOTREBNO
                     $this->id = htmlspecialchars(strip_tags($this->id));
                     $this->places = htmlspecialchars(strip_tags($this->places));
                     $this->price = htmlspecialchars(strip_tags($this->price));
                     $this->newPlaces = htmlspecialchars(strip_tags($this->newPlaces));
+                    */
                     $new_total = $this->totalPrice($this->db, $this->tour_id, $this->newPlaces);
                     //($this->price / $this->places) * $this->newPlaces;
                     $this->newDate = htmlspecialchars(strip_tags($this->newDate));
