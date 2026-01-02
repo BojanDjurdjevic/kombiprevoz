@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Models;
 
@@ -21,37 +22,36 @@ if (!defined('APP_ACCESS')) {
 }
 
 class Order {
-    public $id;
-    public $order_id;
-    public $tour_id;
-    public $user_id;
-    public $driver_id;
-    public $places;
-    public $add_from;
-    public $add_to;
-    public $date;
-    public $price;
-    public $total;
-    public $code;
-    public $voucher;
-    public $deleted;
-    public $new_add_from;
-    public $new_add_to;
-    public $newDate;
-    public $newDateIn;
-    public $newPlaces;
-    public $driver;
-    public $dep_id;
-    public $selected;
-    public $items;
+    public ?int $id = null;
+    public ?int $order_id = null;
+    public ?int $tour_id = null;
+    public ?int $user_id = null;
+    public ?int $driver_id = null;
+    public ?int $places = null;
+    public ?string $add_from = null;
+    public ?string $add_to = null;
+    public ?string $date = null;
+    public ?int $price = null;
+    public ?int $total = null;
+    public ?string $code = null;
+    public ?string $voucher = null;
+    public ?int $deleted = null;
+    public ?string $new_add_from = null;
+    public ?string $new_add_to = null;
+    public ?string $newDate = null;
+    public ?string $newDateIn = null;
+    public ?int $newPlaces = null;
+    public ?object $driver = null;
+    public ?int $dep_id = null;
+    public ?array $selected = null;
+    public ?object $items = null;
+    public ?string $from_city = null;
+    public ?string $to_city = null;
 
-    public $from_city;
-    public $to_city;
-
-    private $user;
-    private $tour;
-    private $db;
-    private $logger;
+    private User $user;
+    private Tour $tour;
+    private PDO $db;
+    private Logger $logger;
 
     public function __construct($db)
     {
@@ -64,178 +64,285 @@ class Order {
     //------------------------------- FUNCTIONS BEFORE THE ACTION ------------------------------//
 
     // Checking if the USER is OWNER of the order
-    public function findUserId() 
+    public function findUserId(): bool 
     {
-        $select = "SELECT user_id from orders 
-                    INNER JOIN order_items on orders.id = order_items.order_id 
-                    WHERE order_items.id = '$this->id'"
-        ;
-        $res = $this->db->query($select);
-        $num = $res->rowCount();
+        if (!isset($_SESSION['user']['id']) || empty($this->id)) {
+            return false;
+        }
 
-        if($num > 0) {
-            $row = $res->fetch(PDO::FETCH_OBJ);
+        $sql = "SELECT user_id FROM orders 
+                INNER JOIN order_items ON orders.id = order_items.order_id 
+                WHERE order_items.id = :id AND orders.deleted = 0";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
 
-            if($_SESSION['user']['id'] == $row->user_id) {
-                return true;
-            } else {
-                return false;
-            }           
-        } else
-        return false;
+        try {
+            $stmt->execute();
+            $row = $stmt->fetch(PDO::FETCH_OBJ);
+
+            return $row && (int)$row->user_id === (int)$_SESSION['user']['id'];
+            
+        } catch (PDOException $e) {
+            $this->logger->error('Failed in findUserId()', [
+                'order_item_id' => $this->id,
+                'error' => $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            return false;
+        }
     }
 
     // How many places we have available for the requested date:
-    public function availability($date) {
-        $sql = "SELECT order_items.places, tours.seats from order_items
-                INNER JOIN tours on tours.id = order_items.tour_id
-                INNER JOIN orders on order_items.order_id = orders.id
-                WHERE order_items.date = '$date'
-                and order_items.tour_id = '$this->tour_id' 
-        ";
-        $res = $this->db->query($sql);
-        $num = $res->rowCount();
-        $occupated = 0;
-        $seats = 0;
-        //and orders.deleted = 0
-        if($num > 0) {
+    public function availability(string $date): int 
+    {
+        // Validate date
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            $this->logger->error('Invalid date format in availability()', [
+                'date' => $date,
+                'tour_id' => $this->tour_id,
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            return 0;
+        }
+
+        if (empty($this->tour_id)) {
+            $this->logger->error('Tour ID missing in availability()', [
+                'date' => $date,
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            return 0;
+        }
+
+        // Query sa SUM za sve zauzete places
+        $sql = "SELECT COALESCE(SUM(order_items.places), 0) as occupied, tours.seats 
+                FROM order_items
+                INNER JOIN tours ON tours.id = order_items.tour_id
+                INNER JOIN orders ON order_items.order_id = orders.id
+                WHERE order_items.date = :date
+                AND order_items.tour_id = :tour_id 
+                AND orders.deleted = 0
+                AND order_items.deleted = 0
+                GROUP BY tours.seats";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':date', $date, PDO::PARAM_STR);
+        $stmt->bindParam(':tour_id', $this->tour_id, PDO::PARAM_INT);
+
+        try {
+            $stmt->execute();
+            $row = $stmt->fetch(PDO::FETCH_OBJ);
             
-            while($row = $res->fetch(PDO::FETCH_OBJ)) {
-                $occupated += $row->places;
-                $seats = $row->seats;
+            if ($row) {
+                $available = (int)$row->seats - (int)$row->occupied;
+                return max(0, $available);
             }
-            return $seats - $occupated;
-        } else {
-            $tSql = "SELECT seats from tours WHERE id = '$this->tour_id' and deleted = 0";
-            $tRes = $this->db->query($tSql);
-            $tNum = $tRes->rowCount();
-            if($tNum > 0) {
-                $row = $tRes->fetch(PDO::FETCH_OBJ);
-                $seats = $row->seats;
-                return $seats;
-            } else 
+            
+            // No reservation - all seats
+            $tourSql = "SELECT seats FROM tours WHERE id = :id AND deleted = 0";
+            $tourStmt = $this->db->prepare($tourSql);
+            $tourStmt->bindParam(':id', $this->tour_id, PDO::PARAM_INT);
+            $tourStmt->execute();
+            
+            $tour = $tourStmt->fetch(PDO::FETCH_OBJ);
+            return $tour ? (int)$tour->seats : 0;
+            
+        } catch (PDOException $e) {
+            $this->logger->error('Failed to check availability', [
+                'date' => $date,
+                'tour_id' => $this->tour_id,
+                'error' => $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
             return 0;
         }
     }
 
     // CHECK if the DEADLINE (48H) for changes is NOT passed:
-    public function checkDeadline() 
+    public function checkDeadline(): bool 
     {
         if(Validator::isAdmin() || Validator::isSuper()) return true;
-        $current = "SELECT places, date, order_items.price, tour_id, time FROM order_items 
-        INNER JOIN orders on order_items.order_id = orders.id
-        INNER JOIN tours on order_items.tour_id = tours.id
-        WHERE order_items.id = '$this->id'";
-        $res = $this->db->query($current);
-        $num = $res->rowCount();
+        if (empty($this->id)) return false;
 
-        if($num > 0) {
-            $row = $res->fetch(PDO::FETCH_OBJ);
-            $test = date_create();
-            $today = date("Y-m-d H:i:s", date_timestamp_get($test));
-            $departure = date_create($row->date . " " . $row->time);
-            //$deadline = date_sub($departure, date_interval_create_from_date_string("48 hours"));
-            $deadline = date("Y-m-d H:i:s", strtotime("-48 hours", date_timestamp_get($departure)));
+        $sql = "SELECT order_items.places, order_items.date, order_items.price, 
+                       order_items.tour_id, tours.time 
+                FROM order_items 
+                INNER JOIN orders ON order_items.order_id = orders.id
+                INNER JOIN tours ON order_items.tour_id = tours.id
+                WHERE order_items.id = :id 
+                AND orders.deleted = 0
+                AND order_items.deleted = 0";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
 
-            $this->date = date("Y-m-d", date_timestamp_get($departure));
-            $this->places = $row->places;
-            $this->price = $row->price;
-            $this->tour_id = $row->tour_id;
+        try {
+            $stmt->execute();
+            $row = $stmt->fetch(PDO::FETCH_OBJ);
 
-            if($deadline > $today) {
-                return true;
-            } else {
+            if (!$row) {
                 return false;
             }
-        } else {
+
+            // Count deadline
+            $departureTimestamp = strtotime($row->date . ' ' . $row->time);
+            $deadlineTimestamp = $departureTimestamp - (48 * 3600); // 48h pre
+            $currentTimestamp = time();
+
+            // Set property
+            $this->date = $row->date;
+            $this->places = (int)$row->places;
+            $this->price = (int)$row->price;
+            $this->tour_id = (int)$row->tour_id;
+
+            return $deadlineTimestamp > $currentTimestamp;
+            
+        } catch (PDOException $e) {
+            $this->logger->error('Failed in checkDeadline()', [
+                'order_item_id' => $this->id,
+                'error' => $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
             return false;
         }
     }
 
     // CHECK if the new date isn't within 24H
 
-    public function isUnlocked($d) {
-        if($d == null) return false;
-        $valid = explode('-', $d);
-        if(!checkdate($valid[1], $valid[2], $valid[0])) {
+    public function isUnlocked(?string $d): bool 
+    {
+        if ($d === null) {
             return false;
-            //
-            //exit();
         }
-        $new_date = date_create($d);
-        $requested = date("Y-m-d H:i:s", date_timestamp_get($new_date));
-        $test = date_create();
-        $now = date("Y-m-d H:i:s", date_timestamp_get($test));
-        $unlock = date("Y-m-d H:i:s", strtotime("+25 hours", date_timestamp_get($test)));
 
-        if($requested > $unlock) {
-            return true;
-        } else
+        // Validate format
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $d)) {
             return false;
+        }
+
+        // Date
+        $parts = explode('-', $d);
+        if (!checkdate((int)$parts[1], (int)$parts[2], (int)$parts[0])) {
+            return false;
+        }
+
+        $requestedTimestamp = strtotime($d);
+        $unlockTimestamp = time() + (25 * 3600); // 25h od sada
+
+        return $requestedTimestamp > $unlockTimestamp;
     }
 
     // CHECK if the requested DATE is departure day:
-    public function isDeparture($d)
+    public function isDeparture(string $d): bool
     {
-        if(!isset($this->tour_id) || empty($this->tour_id)) {
-            $sqlID = "SELECT tour_id from order_items WHERE order_id = '$this->id'";
-            $res = $this->db->query($sqlID);
-            $row = $res->fetch(PDO::FETCH_OBJ);
-            $this->tour_id = $row->tour_id;
+        // Validate date
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $d)) return false;
+
+        // If no tour_id, take from order_items
+        if (empty($this->tour_id) && !empty($this->id)) {
+            $sqlID = "SELECT tour_id FROM order_items WHERE id = :id";
+            $stmt = $this->db->prepare($sqlID);
+            $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
+            
+            try {
+                $stmt->execute();
+                $row = $stmt->fetch(PDO::FETCH_OBJ);
+                
+                if ($row) {
+                    $this->tour_id = (int)$row->tour_id;
+                } else {
+                    return false;
+                }
+            } catch (PDOException $e) {
+                $this->logger->error('Failed to get tour_id in isDeparture()', [
+                    'order_item_id' => $this->id,
+                    'error' => $e->getMessage(),
+                    'file' => __FILE__,
+                    'line' => __LINE__
+                ]);
+                return false;
+            }
         }
-        $sql = "SELECT departures from tours WHERE id = '$this->tour_id'";
-        $res2 = $this->db->query($sql);
-        $row2 = $res2->fetch(PDO::FETCH_OBJ);
-        
-        $days = $row2->departures;
-        
-        $days = explode(",", $days);
 
-        $depDays = [];
-
-        foreach( $days as $day ) {
-            array_push( $depDays, (int)$day);
+        if (empty($this->tour_id)) {
+            return false;
         }
 
-        $orderDate = date('w', strtotime($d));
+        // Check departure days
+        $sql = "SELECT departures FROM tours WHERE id = :id AND deleted = 0";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':id', $this->tour_id, PDO::PARAM_INT);
 
-        if(in_array($orderDate, $depDays)) {
-            return true;
-        } else {
+        try {
+            $stmt->execute();
+            $row = $stmt->fetch(PDO::FETCH_OBJ);
+            
+            if (!$row) {
+                return false;
+            }
+
+            $days = explode(',', $row->departures);
+            $depDays = array_map('intval', $days);
+            
+            // Dan u nedelji za odabrani datum (0=Nedelja, 6=Subota isto kaoo i u JS) 
+            $orderDayOfWeek = (int)date('w', strtotime($d));
+
+            return in_array($orderDayOfWeek, $depDays, true);
+            
+        } catch (PDOException $e) {
+            $this->logger->error('Failed in isDeparture()', [
+                'tour_id' => $this->tour_id,
+                'date' => $d,
+                'error' => $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
             return false;
         }
     }
 
     // Check the real price of the order:
-    public static function totalPrice($db, $tourID, $places)
+    public static function totalPrice(PDO $db, int $tourID, int $places): ?int
     {
-        $sql = "SELECT price FROM tours WHERE id = :id";
+        if ($tourID <= 0 || $places <= 0) {
+            return null;
+        }
+
+        $sql = "SELECT price FROM tours WHERE id = :id AND deleted = 0";
         $stmt = $db->prepare($sql);
+        $stmt->bindParam(':id', $tourID, PDO::PARAM_INT);
 
-        if(filter_var($tourID, FILTER_VALIDATE_INT) && filter_var($places, FILTER_VALIDATE_INT)) {
-            $stmt->bindParam(':id', $tourID);
-
-            try {
-                if($stmt->execute()) {
-                    $row = $stmt->fetch(PDO::FETCH_OBJ);
-                    
-                    if($row) {
-                        return (int)$row->price * (int)$places;
-                    } else return null;
-                }
-            } catch (PDOException $e) {
-                json_encode([
-                    'order' => 'Došlo je do greške pri konekciji na bazu podataka.',
-                    'msg' => $e->getMessage()
-                ]);
-                exit();
+        try {
+            $stmt->execute();
+            $row = $stmt->fetch(PDO::FETCH_OBJ);
+            
+            if ($row) {
+                return (int)$row->price * $places;
             }
-        } else return null;
+            
+            return null;
+            
+        } catch (PDOException $e) {
+            $logger = new Logger($db);
+            $logger->error('Failed in totalPrice()', [
+                'tour_id' => $tourID,
+                'places' => $places,
+                'error' => $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            return null;
+        }
     }
 
     //------------------------------- FUNCTIONS AFTER THE ACTION ------------------------------//
 
-    public function updateTotalPrice() 
+    public function updateTotalPrice(): ?int 
     {
         $find = "SELECT SUM(price) as total FROM order_items WHERE order_id = :order_id";
         
@@ -249,7 +356,12 @@ class Order {
                 $total = $t->total;
             }
         } catch(PDOException $e) {
-            throw new Error($e->getMessage());
+            $this->logger->error('Failed in updateTotalPrice()', [
+                'error' => $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            return null;
         }
         $sql = "UPDATE orders SET total = :total WHERE id = :id";
         $stmt = $this->db->prepare($sql);
@@ -263,7 +375,12 @@ class Order {
             $stmt->execute(Validator::cleanParams($params));
             return $total;
         } catch (PDOException $e) {
-            throw new Error($e->getMessage());
+            $this->logger->error('Failed in updateTotalPrice()', [
+                'error' => $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            return null;
         }
     }
 
@@ -897,7 +1014,7 @@ class Order {
     }
     */
 
-    public function availableDrivers($date, $tours) {
+    public function availableDrivers($date, $tours): array {
         if (empty($tours)) return [];
 
         // Svi gradovi za zadate ture
@@ -1321,191 +1438,231 @@ class Order {
         echo json_encode(['msg' => 'Nema rezervisanih vožnji za odabrane datume.'], JSON_PRETTY_PRINT);
     }
 
-    public function getByUser() 
+    public function getByUser(): void 
     {
-        $this->user_id = htmlspecialchars(strip_tags($this->user_id));
+        if (empty($this->user_id)) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'User ID je obavezan'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
         $sql = "SELECT orders.id, order_items.id as item_id, 
-                order_items.tour_id, orders.user_id, order_items.places, tours.from_city, 
-                order_items.add_from as pickup, tours.to_city, order_items.add_to as dropoff,
+                order_items.tour_id, orders.user_id, order_items.places, 
+                tours.from_city, order_items.add_from as pickup, 
+                tours.to_city, order_items.add_to as dropoff,
                 order_items.date, order_items.price, order_items.deleted,
                 tours.time as pickuptime, tours.duration,
                 orders.total, orders.code, orders.file_path as voucher, 
                 users.name as user, users.email, users.phone
-                from orders 
-                JOIN order_items on orders.id = order_items.order_id
-                JOIN tours on order_items.tour_id = tours.id
-                JOIN users on orders.user_id = users.id
-                
-                WHERE orders.user_id = '$this->user_id' AND orders.deleted = 0
+                FROM orders 
+                INNER JOIN order_items ON orders.id = order_items.order_id
+                INNER JOIN tours ON order_items.tour_id = tours.id
+                INNER JOIN users ON orders.user_id = users.id
+                WHERE orders.user_id = :user_id 
+                AND orders.deleted = 0
+                ORDER BY order_items.date ASC";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':user_id', $this->user_id, PDO::PARAM_INT);
 
-                Order BY order_items.date ASC"
-        ;
         try {
-            $res = $this->db->query($sql);
-            $num = $res->rowCount();
-
-            if($num > 0) {
-                $rows = $res->fetchAll(PDO::FETCH_OBJ);
-                $orders = [];
-                foreach($rows as $row) {
-                    //var_dump($row->id);
-                    $orderId = $row->id;
-
-                    if(!isset($orders[$orderId])) {
-                        $order = new stdClass();
-                        $order->id = $row->id;
-                        $order->code = $row->code;
-                        $order->duration = $row->duration;
-                        $order->voucher = $row->voucher;
-                        $order->total = $row->total;
-                        $order->items = [];
-                        $orders[$orderId] = $order;
-                    }
-
-                    
-
-
-                    $item = new stdClass();
-                    $item->id = $row->item_id;
-                    $item->tour_id = $row->tour_id;
-                    $item->date = $row->date;
-                    $item->time = $row->pickuptime;
-                    $item->pickup = $row->pickup;
-                    $item->dropoff = $row->dropoff;
-                    $item->places = $row->places;
-                    $item->price = $row->price;
-                    $item->from = $row->from_city;
-                    $item->to = $row->to_city;
-                    $item->deleted = $row->deleted;
-
-                    $logs = $this->logger->getOrderLogs($row->item_id);
-                    $item->logs = $logs;
-
-                    $orders[$orderId]->items[] = $item;
-                }
+            $stmt->execute();
+            $rows = $stmt->fetchAll(PDO::FETCH_OBJ);
+            
+            if (empty($rows)) {
                 echo json_encode([
                     'success' => true,
-                    'orders' => array_values($orders)
-                ], JSON_PRETTY_PRINT);
+                    'orders' => []
+                ], JSON_UNESCAPED_UNICODE);
+                return;
             }
-        } catch (PDOException $e) {
-            http_response_code(500);
+
+            // Group by orderID
+            $orders = [];
+            
+            foreach ($rows as $row) {
+                $orderId = $row->id;
+
+                if (!isset($orders[$orderId])) {
+                    $order = new stdClass();
+                    $order->id = $row->id;
+                    $order->code = $row->code;
+                    $order->duration = $row->duration;
+                    $order->voucher = $row->voucher;
+                    $order->total = $row->total;
+                    $order->items = [];
+                    $orders[$orderId] = $order;
+                }
+
+                $item = new stdClass();
+                $item->id = $row->item_id;
+                $item->tour_id = $row->tour_id;
+                $item->date = $row->date;
+                $item->time = $row->pickuptime;
+                $item->pickup = $row->pickup;
+                $item->dropoff = $row->dropoff;
+                $item->places = $row->places;
+                $item->price = $row->price;
+                $item->from = $row->from_city;
+                $item->to = $row->to_city;
+                $item->deleted = $row->deleted;
+
+                // logs
+                $logs = $this->logger->getOrderLogs($row->item_id);
+                $item->logs = $logs;
+
+                $orders[$orderId]->items[] = $item;
+            }
+
             echo json_encode([
-                'success' => false,
-                'error' => $e->getMessage()
-            ], JSON_PRETTY_PRINT);
-        }
-    }
-
-    public function getByCode() {
-        $sql = "SELECT orders.id as order_id, order_items.id as item_id, 
-                order_items.tour_id, orders.user_id, order_items.places, tours.from_city, 
-                order_items.add_from as pickup, tours.to_city, order_items.add_to as dropoff,
-                order_items.date, order_items.price, order_items.deleted,
-                tours.time as pickuptime, tours.duration,
-                orders.total, orders.code, orders.file_path as voucher, 
-                users.name as user, users.email, users.phone, users.city as user_city
-                from order_items
-                JOIN orders on orders.id = order_items.order_id
-                JOIN tours on order_items.tour_id = tours.id
-                JOIN users on orders.user_id = users.id 
-                WHERE orders.code = :code"
-        ;
-
-        if(Validator::validateCode($this->code)) {
-            $stmt = $this->db->prepare($sql);
-
-            $stmt->bindParam(':code', $this->code);
-
-            try {
-                if($stmt->execute()) {
-                    $orders = $stmt->fetchAll(PDO::FETCH_OBJ);
-
-                    echo json_encode(['orders' => $orders, 'has_orders' => !empty($orders)], JSON_PRETTY_PRINT);
-                }
-            } catch (PDOException $e) {
-                $this->logger->error("Failed to search order_item with code: $this->code", [
-                    'user_id' => $_SESSION['user']['id'],
-                    'error' => $e->getMessage(),
-                    'file' => __FILE__,
-                    'line' => __LINE__
-                ]);
-                http_response_code(500);
-                echo json_encode([
-                    'order' => 'Došlo je do greške pri konekciji na bazu podataka.'
-                ], JSON_PRETTY_PRINT);
-            }
-        } else {
-            http_response_code(422);
-            echo json_encode(['error' => 'Pogrešno unet broj rezervacije. Molimo Vas da unesete validan kod
-                            koji sadrži 7 brojeva i 2 velika slova: xxxxxxxKP'], JSON_PRETTY_PRINT);
-        }
-    }
-
-    public function getItems($order_id) 
-    {
-        $sql = "SELECT order_items.*, orders.user_id, orders.code, 
-                orders.file_path as voucher, orders.total
-                FROM order_items 
-                INNER JOIN orders on order_items.order_id = orders.id
-                WHERE orders.id = :id"
-        ; 
-        $stmt = $this->db->prepare($sql);
-
-        $stmt->bindParam(':id', $order_id, PDO::PARAM_INT);
-
-        try {
-            if($stmt->execute()) {
-                $order = new stdClass();
-                while($row = $stmt->fetch(PDO::FETCH_OBJ)) {
-                    $order->items[] = $row;
-                }
-                $this->items = $order;
-            }
+                'success' => true,
+                'orders' => array_values($orders)
+            ], JSON_UNESCAPED_UNICODE);
+            
         } catch (PDOException $e) {
-            $this->logger->error("Failed to get order_items of order_id: $order_id", [
-                'user_id' => $_SESSION['user']['id'],
+            $this->logger->error('Failed in getByUser()', [
+                'user_id' => $this->user_id,
                 'error' => $e->getMessage(),
                 'file' => __FILE__,
                 'line' => __LINE__
             ]);
-            return null;
+            
+            http_response_code(500);
+            echo json_encode([
+                'error' => 'Greška pri učitavanju rezervacija'
+            ], JSON_UNESCAPED_UNICODE);
         }
     }
 
-    public function getFromDB($id) 
+    public function getByCode(): void 
+    {
+        if (empty($this->code) || !Validator::validateCode($this->code)) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Pogrešan format koda rezervacije (format: xxxxxxxKP)'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $sql = "SELECT orders.id as order_id, order_items.id as item_id, 
+                order_items.tour_id, orders.user_id, order_items.places, 
+                tours.from_city, order_items.add_from as pickup, 
+                tours.to_city, order_items.add_to as dropoff,
+                order_items.date, order_items.price, order_items.deleted,
+                tours.time as pickuptime, tours.duration,
+                orders.total, orders.code, orders.file_path as voucher, 
+                users.name as user, users.email, users.phone, 
+                users.city as user_city
+                FROM order_items
+                INNER JOIN orders ON orders.id = order_items.order_id
+                INNER JOIN tours ON order_items.tour_id = tours.id
+                INNER JOIN users ON orders.user_id = users.id 
+                WHERE orders.code = :code
+                AND orders.deleted = 0";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':code', $this->code, PDO::PARAM_STR);
+
+        try {
+            $stmt->execute();
+            $orders = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+            // Dodaj logs za svaki item
+            foreach ($orders as $order) {
+                $logs = $this->logger->getOrderLogs($order->item_id);
+                $order->logs = $logs;
+            }
+
+            echo json_encode([
+                'orders' => $orders, 
+                'has_orders' => !empty($orders)
+            ], JSON_UNESCAPED_UNICODE);
+            
+        } catch (PDOException $e) {
+            $this->logger->error('Failed in getByCode()', [
+                'code' => $this->code,
+                'error' => $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            
+            http_response_code(500);
+            echo json_encode([
+                'error' => 'Greška pri pretrazi rezervacije'
+            ], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+    public function getItems(int $order_id): void 
+    {
+        $sql = "SELECT order_items.*, orders.user_id, orders.code, 
+                orders.file_path as voucher, orders.total
+                FROM order_items 
+                INNER JOIN orders ON order_items.order_id = orders.id
+                WHERE orders.id = :id
+                AND orders.deleted = 0"; 
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':id', $order_id, PDO::PARAM_INT);
+
+        try {
+            $stmt->execute();
+            
+            $order = new stdClass();
+            $order->items = [];
+            
+            while ($row = $stmt->fetch(PDO::FETCH_OBJ)) {
+                $order->items[] = $row;
+            }
+            
+            $this->items = $order;
+            
+        } catch (PDOException $e) {
+            $this->logger->error('Failed to get order items', [
+                'order_id' => $order_id,
+                'error' => $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            $this->items = null;
+        }
+    }
+
+    //GET order from DB by item ID
+    public function getFromDB(int $id): ?object
     {
         $sql = "SELECT order_items.*, orders.* FROM order_items 
         INNER JOIN orders on order_items.order_id = orders.id
         WHERE order_items.id = :id";
         $stmt = $this->db->prepare($sql);
 
-        $id = htmlspecialchars(strip_tags($id), ENT_QUOTES);
-        $stmt->bindParam(':id', $id);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
 
         try {
             if($stmt->execute()) {
                 $order = $stmt->fetch(PDO::FETCH_OBJ);
                 if($order) {
-                    $this->tour_id = $order->tour_id;
-                    $this->user_id = $order->user_id;
-                    $this->places = $order->places;
+                    $this->tour_id = (int) $order->tour_id;
+                    $this->user_id = (int) $order->user_id;
+                    $this->places = (int) $order->places;
                     $this->add_from = $order->add_from;
                     $this->add_to = $order->add_to;
                     $this->date = $order->date;
-                    $this->total = $order->total;
-                    $this->price = $order->price;
+                    $this->total = (int) $order->total;
+                    $this->price = (int) $order->price;
                     $this->code = $order->code;
                     $this->voucher = $order->file_path;
-                    $this->driver_id = $order->driver_id;
-                    $this->dep_id = $order->dep_id;
+                    $this->driver_id = $order->driver_id ? (int)$order->driver_id : null;
+                    $this->dep_id = $order->dep_id ? (int)$order->dep_id : null;
                     $this->order_id = $order->order_id;
 
                     $this->getItems($this->order_id);
                     
                     return $order; 
                 } 
-                else return null;
+                return null;
             }
         } catch (PDOException $e) {
             echo json_encode(['error' => $e->getMessage()]);
