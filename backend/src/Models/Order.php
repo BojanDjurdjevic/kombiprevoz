@@ -390,635 +390,627 @@ class Order {
         }
     }
 
-    public function generateVoucher( ? int $total): array 
+    // ----------- ESCAPE HTML for PDF:
+    
+    private function escapeForPDF(string $value): string 
     {
+        return htmlspecialchars($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+
+    // Validate and sanitize path
+    private function sanitizeFilePath(string $code): string 
+    {
+        // Ukloni sve osim brojeva i KP oznake
+        $cleanCode = preg_replace('/[^0-9A-Z]/', '', strtoupper($code));
+        
+        if (empty($cleanCode) || !preg_match('/^\d{7}KP$/', $cleanCode)) {
+            throw new Exception('Neispravan kod rezervacije za PDF');
+        }
+        
+        $basePath = realpath('src/assets/pdfs');
+        
+        if ($basePath === false) {
+            throw new Exception('PDF direktorijum ne postoji');
+        }
+        
+        $filePath = $basePath . DIRECTORY_SEPARATOR . $cleanCode . '.pdf';
+        
+        // Check the path
+        if (strpos(realpath(dirname($filePath)), $basePath) !== 0) {
+            throw new Exception('Path traversal pokušaj detektovan');
+        }
+        
+        return $filePath;
+    }
+
+    public function generateVoucher(?int $total): array 
+    {
+        if (empty($this->id) || empty($this->user_id) || empty($this->items->create)) {
+            throw new Exception('Nedostaju podaci za generisanje vaučera');
+        }
+
         $this->user->id = $this->user_id;
-        $this->tour->id = $this->items->create[0]->tour_id;
+        $this->tour->id = (int)$this->items->create[0]->tour_id;
 
+        // Učitaj user i tour podatke
         $owner = $this->user->getByID();
-                    
         $tourObj = $this->tour->getByID();
+        
+        if (empty($owner) || empty($tourObj)) {
+            throw new Exception('Korisnik ili tura ne postoje');
+        }
 
+        // Učitaj sve order_items
         $sql = "SELECT orders.id, orders.user_id, orders.code, orders.file_path, orders.total, 
-                order_items.* FROM orders
-                INNER JOIN order_items on orders.id = order_items.order_id
-                WHERE orders.id = :id     
-        ";
-
-        $drive = [];
+                order_items.* 
+                FROM orders
+                INNER JOIN order_items ON orders.id = order_items.order_id
+                WHERE orders.id = :id
+                AND orders.deleted = 0
+                ORDER BY order_items.date ASC";
 
         $stmt = $this->db->prepare($sql);
-        
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
 
         try {
-            if($stmt->execute()) {
-                while($row = $stmt->fetch(PDO::FETCH_OBJ)) {
-                    array_push($drive, $row);
-                }
+            $stmt->execute();
+            $items = $stmt->fetchAll(PDO::FETCH_OBJ);
+            
+            if (empty($items)) {
+                throw new Exception('Nema stavki za generisanje vaučera');
             }
+            
         } catch (PDOException $e) {
-            throw new Exception($e->getMessage());
+            $this->logger->error('Failed to fetch items for voucher', [
+                'order_id' => $this->id,
+                'error' => $e->getMessage()
+            ]);
+            throw new Exception('Greška pri učitavanju stavki');
         }
-                    
+
+        // Setup Dompdf
         $options = new Options();
-        $options->setChroot("src/assets/img");
+        $options->setChroot(realpath("src/assets/img"));
         $pdf = new Dompdf($options);
         $pdf->setPaper("A4", "Portrait");
 
-        $d = Validator::formatDateForFront($drive[0]->date);
-
+        // Load template
         $html = file_get_contents("src/template.html");
-        $html = str_replace("{{ order }}", $drive[0]->code, $html);
-
-        $html = str_replace("{{ name }}", $owner[0]['name'], $html);
-
-        $html = str_replace("{{ places }}", $drive[0]->places, $html);
-        $html = str_replace("{{ address }}", $drive[0]->add_from, $html);
-        $html = str_replace("{{ city }}", $tourObj[0]['from_city'], $html);
-        $html = str_replace("{{ address_to }}", $drive[0]->add_to, $html);
-        $html = str_replace("{{ city_to }}", $tourObj[0]['to_city'], $html);
-        $html = str_replace("{{ date }}", $d, $html);
-        $html = str_replace("{{ time }}", $tourObj[0]['time'], $html);
-        $html = str_replace("{{ price }}", $drive[0]->price, $html);
-
-        if(count($drive) > 1) {
-            $dIn = Validator::formatDateForFront($drive[1]->date);
-
-            $html = str_replace("{{ view }}", "visible", $html);
-            $html = str_replace("{{ places2 }}", $drive[1]->places, $html);
-            $html = str_replace("{{ address2 }}", $drive[1]->add_from, $html);
-            $html = str_replace("{{ city2 }}", $tourObj[0]['to_city'], $html);
-            $html = str_replace("{{ address_to2 }}", $drive[1]->add_to, $html);
-            $html = str_replace("{{ city_to2 }}", $tourObj[0]['from_city'], $html);
-            $html = str_replace("{{ date2 }}", $dIn, $html);
-            $html = str_replace("{{ time2 }}", $tourObj[0]['time'], $html);
-            $html = str_replace("{{ price2 }}", $drive[1]->price, $html);
-            if($total) $html = str_replace("{{ total }}", (string) $total, $html);
-            else $html = str_replace("{{ total }}", 'N/A', $html);
-        } else {
-            $html = str_replace("{{ view }}", "invisible", $html);
-            $html = str_replace("{{ places2 }}", "N/A", $html);
-            $html = str_replace("{{ address2 }}", "N/A", $html);
-            $html = str_replace("{{ city2 }}", "N/A", $html);
-            $html = str_replace("{{ address_to2 }}", "N/A", $html);
-            $html = str_replace("{{ city_to2 }}", "N/A", $html);
-            $html = str_replace("{{ date2 }}", "N/A", $html);
-            $html = str_replace("{{ time2 }}", "N/A", $html);
-            $html = str_replace("{{ price2 }}", "N/A", $html);
-            $html = str_replace("{{ total }}", 'N/A', $html);
+        
+        if ($html === false) {
+            throw new Exception('Template fajl nije pronađen');
         }
 
-        $html = str_replace("{{ year }}", date("Y"), $html);
+        // Escape svih vrednosti
+        $code = $this->escapeForPDF($items[0]->code);
+        $name = $this->escapeForPDF($owner[0]['name']);
+        $fromCity = $this->escapeForPDF($tourObj[0]['from_city']);
+        $toCity = $this->escapeForPDF($tourObj[0]['to_city']);
 
+        // Header
+        $html = str_replace('{{ order }}', $code, $html);
+        $html = str_replace('{{ name }}', $name, $html);
+        $html = str_replace('{{ city }}', $fromCity, $html);
+        $html = str_replace('{{ city_to }}', $toCity, $html);
+
+        // Prvi item (outbound)
+        $item1 = $items[0];
+        $html = str_replace('{{ view_first }}', 'visible', $html);
+        $html = str_replace('{{ places }}', (string)$item1->places, $html);
+        $html = str_replace('{{ address }}', $this->escapeForPDF($item1->add_from), $html);
+        $html = str_replace('{{ address_to }}', $this->escapeForPDF($item1->add_to), $html);
+        $html = str_replace('{{ date }}', Validator::formatDateForFront($item1->date), $html);
+        $html = str_replace('{{ time }}', $this->escapeForPDF($tourObj[0]['time']), $html);
+        $html = str_replace('{{ price }}', (string)$item1->price, $html);
+
+        // Drugi item (inbound) - ako postoji
+        if (count($items) > 1) {
+            $item2 = $items[1];
+            
+            $html = str_replace('{{ view }}', 'visible', $html);
+            $html = str_replace('{{ places2 }}', (string)$item2->places, $html);
+            $html = str_replace('{{ address2 }}', $this->escapeForPDF($item2->add_from), $html);
+            $html = str_replace('{{ city2 }}', $toCity, $html); // Obrnut redosled
+            $html = str_replace('{{ address_to2 }}', $this->escapeForPDF($item2->add_to), $html);
+            $html = str_replace('{{ city_to2 }}', $fromCity, $html); // Obrnut redosled
+            $html = str_replace('{{ date2 }}', Validator::formatDateForFront($item2->date), $html);
+            $html = str_replace('{{ time2 }}', $this->escapeForPDF($tourObj[0]['time']), $html);
+            $html = str_replace('{{ price2 }}', (string)$item2->price, $html);
+            $html = str_replace('{{ total }}', $total ? (int)$total : 'N/A', $html);
+        } else {
+            // Nema povratka
+            $html = str_replace('{{ view }}', 'invisible', $html);
+            $html = str_replace('{{ places2 }}', 'N/A', $html);
+            $html = str_replace('{{ address2 }}', 'N/A', $html);
+            $html = str_replace('{{ city2 }}', 'N/A', $html);
+            $html = str_replace('{{ address_to2 }}', 'N/A', $html);
+            $html = str_replace('{{ city_to2 }}', 'N/A', $html);
+            $html = str_replace('{{ date2 }}', 'N/A', $html);
+            $html = str_replace('{{ time2 }}', 'N/A', $html);
+            $html = str_replace('{{ price2 }}', 'N/A', $html);
+            $html = str_replace('{{ total }}', 'N/A', $html);
+        }
+
+        // Footer
+        $html = str_replace('{{ year }}', date("Y"), $html);
+
+        // Generiši PDF
         $pdf->loadHtml($html);
+        $pdf->render();
+        $pdf->addInfo("Title", "Kombitransfer - rezervacija: " . $code);
 
-        $pdf->render(); // Obavezno!!!
-        $pdf->addInfo("Title", "Kombitransfer - rezervacija: ". $drive[0]->code);
-        //$pdf->stream("Rezervacija.pdf");
-        $file_path = "src/assets/pdfs/". $drive[0]->code . ".pdf";
-                    
+        // Sačuvaj PDF
+        try {
+            $filePath = $this->sanitizeFilePath($items[0]->code);
+        } catch (Exception $e) {
+            $this->logger->error('Invalid file path in generateVoucher', [
+                'code' => $items[0]->code ?? 'unknown',
+                'error' => $e->getMessage()
+            ]);
+            throw $e;
+        }
+
         $output = $pdf->output();
-        file_put_contents($file_path, $output);
+        
+        if (file_put_contents($filePath, $output) === false) {
+            throw new Exception('Nije moguće sačuvati PDF fajl');
+        }
+
         return [
             'email' => $owner[0]['email'],
             'name' => $owner[0]['name'],
-            'path' => $file_path,
-            'code' => $drive[0]->code
+            'path' => $filePath,
+            'code' => $items[0]->code
         ];
     }
 
-    /*
-
-    public function reGenerateVoucher() 
+    /**
+     * Regeneriši voucher (za update)
+     * FIXED: Kompletan refaktor - bolja logika sa deleted items
+     */
+    public function reGenerateVoucher(): array 
     {
+        if (empty($this->order_id) || empty($this->user_id) || empty($this->tour_id)) {
+            throw new Exception('Nedostaju podaci za regenerisanje vaučera');
+        }
+
         $this->user->id = $this->user_id;
         $this->tour->id = $this->tour_id;
         
         $owner = $this->user->getByID();          
         $tourObj = $this->tour->getByID();
+        
+        if (empty($owner) || empty($tourObj)) {
+            throw new Exception('Korisnik ili tura ne postoje');
+        }
+
+        // Učitaj order sa svim stavkama i driverima
         $myOrder = $this->getDriverOfTour();
-                    
+        
+        if ($myOrder === null) {
+            throw new Exception('Order ne postoji');
+        }
+
+        // Setup Dompdf
         $options = new Options();
-        $options->setChroot("src/assets/img");
+        $options->setChroot(realpath("src/assets/img"));
         $pdf = new Dompdf($options);
         $pdf->setPaper("A4", "Portrait");
-        // Drivers for each item
-        if($myOrder != NULL && isset($myOrder['items'][0]['driver'])) { //&& $myOrder['items'][0]['driver'] != NULL
-            $arr = explode(" ", $myOrder['items'][0]['driver']['dr_name']);
-            $myDriver = $arr[0];
-        } else $myDriver = null;
-        if($myOrder != NULL && isset($myOrder['items'][1]['driver'])) { // && $myOrder['items'][1]['driver'] != NULL
-            $arr = explode(" ", $myOrder['items'][1]['driver']['dr_name']);
-            $myDriver2 = $arr[0];
-        } else $myDriver2 = null;
-        // Dates for each item
-        if($myOrder != NULL) {
-           $formated = date_create($myOrder['items'][0]['order']['date']); 
-        } else 
-        $formated = date_create($this->date);  // BUG
-        $d = date("d.m.Y", date_timestamp_get($formated));
-        if($myOrder != NULL && isset($myOrder['items'][1]['order']['date'])) {
-           $formated2 = date_create($myOrder['items'][1]['order']['date']); 
-        } else 
-        $formated2 = $formated; // SAME BUG - corrected
-        $d2 = date("d.m.Y", date_timestamp_get($formated2));
-        // In the title
-        if($myOrder != NULL) {
-            $html = file_get_contents("src/updated.html");
-        } else $html = file_get_contents("src/template.html");
-        if($myOrder != NULL) {
-            $html = str_replace("{{ order }}", $myOrder['items'][0]['order']['code'], $html);
-        } else
-        $html = str_replace("{{ order }}", $this->code, $html);
 
-        $html = str_replace("{{ name }}", $owner[0]['name'], $html);
+        // Odaberi template
+        $html = file_get_contents("src/updated.html");
         
-        // First Item
-
-        if($myOrder != NULL && isset($myOrder['items'][0])) {
-        if($myOrder['items'][0]['deleted'] === 0) {
-        if($myOrder != NULL) {
-            $html = str_replace("{{ places }}", $myOrder['items'][0]['order']['places'], $html);
-        } else
-        $html = str_replace("{{ places }}", $this->places, $html);
-        if($myOrder != NULL) {
-            $html = str_replace("{{ address }}", $myOrder['items'][0]['order']['pickup'], $html);
-        } else
-        $html = str_replace("{{ address }}", $this->add_from, $html);
-        $html = str_replace("{{ city }}", $tourObj[0]['from_city'], $html);
-        if($myOrder != NULL) {
-            $html = str_replace("{{ address_to }}", $myOrder['items'][0]['order']['dropoff'], $html);
-        } else
-        $html = str_replace("{{ address_to }}", $this->add_to, $html);
-        $html = str_replace("{{ city_to }}", $tourObj[0]['to_city'], $html);
-        $html = str_replace("{{ date }}", $d, $html);
-        $html = str_replace("{{ time }}", $tourObj[0]['time'], $html);
-        if($myOrder != NULL) {
-            $html = str_replace("{{ price }}", $myOrder['items'][0]['order']['price'], $html);
-        } else
-        $html = str_replace("{{ price }}", $this->price, $html);
-
-        if($myOrder != NULL && $myDriver) {
-            $html = str_replace("{{ driver }}", $myDriver, $html);
-            $html = str_replace("{{ drphone }}", $myOrder['items'][0]['driver']['dr_phone'], $html);
-            $html = str_replace("{{ drmail }}", $myOrder['items'][0]['driver']['dr_email'], $html);
-            $html = str_replace("{{ driver_view }}", "visible", $html);
-        } else {
-            $html = str_replace("{{ driver_view }}", "invisible", $html);
+        if ($html === false) {
+            throw new Exception('Updated template nije pronađen');
         }
-        } else $html = str_replace("{{ view_first }}", "invisible", $html);
-        } else $html = str_replace("{{ view_first }}", "invisible", $html);
 
-        // 2nd Item - Inbound
-        if($myOrder != NULL && isset($myOrder['items'][1])) {
-            //if(count($myOrder['items']) > 1) {  
-                //$items = $myOrder['items'];
+        // Escape vrednosti
+        $code = $this->escapeForPDF($myOrder['items'][0]['order']['code']);
+        $name = $this->escapeForPDF($owner[0]['name']);
+        $fromCity = $this->escapeForPDF($tourObj[0]['from_city']);
+        $toCity = $this->escapeForPDF($tourObj[0]['to_city']);
 
-                ////$deleted = !array_filter($items, fn($i) => $i['deleted'] == 0);
+        // Header
+        $html = str_replace('{{ order }}', $code, $html);
+        $html = str_replace('{{ name }}', $name, $html);
+        $html = str_replace('{{ city }}', $fromCity, $html);
+        $html = str_replace('{{ city_to }}', $toCity, $html);
 
-                //$hasDeleted = in_array(1, array_column($items, 'deleted'));
-
-                if($myOrder['items'][1]['deleted'] === 0) {
-                    $html = str_replace("{{ view }}", "visible", $html);
-                    $html = str_replace("{{ places2 }}", $myOrder['items'][1]['order']['places'], $html);
-                
-                    $html = str_replace("{{ address2 }}", $myOrder['items'][1]['order']['pickup'], $html);
-
-                    //$html = str_replace("{{ address2 }}", $this->add_from, $html);
-                    $html = str_replace("{{ city2 }}", $tourObj[0]['to_city'], $html);
-
-                    $html = str_replace("{{ address_to2 }}", $myOrder['items'][1]['order']['dropoff'], $html);
-
-                    //$html = str_replace("{{ address_to2 }}", $this->add_to, $html);
-
-                    $html = str_replace("{{ city_to2 }}", $tourObj[0]['from_city'], $html);
-                    $html = str_replace("{{ date2 }}", $d2, $html);
-                    $html = str_replace("{{ time2 }}", $tourObj[0]['time'], $html);
-                    
-                    $html = str_replace("{{ price2 }}", $myOrder['items'][1]['order']['price'], $html);
-                    $html = str_replace("{{ price3 }}", $myOrder['items'][0]['order']['total'], $html);
-                    
-                    if($myOrder != NULL && $myDriver2) {
-                        $html = str_replace("{{ driver2 }}", $myDriver2, $html);
-                        $html = str_replace("{{ drphone2 }}", $myOrder['items'][1]['driver']['dr_phone'], $html);
-                        $html = str_replace("{{ drmail2 }}", $myOrder['items'][1]['driver']['dr_email'], $html);
-                        $html = str_replace("{{ driver_view2 }}", "visible", $html);
-                    } else {
-                        $html = str_replace("{{ driver_view2 }}", "invisible", $html);
-                    }
-                } else $html = str_replace("{{ view }}", "invisible", $html);
-            //} else $html = str_replace("{{ view }}", "invisible", $html);
-        } else $html = str_replace("{{ view }}", "invisible", $html);
-        //In footer
-        $html = str_replace("{{ year }}", date("Y"), $html);
-        // Render voucher and return data
-        $pdf->loadHtml($html);
-
-        $pdf->render();
-        if($myOrder != NULL) {
-            $pdf->addInfo("Title", "Kombitransfer - rezervacija: ". $myOrder['items'][0]['order']['code']);
-        } else
-        $pdf->addInfo("Title", "Kombitransfer - rezervacija: ". $this->code);
-        if($myOrder != NULL) {
-            $file_path = $myOrder['items'][0]['order']['voucher'];
-        } else
-        $file_path = $this->voucher;
-                    
-        $output = $pdf->output();
-        file_put_contents($file_path, $output);
-        if($myOrder != NULL && $myDriver && $myDriver2) {
-            return [
-                'email' => $owner[0]['email'],
-                'name' => $owner[0]['name'],
-                'path' => $file_path,
-                'code' => $myOrder['items'][0]['order']['code'],
-                'driver' => $myDriver,
-                'driver_phone' => $myOrder['items'][0]['driver']['dr_phone'],
-                'driver_email' => $myOrder['items'][0]['driver']['dr_phone'],
-                'driver2' => $myDriver2,
-                'driver_phone2' => $myOrder['items'][1]['driver']['dr_phone'],
-                'driver_email2' => $myOrder['items'][1]['driver']['dr_phone']
-            ];
-        } elseif($myOrder != NULL && $myDriver) {
-            return [
-                'email' => $owner[0]['email'],
-                'name' => $owner[0]['name'],
-                'path' => $file_path,
-                'code' => $myOrder['items'][0]['order']['code'],
-                'driver' => $myDriver,
-                'driver_phone' => $myOrder['items'][0]['driver']['dr_phone'],
-                'driver_email' => $myOrder['items'][0]['driver']['dr_phone'],
-            ];
-        } else
-        return [
-            'email' => $owner[0]['email'],
-            'name' => $owner[0]['name'],
-            'path' => $file_path,
-            'code' => $this->code
-        ];
-    } */
-
-    public function reGenerateVoucher() 
-    {
-        $this->user->id = $this->user_id;
-        $this->tour->id = $this->tour_id;
+        // ==================== PRVI ITEM (OUTBOUND) ====================
         
-        $owner = $this->user->getByID();          
-        $tourObj = $this->tour->getByID();
-        $myOrder = $this->getDriverOfTour();
-                    
-        $options = new Options();
-        $options->setChroot("src/assets/img");
-        $pdf = new Dompdf($options);
-        $pdf->setPaper("A4", "Portrait");
-        
-        //======================================== PRIPREMA PODATAKA
-        
-        // Drivers
-        $myDriver = null;
-        $myDriver2 = null;
-        
-        if ($myOrder != NULL && isset($myOrder['items'][0]['driver']['dr_name'])) {
-            $arr = explode(" ", $myOrder['items'][0]['driver']['dr_name']);
-            $myDriver = $arr[0];
-        }
-        
-        if ($myOrder != NULL && isset($myOrder['items'][1]['driver']['dr_name'])) {
-            $arr = explode(" ", $myOrder['items'][1]['driver']['dr_name']);
-            $myDriver2 = $arr[0];
-        }
-        
-        // Datum polaska (prvi item)
-        if ($myOrder != NULL && isset($myOrder['items'][0]['order']['date'])) {
-            $d = date("d.m.Y", strtotime($myOrder['items'][0]['order']['date']));
-        } else {
-            $d = date("d.m.Y", strtotime($this->date));
-        }
-        
-        // Datum povratka (drugi item)
-        if ($myOrder != NULL && isset($myOrder['items'][1]['order']['date'])) {
-            $d2 = date("d.m.Y", strtotime($myOrder['items'][1]['order']['date']));
-        } else {
-            $d2 = $d; // Ako nema povratak, koristi isti datum
-        }
-        
-        // Order code
-        $orderCode = ($myOrder != NULL) ? $myOrder['items'][0]['order']['code'] : $this->code;
-        
-        // File path
-        $file_path = ($myOrder != NULL) ? $myOrder['items'][0]['order']['voucher'] : $this->voucher;
-        
-        // =====================  TEMPLATE  ===================  
-
-        $html = ($myOrder != NULL) 
-            ? file_get_contents("src/updated.html") 
-            : file_get_contents("src/template.html");
-        
-        // =================== HEADER - Order code i putnik =====================
-
-        $html = str_replace("{{ order }}", $orderCode, $html);
-        $html = str_replace("{{ name }}", $owner[0]['name'], $html);
-        
-        // ==================  PRVI ITEM - POLAZAK  ======================
-        
-        $hasFirstItem = $myOrder != NULL && isset($myOrder['items'][0]) && $myOrder['items'][0]['order']['deleted'] == 0;
+        $hasFirstItem = isset($myOrder['items'][0]) 
+            && (int)$myOrder['items'][0]['order']['deleted'] === 0;
         
         if ($hasFirstItem) {
             $item1 = $myOrder['items'][0]['order'];
+            $driver1 = $myOrder['items'][0]['driver'];
             
-            $html = str_replace("{{ view_first }}", "visible", $html);
-            $html = str_replace("{{ places }}", $item1['places'], $html);
-            $html = str_replace("{{ address }}", $item1['pickup'], $html);
-            $html = str_replace("{{ city }}", $tourObj[0]['from_city'], $html);
-            $html = str_replace("{{ address_to }}", $item1['dropoff'], $html);
-            $html = str_replace("{{ city_to }}", $tourObj[0]['to_city'], $html);
-            $html = str_replace("{{ date }}", $d, $html);
-            $html = str_replace("{{ time }}", $tourObj[0]['time'], $html);
-            $html = str_replace("{{ price }}", $item1['price'], $html);
+            $html = str_replace('{{ view_first }}', 'visible', $html);
+            $html = str_replace('{{ places }}', (string)$item1['places'], $html);
+            $html = str_replace('{{ address }}', $this->escapeForPDF($item1['pickup']), $html);
+            $html = str_replace('{{ address_to }}', $this->escapeForPDF($item1['dropoff']), $html);
+            $html = str_replace('{{ date }}', Validator::formatDateForFront($item1['date']), $html);
+            $html = str_replace('{{ time }}', $this->escapeForPDF($tourObj[0]['time']), $html);
+            $html = str_replace('{{ price }}', (string)$item1['price'], $html);
             
-            // Driver za polazak
-            if ($myDriver) {
-                $html = str_replace("{{ driver }}", $myDriver, $html);
-                $html = str_replace("{{ drphone }}", $myOrder['items'][0]['driver']['dr_phone'], $html);
-                $html = str_replace("{{ drmail }}", $myOrder['items'][0]['driver']['dr_email'], $html);
-                $html = str_replace("{{ driver_view }}", "visible", $html);
+            // Driver info
+            if ($driver1 && !empty($driver1['dr_name'])) {
+                $driverFirstName = explode(" ", $driver1['dr_name'])[0];
+                
+                $html = str_replace('{{ driver_view }}', 'visible', $html);
+                $html = str_replace('{{ driver }}', $this->escapeForPDF($driverFirstName), $html);
+                $html = str_replace('{{ drphone }}', $this->escapeForPDF($driver1['dr_phone']), $html);
+                $html = str_replace('{{ drmail }}', $this->escapeForPDF($driver1['dr_email']), $html);
             } else {
-                $html = str_replace("{{ driver_view }}", "invisible", $html);
+                $html = str_replace('{{ driver_view }}', 'invisible', $html);
+                $html = str_replace('{{ driver }}', 'N/A', $html);
+                $html = str_replace('{{ drphone }}', 'N/A', $html);
+                $html = str_replace('{{ drmail }}', 'N/A', $html);
             }
-            
         } else {
-            // Fallback ako nema myOrder
-            $html = str_replace("{{ view_first }}", "visible", $html);
-            $html = str_replace("{{ places }}", (string) $this->places, $html);
-            $html = str_replace("{{ address }}", $this->add_from, $html);
-            $html = str_replace("{{ city }}", $tourObj[0]['from_city'], $html);
-            $html = str_replace("{{ address_to }}", $this->add_to, $html);
-            $html = str_replace("{{ city_to }}", $tourObj[0]['to_city'], $html);
-            $html = str_replace("{{ date }}", $d, $html);
-            $html = str_replace("{{ time }}", $tourObj[0]['time'], $html);
-            $html = str_replace("{{ price }}", (string) $this->price, $html);
-            $html = str_replace("{{ driver_view }}", "invisible", $html);
+            // Prvi item je obrisan - sakrij
+            $html = str_replace('{{ view_first }}', 'invisible', $html);
+            $html = str_replace('{{ places }}', 'N/A', $html);
+            $html = str_replace('{{ address }}', 'N/A', $html);
+            $html = str_replace('{{ address_to }}', 'N/A', $html);
+            $html = str_replace('{{ date }}', 'N/A', $html);
+            $html = str_replace('{{ time }}', 'N/A', $html);
+            $html = str_replace('{{ price }}', 'N/A', $html);
+            $html = str_replace('{{ driver_view }}', 'invisible', $html);
+            $html = str_replace('{{ driver }}', 'N/A', $html);
+            $html = str_replace('{{ drphone }}', 'N/A', $html);
+            $html = str_replace('{{ drmail }}', 'N/A', $html);
         }
-        
-        // ====================  DRUGI ITEM - POVRATAK  ====================
 
-        $hasSecondItem = $myOrder != NULL && isset($myOrder['items'][1]) && $myOrder['items'][1]['order']['deleted'] == 0;
+        // ==================== DRUGI ITEM (INBOUND) ====================
+        
+        $hasSecondItem = isset($myOrder['items'][1]) 
+            && (int)$myOrder['items'][1]['order']['deleted'] === 0;
         
         if ($hasSecondItem) {
             $item2 = $myOrder['items'][1]['order'];
+            $driver2 = $myOrder['items'][1]['driver'];
             
-            $html = str_replace("{{ view }}", "visible", $html);
-            $html = str_replace("{{ places2 }}", $item2['places'], $html);
-            $html = str_replace("{{ address2 }}", $item2['pickup'], $html);
-            $html = str_replace("{{ city2 }}", $tourObj[0]['from_city'], $html); 
-            $html = str_replace("{{ address_to2 }}", $item2['dropoff'], $html);
-            $html = str_replace("{{ city_to2 }}", $tourObj[0]['to_city'], $html); 
-            $html = str_replace("{{ date2 }}", $d2, $html);
-            $html = str_replace("{{ time2 }}", $tourObj[0]['time'], $html);
-            $html = str_replace("{{ price2 }}", $item2['price'], $html);
+            $html = str_replace('{{ view }}', 'visible', $html);
+            $html = str_replace('{{ places2 }}', (string)$item2['places'], $html);
+            $html = str_replace('{{ address2 }}', $this->escapeForPDF($item2['pickup']), $html);
+            $html = str_replace('{{ city2 }}', $toCity, $html);
+            $html = str_replace('{{ address_to2 }}', $this->escapeForPDF($item2['dropoff']), $html);
+            $html = str_replace('{{ city_to2 }}', $fromCity, $html);
+            $html = str_replace('{{ date2 }}', Validator::formatDateForFront($item2['date']), $html);
+            $html = str_replace('{{ time2 }}', $this->escapeForPDF($tourObj[0]['time']), $html);
+            $html = str_replace('{{ price2 }}', (string)$item2['price'], $html);
             
-            // Total price (iz prvog item-a jer je to total za celu order)
-            $html = str_replace("{{ price3 }}", $myOrder['items'][0]['order']['total'], $html);
+            // Total price (samo ako ima oba item-a)
+            $totalPrice = $hasFirstItem 
+                ? (int)$myOrder['items'][0]['order']['total'] 
+                : (int)$item2['price'];
             
-            // Driver za povratak
-            if ($myDriver2) {
-                $html = str_replace("{{ driver2 }}", $myDriver2, $html);
-                $html = str_replace("{{ drphone2 }}", $myOrder['items'][1]['driver']['dr_phone'], $html);
-                $html = str_replace("{{ drmail2 }}", $myOrder['items'][1]['driver']['dr_email'], $html);
-                $html = str_replace("{{ driver_view2 }}", "visible", $html);
+            $html = str_replace('{{ price3 }}', (string)$totalPrice, $html);
+            
+            // Driver info
+            if ($driver2 && !empty($driver2['dr_name'])) {
+                $driverFirstName = explode(" ", $driver2['dr_name'])[0];
+                
+                $html = str_replace('{{ driver_view2 }}', 'visible', $html);
+                $html = str_replace('{{ driver2 }}', $this->escapeForPDF($driverFirstName), $html);
+                $html = str_replace('{{ drphone2 }}', $this->escapeForPDF($driver2['dr_phone']), $html);
+                $html = str_replace('{{ drmail2 }}', $this->escapeForPDF($driver2['dr_email']), $html);
             } else {
-                $html = str_replace("{{ driver_view2 }}", "invisible", $html);
+                $html = str_replace('{{ driver_view2 }}', 'invisible', $html);
+                $html = str_replace('{{ driver2 }}', 'N/A', $html);
+                $html = str_replace('{{ drphone2 }}', 'N/A', $html);
+                $html = str_replace('{{ drmail2 }}', 'N/A', $html);
             }
-            
         } else {
-            // If no return
-            $html = str_replace("{{ view }}", "invisible", $html);
+            // Drugi item je obrisan ili ne postoji
+            $html = str_replace('{{ view }}', 'invisible', $html);
+            $html = str_replace('{{ places2 }}', 'N/A', $html);
+            $html = str_replace('{{ address2 }}', 'N/A', $html);
+            $html = str_replace('{{ city2 }}', 'N/A', $html);
+            $html = str_replace('{{ address_to2 }}', 'N/A', $html);
+            $html = str_replace('{{ city_to2 }}', 'N/A', $html);
+            $html = str_replace('{{ date2 }}', 'N/A', $html);
+            $html = str_replace('{{ time2 }}', 'N/A', $html);
+            $html = str_replace('{{ price2 }}', 'N/A', $html);
+            $html = str_replace('{{ price3 }}', 'N/A', $html);
+            $html = str_replace('{{ driver_view2 }}', 'invisible', $html);
+            $html = str_replace('{{ driver2 }}', 'N/A', $html);
+            $html = str_replace('{{ drphone2 }}', 'N/A', $html);
+            $html = str_replace('{{ drmail2 }}', 'N/A', $html);
         }
-        
-        // ==================  FOOTER  ======================
-        
-        $html = str_replace("{{ year }}", date("Y"), $html);
-        
-        // ====================  GENERATE PDF   ====================
-        
+
+        // Footer
+        $html = str_replace('{{ year }}', date("Y"), $html);
+
+        // Generiši PDF
         $pdf->loadHtml($html);
         $pdf->render();
-        $pdf->addInfo("Title", "Kombitransfer - rezervacija: " . $orderCode);
+        $pdf->addInfo("Title", "Kombitransfer - rezervacija: " . $code);
+
+        // Sačuvaj PDF
+        $filePath = $myOrder['items'][0]['order']['voucher'];
         
+        // Validacija path-a
+        $basePath = realpath('src/assets/pdfs');
+        
+        if ($basePath === false || strpos(realpath(dirname($filePath)), $basePath) !== 0) {
+            $this->logger->error('Invalid voucher path in reGenerateVoucher', [
+                'path' => $filePath,
+                'order_id' => $this->order_id
+            ]);
+            
+            // Fallback - generiši novi path
+            try {
+                $filePath = $this->sanitizeFilePath($code);
+            } catch (Exception $e) {
+                throw new Exception('Neispravan path za voucher');
+            }
+        }
+
         $output = $pdf->output();
-        file_put_contents($file_path, $output);
         
-        // ==================  RETURN DATA  ======================
-        
+        if (file_put_contents($filePath, $output) === false) {
+            throw new Exception('Nije moguće sačuvati PDF fajl');
+        }
+
+        // Pripremi povratne podatke
         $result = [
             'email' => $owner[0]['email'],
             'name' => $owner[0]['name'],
-            'path' => $file_path,
-            'code' => $orderCode
+            'path' => $filePath,
+            'code' => $code
         ];
-        
+
         // Dodaj driver info ako postoji
-        if ($myDriver) {
-            $result['driver'] = $myDriver;
+        if ($hasFirstItem && !empty($myOrder['items'][0]['driver']['dr_name'])) {
+            $result['driver'] = explode(" ", $myOrder['items'][0]['driver']['dr_name'])[0];
             $result['driver_phone'] = $myOrder['items'][0]['driver']['dr_phone'];
             $result['driver_email'] = $myOrder['items'][0]['driver']['dr_email'];
         }
-        
-        if ($myDriver2) {
-            $result['driver2'] = $myDriver2;
+
+        if ($hasSecondItem && !empty($myOrder['items'][1]['driver']['dr_name'])) {
+            $result['driver2'] = explode(" ", $myOrder['items'][1]['driver']['dr_name'])[0];
             $result['driver_phone2'] = $myOrder['items'][1]['driver']['dr_phone'];
             $result['driver_email2'] = $myOrder['items'][1]['driver']['dr_email'];
         }
-        
+
         return $result;
     }
 
-    public function sendVoucher($email, $name, $path, $new_code, $goal)
+    public function sendVoucher(string $email, string $name, string $path, string $code, string $goal): void
     {
-        $template = '';
-        if($goal === 'create') {
-            $template = "<p> Poštovani/a {$name}, </p>
-            <br>
-            <p> Uspešno ste rezervisali vašu vožnju! </p>
-            <br>
-            <p> Broj vaše rezervacije je: <b> $new_code </b> </p>
-            <br>
-            <p> U prilogu Vam šaljemo potvrdu rezervacije. </p>
-            <br><br>
-            <p> Srdačan pozdrav od Kombitransfer tima! </p>";
-        } elseif($goal === 'update') {
-            $template = "<p> Poštovani/a {$name}, </p>
-            <br>
-            <p> Uspešno ste izmenili vašu vožnju! </p>
-            <br>
-            <p> Broj vaše rezervacije je: <b> $new_code </b> </p>
-            <br>
-            <p> U prilogu Vam šaljemo ažuriranu potvrdu rezervacije. </p>
-            <br><br>
-            <p> Srdačan pozdrav od Kombitransfer tima! </p>";
-        } else {
-            $template = "<p> Poštovani/a {$name}, </p>
-            <br>
-            <p> Vaša rezervacija broj <b> $new_code </b> je ažurirana. </p>
-            <br>
-            <p> U prilogu Vam šaljemo ažuriranu potvrdu rezervacije. </p>
-            <br><br>
-            <p> Srdačan pozdrav od Kombitransfer tima! </p>";
+        // Validacija email-a
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new Exception('Neispravan email format');
         }
 
+        // Validacija fajla
+        if (!file_exists($path)) {
+            throw new Exception('PDF fajl ne postoji: ' . basename($path));
+        }
+
+        // Escape name za sigurnost
+        $safeName = $this->escapeForPDF($name);
+        $safeCode = $this->escapeForPDF($code);
+
+        // Template na osnovu goal-a
+        $template = match($goal) {
+            'create' => "<p>Poštovani/a {$safeName},</p>
+                <br>
+                <p>Uspešno ste rezervisali vašu vožnju!</p>
+                <br>
+                <p>Broj vaše rezervacije je: <b>{$safeCode}</b></p>
+                <br>
+                <p>U prilogu Vam šaljemo potvrdu rezervacije.</p>
+                <br><br>
+                <p>Srdačan pozdrav od Kombitransfer tima!</p>",
+            
+            'update' => "<p>Poštovani/a {$safeName},</p>
+                <br>
+                <p>Uspešno ste izmenili vašu vožnju!</p>
+                <br>
+                <p>Broj vaše rezervacije je: <b>{$safeCode}</b></p>
+                <br>
+                <p>U prilogu Vam šaljemo ažuriranu potvrdu rezervacije.</p>
+                <br><br>
+                <p>Srdačan pozdrav od Kombitransfer tima!</p>",
+            
+            default => "<p>Poštovani/a {$safeName},</p>
+                <br>
+                <p>Vaša rezervacija broj <b>{$safeCode}</b> je ažurirana.</p>
+                <br>
+                <p>U prilogu Vam šaljemo ažuriranu potvrdu rezervacije.</p>
+                <br><br>
+                <p>Srdačan pozdrav od Kombitransfer tima!</p>"
+        };
+
         $mail = new PHPMailer(true);
-        //$mail->SMTPDebug = SMTP::DEBUG_SERVER;
-        $mail->isSMTP();
-        $mail->SMTPAuth = true;
-
-        $mail->Host = "smtp.gmail.com";
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-        $mail->Port = 465;
-        $mail->Username = $_ENV["SMTP_USER"];
-        $mail->Password = $_ENV["SMTP_PASS"];
-
-        $mail->setFrom("noreply-info@kombitransfer.com", "Bojan");
-        $mail->addAddress($email, $name);
-
-        $mail->CharSet = 'UTF-8';
-        $mail->Encoding = 'base64';
-
-        $mail->isHTML(true);
-        $mail->addAttachment($path, "Kombitransfer - rezervacija: ". $new_code);
-        $mail->Subject = "Potvrda Rezervacije";
-        $mail->setLanguage('sr');
-        $mail->Body = <<<END
-
-            $template
-                        
-        END;
-
+        
         try {
+            // SMTP Config
+            $mail->isSMTP();
+            $mail->SMTPAuth = true;
+            $mail->Host = "smtp.gmail.com";
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+            $mail->Port = 465;
+            $mail->Username = $_ENV["SMTP_USER"];
+            $mail->Password = $_ENV["SMTP_PASS"];
+
+            // From/To (escape ime!)
+            $mail->setFrom("noreply-kombiprevoz@gmail.com", "Kombi Transfer");
+            
+            // ✅ FIXED: Escape name da spreči email injection
+            $mail->addAddress($email, mb_substr($safeName, 0, 50)); // Limit 50 karaktera
+
+            // Email settings
+            $mail->CharSet = 'UTF-8';
+            $mail->Encoding = 'base64';
+            $mail->isHTML(true);
+            $mail->Subject = "Potvrda Rezervacije - " . $safeCode;
+            $mail->setLanguage('sr');
+            $mail->Body = $template;
+            
+            // Attachment
+            $mail->addAttachment($path, "Kombitransfer-" . $safeCode . ".pdf");
+
             $mail->send();
-            //echo json_encode(['email' => 'Potvrda je upravo poslata na Vašu email adresu. Molimo proverite Vaš email!']);
+            
         } catch (Exception $e) {
-            echo json_encode([
-                'email' => 'Došlo je do greške!',
-                'msg' => $mail->ErrorInfo
+            $this->logger->error('Failed to send email', [
+                'email' => $email,
+                'code' => $code,
+                'error' => $e->getMessage(),
+                'mailer_error' => $mail->ErrorInfo ?? 'N/A'
             ]);
+            
+            throw new Exception('Greška pri slanju emaila: ' . $mail->ErrorInfo);
         }
     }
 
     // ------ PDF of all passangers and reservations to DRIVER
-    public function generateDeparture($users, $new_code, $dateTime)
-    {        
+    private function generateDeparture(array $orders, string $code, string $dateTime): array
+    {
+        if (empty($orders)) {
+            throw new Exception('Nema rezervacija za generisanje PDF-a');
+        }
+
         $options = new Options();
-        $options->setChroot("src/assets/img");
+        $options->setChroot(realpath("src/assets/img"));
         $pdf = new Dompdf($options);
         $pdf->setPaper("A4", "Portrait");
 
-        $formated = date_create($dateTime);
-        $d = date_format($formated, "d.m.Y H:i"); 
+        // Formatuj datum
+        $formattedDateTime = date('d.m.Y H:i', strtotime($dateTime));
 
-        $template = '';
-        foreach ($users as $pax) {
-            $template .= Validator::mailerDriverTemplate($pax->code, $pax->user->name, $pax->places, $pax->pickup, $pax->from_city, $pax->dropoff, $pax->to_city, $pax->date, $pax->pickuptime, $pax->price, $pax->user->phone);
+        // Generiši HTML za svaku rezervaciju
+        $reservationsHtml = '';
+        
+        foreach ($orders as $pax) {
+            $reservationsHtml .= Validator::mailerDriverTemplate(
+                $this->escapeForPDF($pax->code),
+                $this->escapeForPDF($pax->user->name),
+                (int)$pax->places,
+                $this->escapeForPDF($pax->pickup),
+                $this->escapeForPDF($pax->from_city),
+                $this->escapeForPDF($pax->dropoff),
+                $this->escapeForPDF($pax->to_city),
+                $pax->date,
+                $this->escapeForPDF($pax->pickuptime),
+                (int)$pax->price,
+                $this->escapeForPDF($pax->user->phone)
+            );
         }
 
+        // Učitaj driver template
         $html = file_get_contents("src/driver.html");
-        $html = str_replace("{{ code }}", $new_code, $html);
-        $html = str_replace("{{ dateTime }}", $d, $html);
-        $html = str_replace("{{ main }}", $template, $html);
-        $html = str_replace("{{ year }}", date("Y"), $html);
+        
+        if ($html === false) {
+            throw new Exception('Driver template nije pronađen');
+        }
+
+        $safeCode = $this->escapeForPDF($code);
+
+        $html = str_replace('{{ code }}', $safeCode, $html);
+        $html = str_replace('{{ dateTime }}', htmlspecialchars($formattedDateTime, ENT_QUOTES, 'UTF-8'), $html);
+        $html = str_replace('{{ main }}', $reservationsHtml, $html);
+        $html = str_replace('{{ year }}', date("Y"), $html);
 
         $pdf->loadHtml($html);
-
         $pdf->render();
-        $pdf->addInfo("Title", "Kombitransfer - vožnja: ". $new_code);
-        $file_path = "src/assets/pdfs/". $new_code . ".pdf";
-                    
+        $pdf->addInfo("Title", "Kombitransfer - vožnja: " . $safeCode);
+
+        // Sačuvaj PDF
+        try {
+            $filePath = $this->sanitizeFilePath($code);
+        } catch (Exception $e) {
+            $this->logger->error('Invalid departure PDF path', [
+                'code' => $code,
+                'error' => $e->getMessage()
+            ]);
+            throw $e;
+        }
+
         $output = $pdf->output();
-        file_put_contents($file_path, $output);
-        return [
-            'path' => $file_path
-        ];
+        
+        if (file_put_contents($filePath, $output) === false) {
+            throw new Exception('Nije moguće sačuvati departure PDF');
+        }
+
+        return ['path' => $filePath];
     }
 
     // ------ Email about reservations to DRIVER
-    public function sendOrdersToDriver($name, $new_code, $path, $email)
-    {        
-        $template = "<p> Poštovani/a {$name}, </p>
-        <br>
-        <p> Sistem Vam je dodelio vožnju broj: <b> $new_code </b> </p>
-        <br>
-        <p> U prilogu Vam šaljemo spisak svih porudžbina, sa imenima i podacima putnika. </p>
-        <p> Savetujemo Vam da napravite svoju rutu i poredak kupljenja i ostavljanja putnika sa/na adrese. </p>
-        <p> Takođe Vas molimo da dan pre polaska, a nakon pravljenja redosleda preuzimanja putnika, 
-        svim putnicima blagovremeno javite okvirno vreme kada ćete po njih doći. </p>
-        <p>Hvala!</p>
-        <br><br>
-        <p> Srdačan pozdrav od Kombitransfer tima! </p>";
+    private function sendOrdersToDriver(
+        string $name, 
+        string $code, 
+        string $path, 
+        string $email
+    ): void {
+        // Validacija
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new Exception('Neispravan email vozača');
+        }
+
+        if (!file_exists($path)) {
+            throw new Exception('Departure PDF ne postoji');
+        }
+
+        $safeName = $this->escapeForPDF($name);
+        $safeCode = $this->escapeForPDF($code);
+
+        $template = "<p>Poštovani/a {$safeName},</p>
+            <br>
+            <p>Sistem Vam je dodelio vožnju broj: <b>{$safeCode}</b></p>
+            <br>
+            <p>U prilogu Vam šaljemo spisak svih rezervacija, sa imenima i podacima putnika.</p>
+            <br>
+            <p><b>Važno:</b></p>
+            <ul>
+                <li>Molimo napravite svoju rutu i poredak preuzimanja putnika</li>
+                <li>Dan pre polaska, javite putnicima okvirno vreme dolaska</li>
+                <li>Budite dostupni na telefonu za bilo kakva pitanja</li>
+            </ul>
+            <br>
+            <p>Hvala i srećan put!</p>
+            <br><br>
+            <p>Srdačan pozdrav,<br>Kombitransfer Tim</p>";
 
         $mail = new PHPMailer(true);
-        //$mail->SMTPDebug = SMTP::DEBUG_SERVER;
-        $mail->isSMTP();
-        $mail->SMTPAuth = true;
-
-        $mail->Host = "smtp.gmail.com";
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-        $mail->Port = 465;
-        $mail->Username = $_ENV["SMTP_USER"];
-        $mail->Password = $_ENV["SMTP_PASS"];
-
-        $mail->setFrom("noreply-info@kombitransfer.com", "Bojan");
-        $mail->addAddress($email, $name);
-
-        $mail->CharSet = 'UTF-8';
-        $mail->Encoding = 'base64';
-
-        $mail->isHTML(true);
-        $mail->addAttachment($path, "Kombitransfer - rezervacija: ". $new_code);
-        $mail->Subject = "Potvrda Rezervacije";
-        $mail->setLanguage('sr');
-        $mail->Body = <<<END
-
-            $template
-                        
-        END;
-
-        try {
-            $mail->send();
-        } catch (Exception $e) {
-            echo json_encode([
-                'email' => 'Došlo je do greške!',
-                'msg' => $mail->ErrorInfo
-            ]);
-        }
-    }
-
-    //------------------------------- AFTER ACTION HELPERS RELATED WITH ANOTHER CLASSES --------------------------------//
-    /*
-    public function availableDrivers($date, $tour_id) {
-        $sql = "SELECT users.id, users.name, users.status, users.email, users.phone, users.city FROM users
-                WHERE users.status = 'driver' AND
-                NOT EXISTS (SELECT 1 FROM departures WHERE driver_id = users.id AND departures.date = :date)
-                AND users.city IN 
-                (
-                    (SELECT from_city FROM tours WHERE id = :tour_id), 
-                    (SELECT to_city FROM tours WHERE id = :tour_id)
-                ) 
-                "
-        ;
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(':date', $date);
-        $stmt->bindParam(':tour_id', $tour_id);
         
         try {
-            if($stmt->execute()) {
-                $drivers = $stmt->fetchAll(PDO::FETCH_OBJ);
-                return $drivers;
-            }
-        } catch(PDOException $e) {
-            return json_encode(['message' => $e->getMessage()]);
+            $mail->isSMTP();
+            $mail->SMTPAuth = true;
+            $mail->Host = "smtp.gmail.com";
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+            $mail->Port = 465;
+            $mail->Username = $_ENV["SMTP_USER"];
+            $mail->Password = $_ENV["SMTP_PASS"];
+
+            $mail->setFrom("noreply-kombiprevoz@gmail.com", "Kombi Transfer");
+            $mail->addAddress($email, mb_substr($safeName, 0, 50));
+
+            $mail->CharSet = 'UTF-8';
+            $mail->Encoding = 'base64';
+            $mail->isHTML(true);
+            $mail->Subject = "Dodela Vožnje - " . $safeCode;
+            $mail->setLanguage('sr');
+            $mail->Body = $template;
+            
+            $mail->addAttachment($path, "Kombitransfer-voznja-" . $safeCode . ".pdf");
+
+            $mail->send();
+            
+        } catch (Exception $e) {
+            $this->logger->error('Failed to send email to driver', [
+                'email' => $email,
+                'code' => $code,
+                'error' => $e->getMessage()
+            ]);
+            
+            throw new Exception('Greška pri slanju emaila vozaču');
         }
     }
-    */
 
     public function availableDrivers($date, $tours): array {
         if (empty($tours)) return [];
@@ -1322,71 +1314,99 @@ class Order {
         }
     }
 
-
-    public function getAllByFilter($email) 
+    public function getAllByFilter(?string $email): void 
     {
-        if($this->code) return $this->getByCode();
+        // Ako ima code, pretraži samo po code-u
+        if (!empty($this->code)) {
+            $this->getByCode();
+            return;
+        }
 
-        $params = [
-            'date' => $this->date,
-            'from_city' => $this->from_city,
-            'to_city' => $this->to_city,
-            'tour_id' => $this->tour_id,
-            'email' => $email
-        ];
+        // Build WHERE clause dinamički
+        $whereClauses = ['1=1'];
+        $params = [];
 
-        $params = array_filter($params, fn($p) => !empty($p));
+        if (!empty($this->date)) {
+            $whereClauses[] = 'order_items.date = :date';
+            $params[':date'] = $this->date;
+        }
 
-        $cleaned = Validator::cleanParams($params);
+        if (!empty($this->from_city)) {
+            $whereClauses[] = 'tours.from_city = :from_city';
+            $params[':from_city'] = $this->from_city;
+        }
+
+        if (!empty($this->to_city)) {
+            $whereClauses[] = 'tours.to_city = :to_city';
+            $params[':to_city'] = $this->to_city;
+        }
+
+        if (!empty($this->tour_id)) {
+            $whereClauses[] = 'order_items.tour_id = :tour_id';
+            $params[':tour_id'] = $this->tour_id;
+        }
+
+        if (!empty($email)) {
+            $whereClauses[] = 'users.email = :email';
+            $params[':email'] = $email;
+        }
+
+        $whereClause = implode(' AND ', $whereClauses);
 
         $sql = "SELECT orders.id as order_id, order_items.id as item_id, 
-                order_items.tour_id, orders.user_id, order_items.places, tours.from_city, 
-                order_items.add_from as pickup, tours.to_city, order_items.add_to as dropoff,
+                order_items.tour_id, orders.user_id, order_items.places, 
+                tours.from_city, order_items.add_from as pickup, 
+                tours.to_city, order_items.add_to as dropoff,
                 order_items.date, order_items.price, order_items.deleted,
                 tours.time as pickuptime, tours.duration,
                 orders.total, orders.code, orders.file_path as voucher, 
-                users.name as user, users.email, users.phone, users.city as user_city
-                from order_items
-                JOIN orders on orders.id = order_items.order_id
-                JOIN tours on order_items.tour_id = tours.id
-                JOIN users on orders.user_id = users.id
-                
-                WHERE 1=1"
-        ;
-
-        if(isset($cleaned['date'])) $sql .= " AND order_items.date = :date ";
-        if(isset($cleaned['from_city'])) $sql .= " AND tours.from_city = :from_city";
-        if(isset($cleaned['to_city'])) $sql .= " AND tours.to_city = :to_city";
-        if(isset($cleaned['tour_id'])) $sql .= " AND order_items.tour_id = :tour_id";
-        if(isset($cleaned['email'])) $sql .= " AND users.email = :email";
+                users.name as user, users.email, users.phone, 
+                users.city as user_city
+                FROM order_items
+                INNER JOIN orders ON orders.id = order_items.order_id
+                INNER JOIN tours ON order_items.tour_id = tours.id
+                INNER JOIN users ON orders.user_id = users.id
+                WHERE {$whereClause}
+                ORDER BY order_items.date ASC";
 
         $stmt = $this->db->prepare($sql);
-        foreach($cleaned as $k => $v) {
-            $stmt->bindValue(':' . $k, $v);
+
+        // Bind parameters
+        foreach ($params as $key => $value) {
+            if ($key === ':tour_id') {
+                $stmt->bindValue($key, $value, PDO::PARAM_INT);
+            } else {
+                $stmt->bindValue($key, $value, PDO::PARAM_STR);
+            }
         }
 
         try {
             $stmt->execute();
             $orders = $stmt->fetchAll(PDO::FETCH_OBJ);
 
+            // Dodaj logs za svaki item
             foreach ($orders as $order) {
                 $logs = $this->logger->getOrderLogs($order->item_id);
                 $order->logs = $logs;
             }
 
-            header('Content-Type: application/json');
-            echo json_encode(['orders' => $orders, 'has_orders' => !empty($orders)], JSON_PRETTY_PRINT);
+            echo json_encode([
+                'orders' => $orders, 
+                'has_orders' => !empty($orders)
+            ], JSON_UNESCAPED_UNICODE);
+
         } catch (PDOException $e) {
-            $this->logger->error("Failed to get order_items by filters in getAllByFilter()", [
-                'user_id' => $_SESSION['user']['id'],
+            $this->logger->error('Failed in getAllByFilter', [
+                'params' => $params,
                 'error' => $e->getMessage(),
                 'file' => __FILE__,
                 'line' => __LINE__
             ]);
+
             http_response_code(500);
             echo json_encode([
-                'error' => 'Došlo je do greške pri filtriranju rezervacija!'
-            ]);
+                'error' => 'Greška pri filtriranju rezervacija'
+            ], JSON_UNESCAPED_UNICODE);
         }
     }
 
@@ -1676,76 +1696,131 @@ class Order {
         }
     }
 
-    public function getByTour(): void {
-        $sql = "SELECT orders.id, orders.tour_id, orders.user_id, orders.places, tours.from_city, 
-                orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
-                orders.date, tours.time as pickuptime, tours.duration,
-                orders.total as price, orders.code, orders.file_path as voucher, users.name as user, users.email, users.phone
-                from orders 
-                INNER JOIN tours on orders.tour_id = tours.id
-                INNER JOIN users on orders.user_id = users.id
-                WHERE orders.tour_id = '$this->tour_id' AND orders.deleted = 0"
-        ;
-        $res = $this->db->query($sql);
-        $num = $res->rowCount();
-
-        if($num > 0) {
-            $orders = [];
-            while($row = $res->fetch(PDO::FETCH_OBJ)) {
-                array_push($orders, $row);
-            }
-            echo json_encode([
-                'orders'=> $orders
-            ], JSON_PRETTY_PRINT);
-        } else
-        echo json_encode(['msg' => 'Nema rezervisanih vožnji za odabrane destinacije.'], JSON_PRETTY_PRINT);
-    }
-
-    public function getByTourAndDate() {
-        $sql = "SELECT orders.id, orders.tour_id, orders.user_id, orders.places, tours.from_city, 
-                orders.add_from as pickup, tours.to_city, orders.add_to as dropoff,
-                orders.date, tours.time as pickuptime, tours.duration,
-                orders.total as price, orders.code, orders.file_path as voucher, users.name as user, users.email, users.phone
-                from orders 
-                INNER JOIN tours on orders.tour_id = tours.id
-                INNER JOIN users on orders.user_id = users.id
-                WHERE orders.tour_id = '$this->tour_id' AND orders.date = '$this->date' AND orders.deleted = 0"
-        ;
-        $res = $this->db->query($sql);
-        $num = $res->rowCount();
-
-        if($num > 0) {
-            $drivers = $this->user->getAvailableDrivers($this->date);
-            $orders = [];
-            while($row = $res->fetch(PDO::FETCH_OBJ)) {
-                array_push($orders, $row);
-            }
-            echo json_encode([
-                'orders'=> $orders,
-                'drivers' => $drivers
-            ], JSON_PRETTY_PRINT);
-        } else
-        echo json_encode(['msg' => 'Nema rezervisanih vožnji za odabrane datume.'], JSON_PRETTY_PRINT);
-    }
-
-    public function getDriverOfTour()
+    public function getByTour(): void 
     {
+        if (empty($this->tour_id)) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Tour ID je obavezan'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $sql = "SELECT orders.id, orders.tour_id, orders.user_id, order_items.places, 
+                tours.from_city, order_items.add_from as pickup, 
+                tours.to_city, order_items.add_to as dropoff,
+                order_items.date, tours.time as pickuptime, tours.duration,
+                orders.total as price, orders.code, orders.file_path as voucher, 
+                users.name as user, users.email, users.phone
+                FROM order_items
+                INNER JOIN orders ON order_items.order_id = orders.id
+                INNER JOIN tours ON order_items.tour_id = tours.id
+                INNER JOIN users ON orders.user_id = users.id
+                WHERE order_items.tour_id = :tour_id 
+                AND orders.deleted = 0
+                AND order_items.deleted = 0
+                ORDER BY order_items.date ASC, pickuptime ASC";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':tour_id', $this->tour_id, PDO::PARAM_INT);
+
+        try {
+            $stmt->execute();
+            $orders = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+            echo json_encode([
+                'orders' => $orders,
+                'has_orders' => !empty($orders)
+            ], JSON_UNESCAPED_UNICODE);
+
+        } catch (PDOException $e) {
+            $this->logger->error('Failed in getByTour', [
+                'tour_id' => $this->tour_id,
+                'error' => $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+        }
+    }
+
+    public function getByTourAndDate(): void 
+    {
+        if (empty($this->tour_id) || empty($this->date)) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Tour ID i datum su obavezni'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $sql = "SELECT orders.id, orders.tour_id, orders.user_id, order_items.places, 
+                tours.from_city, order_items.add_from as pickup, 
+                tours.to_city, order_items.add_to as dropoff,
+                order_items.date, tours.time as pickuptime, tours.duration,
+                orders.total as price, orders.code, orders.file_path as voucher, 
+                users.name as user, users.email, users.phone
+                FROM order_items
+                INNER JOIN orders ON order_items.order_id = orders.id
+                INNER JOIN tours ON order_items.tour_id = tours.id
+                INNER JOIN users ON orders.user_id = users.id
+                WHERE order_items.tour_id = :tour_id 
+                AND order_items.date = :date 
+                AND orders.deleted = 0
+                AND order_items.deleted = 0
+                ORDER BY pickuptime ASC";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':tour_id', $this->tour_id, PDO::PARAM_INT);
+        $stmt->bindParam(':date', $this->date, PDO::PARAM_STR);
+
+        try {
+            $stmt->execute();
+            $orders = $stmt->fetchAll(PDO::FETCH_OBJ);
+            
+            // Dohvati dostupne vozače
+            $drivers = $this->user->getAvailableDrivers($this->date);
+
+            echo json_encode([
+                'orders' => $orders,
+                'drivers' => $drivers,
+                'has_orders' => !empty($orders)
+            ], JSON_UNESCAPED_UNICODE);
+
+        } catch (PDOException $e) {
+            $this->logger->error('Failed in getByTourAndDate', [
+                'tour_id' => $this->tour_id,
+                'date' => $this->date,
+                'error' => $e->getMessage()
+            ]);
+
+            http_response_code(500);
+            echo json_encode([
+                'error' => 'Greška pri pretrazi rezervacija'
+            ], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+    public function getDriverOfTour(): ?array
+    {
+        if (empty($this->order_id)) {
+            return null;
+        }
+
         $sql = "SELECT orders.id, order_items.id as item_id, order_items.tour_id, 
-                order_items.driver_id, order_items.places, order_items.deleted, tours.from_city, 
-                order_items.add_from as pickup, tours.to_city, order_items.add_to as dropoff,
+                order_items.driver_id, order_items.places, order_items.deleted, 
+                tours.from_city, order_items.add_from as pickup, 
+                tours.to_city, order_items.add_to as dropoff,
                 order_items.date, tours.time as pickuptime, tours.duration,
                 order_items.price, orders.total, orders.code, orders.file_path as voucher
-                
-                from order_items 
-                INNER JOIN orders on order_items.order_id = orders.id
-                INNER JOIN tours on order_items.tour_id = tours.id
-                
+                FROM order_items 
+                INNER JOIN orders ON order_items.order_id = orders.id
+                INNER JOIN tours ON order_items.tour_id = tours.id
                 WHERE orders.id = :id
-                ORDER BY order_items.date ASC"
-        ;
-
+                ORDER BY order_items.date ASC";
+        
         $stmt = $this->db->prepare($sql);
         $stmt->bindParam(':id', $this->order_id, PDO::PARAM_INT);
+        
         try {
             $stmt->execute();
             $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -1756,37 +1831,38 @@ class Order {
         
             $items = [];
         
-            foreach($orders as $order) {
+            foreach ($orders as $order) {
                 $driver = null;
 
-                if($order['driver_id']) {
-                    $sdr = "SELECT users.name as dr_name, users.email as dr_email, 
-                        users.phone as dr_phone 
-                        FROM users
-                        WHERE id = :driver_id";
+                if ($order['driver_id']) {
+                    $driverSql = "SELECT users.name as dr_name, users.email as dr_email, 
+                                users.phone as dr_phone 
+                                FROM users
+                                WHERE id = :driver_id AND deleted = 0";
                 
-                    $stmtDriver = $this->db->prepare($sdr);
+                    $stmtDriver = $this->db->prepare($driverSql);
                     $stmtDriver->bindParam(':driver_id', $order['driver_id'], PDO::PARAM_INT);
                     $stmtDriver->execute();
                     $driver = $stmtDriver->fetch(PDO::FETCH_ASSOC);
                 }
+                
                 $items[] = [
                     'order' => $order,
                     'driver' => $driver
                 ];
             }
             
-            return [
-                'items' => $items
-            ];
-        } catch(PDOException $e) {
-            $this->logger->error('Failed to fetch driver of tour for generate Voucher in getDriverOfTour()', [
+            return ['items' => $items];
+            
+        } catch (PDOException $e) {
+            $this->logger->error('Failed in getDriverOfTour', [
+                'order_id' => $this->order_id,
                 'error' => $e->getMessage(),
                 'file' => __FILE__,
                 'line' => __LINE__
             ]);
+            return null;
         }
-        
     }
 
     //------------------------------- FUNCTIONS OF POST METHOD --------------------------------//
@@ -2423,239 +2499,428 @@ class Order {
     }
     // REFACTOR ASSIGN DRIVER
 
-    public function assignDriverTo()
+    public function assignDriverTo(): void
     {
-        $now = time() + $this->driver->id;
-        $generated = (string)$now . "KP";
-        $new_code = substr($generated, -9);
-        $dep_date = $this->selected[0]->date;
-        
-        $pathD = $this->generateDeparture($this->selected, $new_code, $dep_date);
-
-        $dep_id = $this->departureCreate($this->driver->id, $this->tour_id, $new_code, $pathD['path'], $dep_date);
-        $this->sendOrdersToDriver($this->driver->name, $new_code, $pathD['path'], $this->driver->email);
-
-        foreach($this->selected as $ord) {
-            $sql = "UPDATE order_items SET driver_id = :driver, dep_id = :dep_id WHERE id = :id";
-            $stmt = $this->db->prepare($sql);
-
-            $this->order_id = $ord->order_id;
-            $stmt->bindParam(':driver', $this->driver->id, PDO::PARAM_INT);
-            $stmt->bindParam(':dep_id', $dep_id, PDO::PARAM_INT);
-            $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
-            
-            try {
-                if($stmt->execute()) {
-                    $updated = $this->reGenerateVoucher();
-                    $this->sendVoucher($ord->user->email, $ord->user->name, $updated['path'], $updated['code'], 'resend');
-                    $this->logger->logOrderChange($this->id, $_SESSION['user']['id'], 'Ažuriranje', 'Dodela vozača',
-                                    null, $this->driver->id);
-
-                    echo json_encode([
-                        "success" => true,
-                        "msg" => "Uspešno ste dodelili vožnje vozaču {$this->driver->name}"
-                    ], JSON_PRETTY_PRINT);
-                }
-            } catch (PDOException $e) {            
-                $this->logger->error("Failed to assign a driver to order_item with ID: $this->id", [
-                    'user_id' => $_SESSION['user']['id'],
-                    'error' => $e->getMessage(),
-                    'file' => __FILE__,
-                    'line' => __LINE__
-                ]);
-                http_response_code(500);
-                echo json_encode([
-                    'error'=> 'Došlo je do greške prilikom dodele vozača!'
-                ]);
-            } 
+        if (empty($this->selected) || empty($this->driver) || empty($this->driver->id)) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Nedostaju podaci za dodelu vozača'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
         }
-        
-    }
 
-    // END
-    public function departureCreate($driver_id, $tour_id, $code, $path, $date) 
-    {
-        $sql = "INSERT INTO departures SET driver_id = :driver_id, tour_id = :tour_id, code = :code, file_path = :path, date = :date";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(':driver_id', $driver_id);
-        $stmt->bindParam(':tour_id', $tour_id);
-        //$stmt->bindParam(':orders', $orders);
-        $stmt->bindParam(':code', $code);
-        $stmt->bindParam(':path', $path);
-        $stmt->bindParam(':date', $date);
+        // Validacija driver ID-a
+        $driverId = filter_var($this->driver->id, FILTER_VALIDATE_INT);
+        
+        if ($driverId === false) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Neispravan ID vozača'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        // Provera da li driver postoji
+        $driverCheckSql = "SELECT id, name, email FROM users 
+                        WHERE id = :id AND status = 'Driver' AND deleted = 0";
+        $driverStmt = $this->db->prepare($driverCheckSql);
+        $driverStmt->bindParam(':id', $driverId, PDO::PARAM_INT);
+        
+        try {
+            $driverStmt->execute();
+            $driverData = $driverStmt->fetch(PDO::FETCH_OBJ);
+            
+            if (!$driverData) {
+                http_response_code(404);
+                echo json_encode([
+                    'error' => 'Vozač nije pronađen'
+                ], JSON_UNESCAPED_UNICODE);
+                return;
+            }
+        } catch (PDOException $e) {
+            $this->logger->error('Failed to validate driver', [
+                'driver_id' => $driverId,
+                'error' => $e->getMessage()
+            ]);
+            
+            http_response_code(500);
+            echo json_encode([
+                'error' => 'Greška pri validaciji vozača'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        // Generiši departure code
+        $now = time() + $driverId;
+        $generated = (string)$now . "KP";
+        $dep_code = substr($generated, -9);
+        $dep_date = $this->selected[0]->date;
 
         try {
-            if($stmt->execute()) {
-                //echo json_encode(['departure' => 'Uspešno ste kreirali polazak!'], JSON_PRETTY_PRINT);
-                return $this->db->lastInsertId();
-            } 
-        }catch (PDOException $e) {
-            $this->logger->error("Failed to make a new departure", [
-                'user_id' => $_SESSION['user']['id'],
+            $this->db->beginTransaction();
+
+            // 1. Generiši PDF za vozača
+            $pathD = $this->generateDeparture($this->selected, $dep_code, $dep_date);
+
+            // 2. Kreiraj departure
+            $dep_id = $this->departureCreate(
+                $driverId, 
+                $this->tour_id, 
+                $dep_code, 
+                $pathD['path'], 
+                $dep_date
+            );
+
+            // 3. Assign driver svim order_items
+            $assignSql = "UPDATE order_items 
+                        SET driver_id = :driver_id, dep_id = :dep_id 
+                        WHERE id = :id";
+            $assignStmt = $this->db->prepare($assignSql);
+
+            foreach ($this->selected as $ord) {
+                $this->id = (int)$ord->order_item_id;
+                $this->order_id = (int)$ord->order_id;
+
+                $assignStmt->bindParam(':driver_id', $driverId, PDO::PARAM_INT);
+                $assignStmt->bindParam(':dep_id', $dep_id, PDO::PARAM_INT);
+                $assignStmt->bindParam(':id', $this->id, PDO::PARAM_INT);
+                $assignStmt->execute();
+
+                // Regeneriši voucher sa driver info
+                try {
+                    $updated = $this->reGenerateVoucher();
+                    $this->sendVoucher(
+                        $ord->user->email, 
+                        $ord->user->name, 
+                        $updated['path'], 
+                        $updated['code'], 
+                        'update'
+                    );
+                } catch (Exception $e) {
+                    $this->logger->error('Failed to send voucher in assignDriverTo', [
+                        'order_item_id' => $this->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+
+                // Log
+                $this->logger->logOrderChange(
+                    $this->id, 
+                    $_SESSION['user']['id'], 
+                    'Ažuriranje', 
+                    'Dodela vozača',
+                    'null', 
+                    (string)$driverId
+                );
+            }
+
+            $this->db->commit();
+
+            // 4. Pošalji PDF vozaču
+            try {
+                $this->sendOrdersToDriver(
+                    $driverData->name, 
+                    $dep_code, 
+                    $pathD['path'], 
+                    $driverData->email
+                );
+            } catch (Exception $e) {
+                $this->logger->error('Failed to send PDF to driver', [
+                    'driver_id' => $driverId,
+                    'dep_code' => $dep_code,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+            http_response_code(200);
+            echo json_encode([
+                'success' => true,
+                'msg' => "Uspešno ste dodelili vožnje vozaču {$driverData->name}"
+            ], JSON_UNESCAPED_UNICODE);
+
+        } catch (Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+
+            $this->logger->error('Failed to assign driver', [
+                'driver_id' => $driverId,
+                'selected_count' => count($this->selected),
                 'error' => $e->getMessage(),
                 'file' => __FILE__,
                 'line' => __LINE__
             ]);
+
+            http_response_code(500);
+            echo json_encode([
+                'error' => 'Greška pri dodeli vozača'
+            ], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+
+    // END
+    private function departureCreate(
+        int $driver_id, 
+        int $tour_id, 
+        string $code, 
+        string $path, 
+        string $date
+    ): int 
+    {
+        $sql = "INSERT INTO departures 
+                (driver_id, tour_id, code, file_path, date) 
+                VALUES (:driver_id, :tour_id, :code, :path, :date)";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':driver_id', $driver_id, PDO::PARAM_INT);
+        $stmt->bindParam(':tour_id', $tour_id, PDO::PARAM_INT);
+        $stmt->bindParam(':code', $code, PDO::PARAM_STR);
+        $stmt->bindParam(':path', $path, PDO::PARAM_STR);
+        $stmt->bindParam(':date', $date, PDO::PARAM_STR);
+
+        try {
+            $stmt->execute();
+            return (int)$this->db->lastInsertId();
+            
+        } catch (PDOException $e) {
+            $this->logger->error('Failed to create departure', [
+                'driver_id' => $driver_id,
+                'tour_id' => $tour_id,
+                'code' => $code,
+                'date' => $date,
+                'error' => $e->getMessage()
+            ]);
+            
+            throw new Exception('Greška pri kreiranju polaska');
         }
     }
 
     //------------------------------- FUNCTIONS OF DELETE METHOD --------------------------------//
 
     // DELETE order
-    public function delete()
+    public function delete(): void
     {
+        if (empty($this->id)) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'ID stavke je obavezan'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        // Učitaj podatke
         $this->getFromDB($this->id);
-        $sql = "UPDATE order_items SET deleted = 1 WHERE id = :id";
-        $stmt = $this->db->prepare($sql);
+        
+        if (!$this->order_id) {
+            http_response_code(404);
+            echo json_encode([
+                'error' => 'Stavka nije pronađena'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
 
-        $stmt->bindParam(":id", $this->id);
         try {
-            if($stmt->execute()) {
-                // Check if the departure has at leas one active item:
-                $depSql = "UPDATE departures SET deleted = 1 WHERE id = :dep_id
-                            AND NOT EXISTS ( SELECT 1 FROM order_items 
-                            WHERE dep_id = departures.id AND deleted = 0)
-                ";
-                $stmt = $this->db->prepare($depSql);
-                $stmt->bindParam(':dep_id', $this->dep_id);
-                $stmt->execute();
+            $this->db->beginTransaction();
 
-                // Check if the order has at leas one active item:
+            // 1. Obriši order_item
+            $sql = "UPDATE order_items SET deleted = 1 WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
+            $stmt->execute();
+
+            // 2. Proveri da li departure ima još aktivnih items
+            if ($this->dep_id) {
+                $depCheckSql = "SELECT COUNT(*) as active_count 
+                                FROM order_items 
+                                WHERE dep_id = :dep_id 
+                                AND deleted = 0";
                 
-                $ordSql = "UPDATE orders SET deleted = 1 WHERE id = :order_id
-                            AND NOT EXISTS ( SELECT 1 FROM order_items 
-                            WHERE order_id = orders.id AND deleted = 0)
-                ";
-                $stmt = $this->db->prepare($ordSql);
-                $stmt->bindParam(':order_id', $this->order_id);
-                $stmt->execute();
+                $depStmt = $this->db->prepare($depCheckSql);
+                $depStmt->bindParam(':dep_id', $this->dep_id, PDO::PARAM_INT);
+                $depStmt->execute();
+                $depResult = $depStmt->fetch(PDO::FETCH_OBJ);
 
-                $this->updateTotalPrice();
-
-                $this->logger->logOrderChange($this->id, $_SESSION['user']['id'], 'Otkazivanje', 
-                    'deleted', 0, 1);
-
-                echo json_encode([
-                    "success" => true,
-                    "msg" => 'Uspešno ste obrisali vožnju!'
-                ], JSON_PRETTY_PRINT);
-            } else {
-                http_response_code(422);
-                echo json_encode(["error" => 'Trenutno nije moguće obrisati ovu rezervaciju!']);
+                // Ako nema više aktivnih items, obriši departure
+                if ($depResult && (int)$depResult->active_count === 0) {
+                    $depDeleteSql = "UPDATE departures SET deleted = 1 WHERE id = :dep_id";
+                    $depDeleteStmt = $this->db->prepare($depDeleteSql);
+                    $depDeleteStmt->bindParam(':dep_id', $this->dep_id, PDO::PARAM_INT);
+                    $depDeleteStmt->execute();
+                }
             }
+
+            // 3. Proveri da li order ima još aktivnih items
+            $ordCheckSql = "SELECT COUNT(*) as active_count 
+                            FROM order_items 
+                            WHERE order_id = :order_id 
+                            AND deleted = 0";
+            
+            $ordStmt = $this->db->prepare($ordCheckSql);
+            $ordStmt->bindParam(':order_id', $this->order_id, PDO::PARAM_INT);
+            $ordStmt->execute();
+            $ordResult = $ordStmt->fetch(PDO::FETCH_OBJ);
+
+            // Ako nema više aktivnih items, obriši order
+            if ($ordResult && (int)$ordResult->active_count === 0) {
+                $ordDeleteSql = "UPDATE orders SET deleted = 1 WHERE id = :order_id";
+                $ordDeleteStmt = $this->db->prepare($ordDeleteSql);
+                $ordDeleteStmt->bindParam(':order_id', $this->order_id, PDO::PARAM_INT);
+                $ordDeleteStmt->execute();
+            } else {
+                // Ažuriraj total price
+                $this->updateTotalPrice();
+            }
+
+            $this->db->commit();
+
+            // Log
+            $this->logger->logOrderChange(
+                $this->id, 
+                $_SESSION['user']['id'], 
+                'Otkazivanje', 
+                'deleted', 
+                '0', 
+                '1'
+            );
+
+            http_response_code(200);
+            echo json_encode([
+                'success' => true,
+                'msg' => 'Uspešno ste obrisali vožnju'
+            ], JSON_UNESCAPED_UNICODE);
+
         } catch (PDOException $e) {
-            $this->logger->error("Failed to delete order_item with ID: $this->id", [
+            $this->db->rollBack();
+            
+            $this->logger->error('Failed to delete order_item', [
+                'order_item_id' => $this->id,
                 'user_id' => $_SESSION['user']['id'],
                 'error' => $e->getMessage(),
                 'file' => __FILE__,
                 'line' => __LINE__
             ]);
+
             http_response_code(500);
-            echo json_encode(['error'=> 'Došlo je do greške pri brisanju vožnje.']);
+            echo json_encode([
+                'error' => 'Greška pri brisanju vožnje'
+            ], JSON_UNESCAPED_UNICODE);
         }
     }
 
-    // RESTORE order - only Admin
-
-    public function restore() 
+    // RESTORE deleted order
+    public function restore(): void 
     {   
+        if (empty($this->id)) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'ID stavke je obavezan'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
         $order = $this->getFromDB($this->id);
 
-        if($order) {
-            if($this->places <= $this->availability($this->date) && ($this->isUnlocked($this->date) || Validator::isSuper() || Validator::isAdmin())) {
-                $sql = "UPDATE order_items SET deleted = 0 WHERE id = :id";
-                $stmt = $this->db->prepare($sql);
+        if (!$order) {
+            http_response_code(404);
+            echo json_encode([
+                'error' => 'Stavka nije pronađena ili je trajno obrisana'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
 
-                $stmt->bindParam(":id", $this->id);
-                try {
-                    if($stmt->execute()) {
-                        $ordSql = "UPDATE orders SET deleted = 0 WHERE id = :order_id
-                            AND EXISTS ( SELECT 1 FROM order_items 
-                            WHERE order_id = orders.id AND deleted = 0)
-                        ";
-                        $stmt = $this->db->prepare($ordSql);
-                        $stmt->bindParam(':order_id', $this->order_id);
-                        $stmt->execute();
+        // Provera dostupnosti
+        $available = $this->availability($this->date);
+        
+        if ($this->places > $available) {
+            http_response_code(422);
+            echo json_encode([
+                'error' => "Nema dovoljno mesta za reaktiviranje. Dostupno: {$available}"
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
 
-                        $this->updateTotalPrice();
+        // Provera datuma (mora biti u budućnosti ili admin override)
+        if (!$this->isUnlocked($this->date) 
+            && !Validator::isSuper() 
+            && !Validator::isAdmin()) {
+            http_response_code(422);
+            echo json_encode([
+                'error' => 'Datum vožnje je prošao, nije moguće reaktivirati'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
 
-                        $mydata = $this->reGenerateVoucher();
-                        $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
+        try {
+            $this->db->beginTransaction();
 
-                        $this->logger->logOrderChange($this->id, $_SESSION['user']['id'], 'Ponovno aktiviranje', 
-                        'deleted', 1, 0);
+            // 1. Reaktiviraj order_item
+            $sql = "UPDATE order_items SET deleted = 0 WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
+            $stmt->execute();
 
-                        echo json_encode([
-                            'success' => true,
-                            "msg" => 'Uspešno ste aktivirali rezervaciju!'
-                        ], JSON_PRETTY_PRINT);
-                    } else {
-                        http_response_code(422);
-                        echo json_encode(["error" => 'Trenutno nije moguće aktivirati ovu rezervaciju!']);
-                    } 
-                } catch(PDOException $e) {
-                    $this->logger->error("Failed to delete order_item with ID: $this->id", [
-                        'user_id' => $_SESSION['user']['id'],
-                        'error' => $e->getMessage(),
-                        'file' => __FILE__,
-                        'line' => __LINE__
-                    ]);
-                    http_response_code(500);
-                    echo json_encode(['error'=> 'Došlo je do greške pri reaktiviranju rezervacije.']);
-                }
-            } else {
-                http_response_code(422);
-                echo json_encode([
-                    'success' => false,
-                    "error" => 'Nema više slobodnih mesta za datum ove rezervacije, te je ne možemo aktivirati.'
+            // 2. Reaktiviraj order ako je bio obrisan
+            $ordSql = "UPDATE orders SET deleted = 0 WHERE id = :order_id";
+            $ordStmt = $this->db->prepare($ordSql);
+            $ordStmt->bindParam(':order_id', $this->order_id, PDO::PARAM_INT);
+            $ordStmt->execute();
+
+            // 3. Ažuriraj total price
+            $this->updateTotalPrice();
+
+            $this->db->commit();
+
+            // Regeneriši voucher i pošalji email
+            try {
+                $mydata = $this->reGenerateVoucher();
+                $this->sendVoucher(
+                    $mydata['email'], 
+                    $mydata['name'], 
+                    $mydata['path'], 
+                    $this->code, 
+                    'update'
+                );
+            } catch (Exception $e) {
+                $this->logger->error('Failed to send voucher after restore', [
+                    'order_item_id' => $this->id,
+                    'error' => $e->getMessage()
                 ]);
             }
-        } else
-            echo json_encode(["msg" => 'Ova rezervacija je izbrisana iz naše baze, pokušajte da kreirate novu.']);
+
+            // Log
+            $this->logger->logOrderChange(
+                $this->id, 
+                $_SESSION['user']['id'], 
+                'Ponovno aktiviranje', 
+                'deleted', 
+                '1', 
+                '0'
+            );
+
+            http_response_code(200);
+            echo json_encode([
+                'success' => true,
+                'msg' => 'Uspešno ste aktivirali rezervaciju'
+            ], JSON_UNESCAPED_UNICODE);
+
+        } catch (PDOException $e) {
+            $this->db->rollBack();
+            
+            $this->logger->error('Failed to restore order_item', [
+                'order_item_id' => $this->id,
+                'user_id' => $_SESSION['user']['id'],
+                'error' => $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+
+            http_response_code(500);
+            echo json_encode([
+                'error' => 'Greška pri reaktiviranju rezervacije'
+            ], JSON_UNESCAPED_UNICODE);
+        }
     }
 }
 
-
-/**
- 
-    PUT
-    
-    "user": {
-        "id": 10,
-        "email": "pininfarina164@gmail.com"
-    },
-    "orders": {
-        "update": {
-            "order_id": 83,
-            "tour_id": 1,
-            "user_id": 10,
-            "places": 2,
-            "add_from": "Gavrila Principa 9",
-            "add_to": "Primorska 18",
-            "date": "2025-07-14",
-            "price": null
-        },
-        "address": {
-            "add_from": "Jevrejska 9",
-            "add_to": "Mornarska 18"
-        },
-        "new_places": 3,
-        "reschedule": null
-    }
-
-    DELETE
-
-    "orders": {
-        "delete": {
-            "order_id": 83
-        }
-    }
-
-    "orders": {
-        "restore": {
-            "order_id": 83
-        }
-    }
-
- */
 ?>
