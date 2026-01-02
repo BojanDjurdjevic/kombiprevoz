@@ -869,33 +869,36 @@ class User {
 
                         if ($currentUser->city !== $this->city) {
                             $logger->logUserChange($this->id, $_SESSION['user']['id'],
-                            'update', 'city', $currentUser->city, $this->name);
+                            'update', 'city', $currentUser->city, $this->city);
                         }
                         if ($currentUser->address !== $this->address) {
                             $logger->logUserChange($this->id, $_SESSION['user']['id'], 
-                            'update', 'address', $currentUser->address, $this->email);
+                            'update', 'address', $currentUser->address, $this->address);
                         }
                         if ($currentUser->phone !== $this->phone) {
                             $logger->logUserChange($this->id, $_SESSION['user']['id'], 
                             'update', 'phone', $currentUser->phone, $this->status);
                         }
-
+                        /*
                         $splited = explode(" ", $this->name);
                         $arr = [];
                         foreach($splited as $s) {
                             array_push($arr, mb_strtoupper(mb_substr($s, 0,1, "UTF-8")));
                         }
-                        $initials = implode("", $arr);
+                        $initials = implode("", $arr); */
+
+                        session_regenerate_id(true);
 
                         $logedUser = [
-                            'id' => $this->id,
+                            'id' => (int) $this->id, 
                             'name' => $this->name,
                             'email' => $this->email,
                             'status' => $_SESSION['user']['status'],
                             'city' => $this->city,
                             "address" => $this->address,
                             'phone' => $this->phone,
-                            'initials' => $initials
+                            'is_demo' => (bool) $currentUser->is_demo,
+                            'initials' => $this->generateInitials((string) $this->name)
                         ];
                         $_SESSION['user'] = $logedUser;
 
