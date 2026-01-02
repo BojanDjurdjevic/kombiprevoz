@@ -342,45 +342,51 @@ class Order {
 
     //------------------------------- FUNCTIONS AFTER THE ACTION ------------------------------//
 
-    public function updateTotalPrice(): ?int 
+    public function updateTotalPrice(): int 
     {
-        $find = "SELECT SUM(price) as total FROM order_items WHERE order_id = :order_id";
+        if (empty($this->order_id)) {
+            throw new Exception('Order ID nije setovan');
+        }
+
+        // Count total from items
+        $findSql = "SELECT COALESCE(SUM(price), 0) as total 
+                    FROM order_items 
+                    WHERE order_id = :order_id 
+                    AND deleted = 0";
         
-        $stmtF = $this->db->prepare($find);
+        $stmtF = $this->db->prepare($findSql);
         $stmtF->bindParam(':order_id', $this->order_id, PDO::PARAM_INT);
-        $total = 0;
+        
         try {
             $stmtF->execute();
-            $t = $stmtF->fetch(PDO::FETCH_OBJ);
-            if($t) {
-                $total = $t->total;
-            }
-        } catch(PDOException $e) {
-            $this->logger->error('Failed in updateTotalPrice()', [
-                'error' => $e->getMessage(),
-                'file' => __FILE__,
-                'line' => __LINE__
+            $result = $stmtF->fetch(PDO::FETCH_OBJ);
+            $total = $result ? (int)$result->total : 0;
+            
+        } catch (PDOException $e) {
+            $this->logger->error('Failed to calculate total in updateTotalPrice', [
+                'order_id' => $this->order_id,
+                'error' => $e->getMessage()
             ]);
-            return null;
+            throw $e;
         }
-        $sql = "UPDATE orders SET total = :total WHERE id = :id";
-        $stmt = $this->db->prepare($sql);
-        //
-        $params = [
-            ':total' => $total,
-            ':id' => $this->order_id
-        ];
+
+        // Update orders
+        $updateSql = "UPDATE orders SET total = :total WHERE id = :id";
+        $updateStmt = $this->db->prepare($updateSql);
+        $updateStmt->bindParam(':total', $total, PDO::PARAM_INT);
+        $updateStmt->bindParam(':id', $this->order_id, PDO::PARAM_INT);
 
         try {
-            $stmt->execute(Validator::cleanParams($params));
+            $updateStmt->execute();
             return $total;
+            
         } catch (PDOException $e) {
-            $this->logger->error('Failed in updateTotalPrice()', [
-                'error' => $e->getMessage(),
-                'file' => __FILE__,
-                'line' => __LINE__
+            $this->logger->error('Failed to update total price', [
+                'order_id' => $this->order_id,
+                'total' => $total,
+                'error' => $e->getMessage()
             ]);
-            return null;
+            throw $e;
         }
     }
 
@@ -1785,156 +1791,227 @@ class Order {
 
     //------------------------------- FUNCTIONS OF POST METHOD --------------------------------//
 
-    public function create() 
+    public function create(): void 
     {
-        $this->db->beginTransaction();
+        if (empty($this->items->create) || !is_array($this->items->create)) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Nedostaju stavke rezervacije'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
 
+        // Validacija user_id
+        $this->user_id = (int)$this->items->create[0]->user_id;
+        
+        if ($this->user_id <= 0) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Neispravan ID korisnika'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        // Provera da li user postoji
+        $userCheckSql = "SELECT id FROM users WHERE id = :user_id AND deleted = 0";
+        $userStmt = $this->db->prepare($userCheckSql);
+        $userStmt->bindParam(':user_id', $this->user_id, PDO::PARAM_INT);
+        
         try {
-            $sql = "INSERT INTO orders SET
-                    user_id = :user_id, total = :total, code = :code, file_path = :pdf
-            ";
-            $stmt = $this->db->prepare($sql); 
+            $userStmt->execute();
+            if (!$userStmt->fetch()) {
+                http_response_code(404);
+                echo json_encode([
+                    'error' => 'Korisnik nije pronađen'
+                ], JSON_UNESCAPED_UNICODE);
+                return;
+            }
+        } catch (PDOException $e) {
+            $this->logger->error('Failed to validate user in create()', [
+                'user_id' => $this->user_id,
+                'error' => $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
             
-            $this->user_id = $this->items->create[0]->user_id;
-            $now = time() + $this->user_id;
-            $generated = (string)$now . "KP";
-            $new_code = substr($generated, -9);
-            $file_path = "src/assets/pdfs/". $new_code . ".pdf";
-            $total = 0; 
-            foreach($this->items->create as $item) {
-                $total = $total + $item->price;
+            http_response_code(500);
+            echo json_encode([
+                'error' => 'Greška pri validaciji korisnika'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        // Generisanje koda rezervacije
+        $now = time() + $this->user_id;
+        $generated = (string)$now . "KP";
+        $new_code = substr($generated, -9);
+        $file_path = "src/assets/pdfs/" . $new_code . ".pdf";
+
+        // Izračunavanje ukupne cene
+        $total = 0; 
+        foreach ($this->items->create as $item) {
+            $itemPrice = self::totalPrice($this->db, (int)$item->tour_id, (int)$item->places);
+            
+            if ($itemPrice === null) {
+                http_response_code(400);
+                echo json_encode([
+                    'error' => 'Nevalidna tura ili broj mesta'
+                ], JSON_UNESCAPED_UNICODE);
+                return;
+            }
+            
+            $total += $itemPrice;
+        }
+
+        // TRANSACTION START sa LOCKING
+        try {
+            $this->db->beginTransaction();
+            
+            // 1. INSERT u orders tabelu
+            $orderSql = "INSERT INTO orders (user_id, total, code, file_path) 
+                        VALUES (:user_id, :total, :code, :pdf)";
+            
+            $orderStmt = $this->db->prepare($orderSql);
+            $orderStmt->bindParam(':user_id', $this->user_id, PDO::PARAM_INT);
+            $orderStmt->bindParam(':total', $total, PDO::PARAM_INT);
+            $orderStmt->bindParam(':code', $new_code, PDO::PARAM_STR);
+            $orderStmt->bindParam(':pdf', $file_path, PDO::PARAM_STR);
+            
+            $orderStmt->execute();
+            $this->id = (int)$this->db->lastInsertId();
+            
+            // 2. INSERT svih order_items SA ROW LOCKING
+            foreach ($this->items->create as $item) {
+                $this->tour_id = (int)$item->tour_id;
+                $this->date = $item->date;
+                $this->places = (int)$item->places;
+                $this->add_from = $item->add_from;
+                $this->add_to = $item->add_to;
+
+                // Validacija datuma
+                if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->date)) {
+                    throw new Exception('Neispravan format datuma: ' . $this->date);
+                }
+
+                // LOCK ROW - provera dostupnosti sa FOR UPDATE
+                $lockSql = "SELECT COALESCE(SUM(oi.places), 0) as occupied, t.seats 
+                            FROM tours t
+                            LEFT JOIN order_items oi ON oi.tour_id = t.id 
+                                AND oi.date = :date
+                            LEFT JOIN orders o ON oi.order_id = o.id 
+                                AND o.deleted = 0
+                            WHERE t.id = :tour_id 
+                            AND t.deleted = 0
+                            FOR UPDATE"; 
+                
+                $lockStmt = $this->db->prepare($lockSql);
+                $lockStmt->bindParam(':date', $this->date, PDO::PARAM_STR);
+                $lockStmt->bindParam(':tour_id', $this->tour_id, PDO::PARAM_INT);
+                $lockStmt->execute();
+                
+                $availability = $lockStmt->fetch(PDO::FETCH_OBJ);
+                
+                if (!$availability) {
+                    throw new Exception("Tura sa ID {$this->tour_id} ne postoji");
+                }
+
+                $availableSeats = (int)$availability->seats - (int)$availability->occupied;
+
+                // Provera dostupnosti
+                if ($this->places > $availableSeats) {
+                    throw new Exception("Nema dovoljno mesta. Dostupno: {$availableSeats}");
+                }
+
+                // Provera departure day
+                if (!$this->isDeparture($this->date)) {
+                    throw new Exception("Nema polazaka za datum: {$this->date}");
+                }
+
+                // Provera unlock (25h minimum)
+                if (!$this->isUnlocked($this->date)) {
+                    throw new Exception("Rezervacija mora biti najmanje 25h unapred");
+                }
+
+                // total price
+                $this->price = self::totalPrice($this->db, $this->tour_id, $this->places);
+                
+                if ($this->price === null) {
+                    throw new Exception("Greška pri računanju cene");
+                }
+
+                // INSERT order_item
+                $itemSql = "INSERT INTO order_items 
+                            (order_id, tour_id, places, add_from, add_to, date, price) 
+                            VALUES (:order_id, :tour_id, :places, :add_from, :add_to, :date, :price)";
+                
+                $itemStmt = $this->db->prepare($itemSql);
+                $itemStmt->bindParam(':order_id', $this->id, PDO::PARAM_INT);
+                $itemStmt->bindParam(':tour_id', $this->tour_id, PDO::PARAM_INT);
+                $itemStmt->bindParam(':places', $this->places, PDO::PARAM_INT);
+                $itemStmt->bindParam(':add_from', $this->add_from, PDO::PARAM_STR);
+                $itemStmt->bindParam(':add_to', $this->add_to, PDO::PARAM_STR);
+                $itemStmt->bindParam(':date', $this->date, PDO::PARAM_STR);
+                $itemStmt->bindParam(':price', $this->price, PDO::PARAM_INT);
+                
+                $itemStmt->execute();
             }
 
-            $params = [
-                ':user_id' => $this->user_id,
-                ':total' => $total,
-                ':code' => $new_code,
-                ':pdf' => $file_path
-            ];
-
-            try {
-                try {
-                    $stmt->execute(Validator::cleanParams($params));
-                } catch (PDOException $e) {
-                    throw new Error($e->getMessage() . " / " . Validator::cleanParams($params));
-                }
-                $this->id = (int)$this->db->lastInsertId();
-                
-                foreach($this->items->create as $item) {
-                    $this->add_from = $item->add_from;
-                    $this->add_to = $item->add_to;
-                    $this->tour_id = $item->tour_id;
-                    $this->date = $item->date;
-                    $this->places = $item->places;
-
-                    if($this->places <= $this->availability($this->date)) {
-                        if($this->isDeparture($this->date)) {
-                            if($this->isUnlocked($this->date)) {
-                                
-                                $sql = "INSERT INTO order_items SET
-                                        order_id = :order_id, tour_id = :tour_id, places = :places,
-                                        add_from = :add_from, add_to = :add_to, date = :date, price = :price
-                                ";
-                                $stmt = $this->db->prepare($sql);
-                                /* NEPOTREBNO
-                                $this->add_from = htmlspecialchars(strip_tags($this->add_from));
-                                $this->add_to = htmlspecialchars(strip_tags($this->add_to));
-                                $this->date = htmlspecialchars(strip_tags($this->date));
-                                $this->price = $this->totalPrice($this->db, $this->tour_id, $this->places);
-                                */
-                                if($this->price != null) {
-                                    $stmt->bindParam(':order_id', $this->id);
-                                    $stmt->bindParam(':tour_id', $this->tour_id);
-                                    //$stmt->bindParam(':user_id', $this->user_id);
-                                    $stmt->bindParam(':places', $this->places);
-                                    $stmt->bindParam(':add_from', $this->add_from);
-                                    $stmt->bindParam(':add_to', $this->add_to);
-                                    $stmt->bindParam(':date', $this->date);
-                                    $stmt->bindParam(':price', $this->price);
-                                    // voucher
-                                    //$mydata = $this->generateVoucher($new_code, $this->places, $this->add_from, $this->add_to, $this->date, $this->price);
-                                    //
-                                    //$stmt->bindParam(':pdf', $mydata['path']);
-
-                                    try {
-                                        /*
-                                        //$this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $new_code, 'create');
-                                        http_response_code(200);
-                                        echo json_encode([
-                                            'success' => true,
-                                            'msg' => "Uspešno ste rezervisali vožnju. Vaš broj rezervacije je: {$new_code}"
-                                        ], JSON_PRETTY_PRINT); */
-                                        $stmt->execute();
-                                        
-                                    }
-                                    catch (PDOException $e) { /*
-                                        http_response_code(422);
-                                        echo json_encode([
-                                            'error' => 'Trenutno nije moguće rezervisati ovu vožnju.'
-                                        ], JSON_PRETTY_PRINT); */
-                                        throw new Exception($e->getMessage());
-                                    } 
-                                } else { /*
-                                    http_response_code(422);
-                                    echo json_encode(['error' => 'Trenutno nije moguće rezervisati ovu vožnju. 
-                                                        Nolimo Vas da se obratite našem centru za podršku!'], JSON_PRETTY_PRINT); */
-                                    throw new Exception('Trenutno nije moguće rezervisati ovu vožnju. 
-                                                        Nolimo Vas da se obratite našem centru za podršku!');
-                                } 
-                            } else { /*
-                                http_response_code(422);
-                                echo json_encode(['error' => 'Žao nam je, do vožnje mora biti rezervisna najmanje 25 sati pre polaska.']); */
-                                throw new Exception('Žao nam je, do vožnje mora biti rezervisna najmanje 25 sati pre polaska.');
-                            }
-                        } else { /*
-                            http_response_code(422);
-                            echo json_encode(['error' => 'Žao nam je, ali nemamo polaske na birani datum.']); */
-                            throw new Exception('Žao nam je, ali nemamo polaske na birani datum.');
-                        }
-                    } else { /*
-                        http_response_code(422);
-                        echo json_encode(['error' => 'Žao nam je, ali nema više slobodnih mesta za ovu vožnju.']); */
-                        throw new Exception('Žao nam je, ali nema više slobodnih mesta za ovu vožnju.');
-                    }
-                }
-
-            } catch(PDOException $e) { /*
-                http_response_code(500);
-                return json_encode([
-                    'error' => 'Došlo je do greške pri konekciji na bazu podataka',
-                    'errMsg' => $e->getMessage() 
-                ], JSON_PRETTY_PRINT); */
-                throw new Exception($e->getMessage());
-            }      
-            
+            // COMMIT transaction
             $this->db->commit();
-            // Update total price
-            $total = $this->updateTotalPrice();
-            //generate Voucher
-            $mydata = $this->generateVoucher($total);
-            // Email
-            $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $mydata['code'], 'create');
 
-            return json_encode([
+            // Generate and send voucher
+            try {
+                $mydata = $this->generateVoucher($total);
+                $this->sendVoucher(
+                    $mydata['email'], 
+                    $mydata['name'], 
+                    $mydata['path'], 
+                    $mydata['code'], 
+                    'create'
+                );
+            } catch (Exception $e) {
+                $this->logger->error('Failed to generate/send voucher', [
+                    'order_id' => $this->id,
+                    'code' => $new_code,
+                    'error' => $e->getMessage(),
+                    'file' => __FILE__,
+                    'line' => __LINE__
+                ]);
+            }
+
+            // SUCCESS response
+            http_response_code(200);
+            echo json_encode([
                 'success' => true,
-                'msg' => "Uspešno ste rezervisali vožnju. Vaš broj rezervacije je: {$new_code}"
-            ], JSON_PRETTY_PRINT); 
+                'msg' => "Uspešno ste rezervisali vožnju. Vaš broj rezervacije je: {$new_code}",
+                'code' => $new_code
+            ], JSON_UNESCAPED_UNICODE);
 
-        } catch(Exception $e) {
-            $this->db->rollBack();
+        } catch (Exception $e) {
+            // ROLLBACK 
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+
+            $this->logger->error('Order creation failed', [
+                'user_id' => $this->user_id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+
             http_response_code(422);
-            return json_encode([
+            echo json_encode([
                 'success' => false,
-                'error' => 'Nije prošlo sve. '. "/ " . $e->getMessage()
-            ], JSON_PRETTY_PRINT);
+                'error' => $e->getMessage()
+            ], JSON_UNESCAPED_UNICODE);
         }
-        
     }
 
     //------------------------------- FUNCTIONS OF PUT METHOD --------------------------------// 
-    public function updateAddress()
+    public function updateAddress(): array
     {
-        // Ako nema šta da se ažurira
         if (empty($this->new_add_from) && empty($this->new_add_to)) {
             return ['msg' => '']; 
         }
@@ -1943,34 +2020,38 @@ class Order {
             return ['error' => 'Molimo unesite obe adrese (polazak i dolazak)'];
         }
 
-        $sql = "UPDATE order_items SET add_from = :add_from, add_to = :add_to WHERE id = :id";
+        $sql = "UPDATE order_items 
+                SET add_from = :add_from, add_to = :add_to 
+                WHERE id = :id";
+        
         $stmt = $this->db->prepare($sql);
-
-        $stmt->bindParam(":id", $this->id, PDO::PARAM_INT);
-        $stmt->bindParam(':add_from', $this->new_add_from);
-        $stmt->bindParam(':add_to', $this->new_add_to);
+        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
+        $stmt->bindParam(':add_from', $this->new_add_from, PDO::PARAM_STR);
+        $stmt->bindParam(':add_to', $this->new_add_to, PDO::PARAM_STR);
 
         try {
-            if ($stmt->execute()) {
+            $stmt->execute();
+            
+            if ($stmt->rowCount() > 0) {
                 $this->logger->logOrderChange(
                     $this->id, 
                     $_SESSION['user']['id'], 
                     'Ažuriranje', 
                     'Adresa od/do', 
-                    "Polazak: $this->add_from / Dolazak: $this->add_to", 
-                    "Polazak: $this->new_add_from / Dolazak: $this->new_add_to"
+                    "Polazak: {$this->add_from} / Dolazak: {$this->add_to}", 
+                    "Polazak: {$this->new_add_from} / Dolazak: {$this->new_add_to}"
                 );
                 
                 return [
                     'success' => true,
                     'msg' => 'Uspešno ste izmenili adrese rezervacije.'
                 ];
-            } else {
-                return ['error' => 'Nije moguće ažurirati adrese'];
             }
             
+            return ['error' => 'Nije moguće ažurirati adrese'];
+            
         } catch (PDOException $e) {
-            $this->logger->error("Failed to update addresses", [
+            $this->logger->error('Failed to update addresses', [
                 'user_id' => $_SESSION['user']['id'],
                 'order_item_id' => $this->id,
                 'error' => $e->getMessage(),
@@ -1982,147 +2063,83 @@ class Order {
         }
     }
 
-    /*
-    public function updateAddress()
-    {
-        if(empty($this->new_add_from) && empty($this->new_add_to) && 
-        (!empty($this->newPlaces) || !empty($this->newDate || !empty($this->newDateIn)))) {
-            return ['msg' => ''];
-        }
-
-        $sql = "UPDATE order_items SET add_from = :add_from, add_to = :add_to
-                WHERE id = :id"
-        ;
-        $stmt = $this->db->prepare($sql);
-
-        $stmt->bindParam(":id", $this->id, PDO::PARAM_INT);
-        $stmt->bindParam('add_from', $this->new_add_from);
-        $stmt->bindParam('add_to', $this->new_add_to);
-
-        if(!empty($this->new_add_from) && !empty($this->new_add_to)) {
-            try {
-                if($stmt->execute()) {
-                    $this->logger->logOrderChange($this->id, $_SESSION['user']['id'], 'Ažuriranje', 
-                            'Adresa od/do', "Polazak: $this->add_from / Dolazak: $this->add_to", 
-                            "Polazak: $this->new_add_from / Dolazak: $this->new_add_to");
-                    return [
-                        "success" => true,
-                        "msg" => 'Uspešno ste izmenili adresu/adrese rezervacije!',
-                    ];
-                } 
-            } catch (PDOException $e) {
-                $this->logger->error("Failed to update addresses", [
-                    'user_id' => $_SESSION['user']['id'],
-                    'error' => $e->getMessage(),
-                    'file' => __FILE__,
-                    'line' => __LINE__
-                ]);
-                return [
-                    'error' => 'Došlo je do greške pri konekciji na bazu podataka.'
-                ];
-            }
-            
-        } else { 
-            return ["error" => 'Molimo Vas da unesete validne adrese!'];
-        }           
-    }
-
-    // Update ONLY number of places:
-    
-    public function updatePlaces() 
-    {
-        $this->getFromDB($this->id);
-        if($this->newPlaces - $this->places <= $this->availability($this->date)) {
-            $sql = "UPDATE order_items SET places = :places, price = :total WHERE id = :id";
-            $stmt = $this->db->prepare($sql);
-
-            $new_total = $this->totalPrice($this->db, $this->tour_id, $this->newPlaces);
-
-            $stmt->bindParam(':places', $this->newPlaces);
-            $stmt->bindParam(':total', $new_total);
-            $stmt->bindParam(':id', $this->id);
-            try {
-                if($stmt->execute()) {
-                    $this->updateTotalPrice();
-                    $mydata = $this->reGenerateVoucher();
-                    $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update'); 
-                    $this->logger->logOrderChange($this->id, $_SESSION['user']['id'], 'Ažuriranje',
-                            'Broj mesta', $this->places, $this->newPlaces);
-                    return [
-                        "success" => true,
-                        "msg" => "Uspešno ste izmenili broj mesta u rezervaciji na {$this->newPlaces}."
-                    ];
-                } else { 
-                    return ["error" => 'Trenutno nije moguće izmeniti ovu rezervaciju!'];
-                } 
-            } catch (PDOException $e) {
-                $this->logger->error("Failed to update places", [
-                    'user_id' => $_SESSION['user']['id'],
-                    'error' => $e->getMessage(),
-                    'file' => __FILE__,
-                    'line' => __LINE__
-                ]);
-                return [
-                    'error' => 'Došlo je do greške pri konekciji na bazu podataka.'
-                ];
-            } 
-        } else {
-            return [
-                "error" => "Nema dovoljno slobodnih mesta da biste izvršili izmenu!",
-                "available" => $this->availability($this->date) + $this->places
-            ];
-        }
-    }
-        */
-
-    public function updatePlaces() 
+    public function updatePlaces(): array 
     {
         $this->getFromDB($this->id);
         
-        // Proveri dostupnost
+        if ($this->newPlaces <= 0) {
+            return ['error' => 'Broj mesta mora biti veći od 0'];
+        }
+        
+        // Provera dostupnosti
         $diff = $this->newPlaces - $this->places;
+        $available = $this->availability($this->date);
         
-        if ($diff > $this->availability($this->date)) {
+        if ($diff > $available) {
             return [
-                'error' => "Nema dovoljno slobodnih mesta. Dostupno: " . ($this->availability($this->date) + $this->places)
+                'error' => "Nema dovoljno mesta. Dostupno: " . ($available + $this->places)
             ];
         }
 
-        $sql = "UPDATE order_items SET places = :places, price = :total WHERE id = :id";
+        $sql = "UPDATE order_items 
+                SET places = :places, price = :total 
+                WHERE id = :id";
+        
         $stmt = $this->db->prepare($sql);
 
-        $new_total = $this->totalPrice($this->db, $this->tour_id, $this->newPlaces);
+        $new_total = self::totalPrice($this->db, $this->tour_id, $this->newPlaces);
+        
+        if ($new_total === null) {
+            return ['error' => 'Greška pri računanju nove cene'];
+        }
 
         $stmt->bindParam(':places', $this->newPlaces, PDO::PARAM_INT);
-        $stmt->bindParam(':total', $new_total);
+        $stmt->bindParam(':total', $new_total, PDO::PARAM_INT);
         $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
         
         try {
-            if ($stmt->execute()) {
+            $stmt->execute();
+            
+            if ($stmt->rowCount() > 0) {
+                // Update total price u orders
                 $this->updateTotalPrice();
                 
-                $mydata = $this->reGenerateVoucher();
-                $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update'); 
+                // Regeneriši voucher
+                try {
+                    $mydata = $this->reGenerateVoucher();
+                    $this->sendVoucher(
+                        $mydata['email'], 
+                        $mydata['name'], 
+                        $mydata['path'], 
+                        $this->code, 
+                        'update'
+                    );
+                } catch (Exception $e) {
+                    $this->logger->error('Failed to regenerate voucher in updatePlaces', [
+                        'order_item_id' => $this->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
                 
                 $this->logger->logOrderChange(
                     $this->id, 
                     $_SESSION['user']['id'], 
                     'Ažuriranje',
                     'Broj mesta', 
-                    $this->places, 
-                    $this->newPlaces
+                    (string)$this->places, 
+                    (string)$this->newPlaces
                 );
                 
                 return [
                     'success' => true,
                     'msg' => "Uspešno ste izmenili broj mesta na {$this->newPlaces}."
                 ];
-            } else {
-                return ['error' => 'Nije moguće ažurirati broj mesta'];
-            } 
+            }
+            
+            return ['error' => 'Nije moguće ažurirati broj mesta'];
             
         } catch (PDOException $e) {
-            $this->logger->error("Failed to update places", [
+            $this->logger->error('Failed to update places', [
                 'user_id' => $_SESSION['user']['id'],
                 'order_item_id' => $this->id,
                 'error' => $e->getMessage(),
@@ -2133,161 +2150,230 @@ class Order {
             return ['error' => 'Greška pri ažuriranju broja mesta'];
         } 
     }
-
     // RESCHEDULE outbound
 
-    public function outbound($voucher) 
+    private function outbound(bool $sendVoucher): array 
     {
-        if($this->isDeparture($this->newDate)) {
-            if($this->isUnlocked($this->newDate) || Validator::isAdmin() || Validator::isSuper()) {
-                if($this->items->items[0]->places <= $this->availability($this->newDate)) {
-                    $sql = "UPDATE order_items SET date = :date WHERE id = :id";
-                    $stmt = $this->db->prepare($sql);
+        if (!$this->isDeparture($this->newDate)) {
+            return ['error' => 'Nema polazaka za odabrani datum'];
+        }
 
-                    $stmt->bindParam(':id', $this->items->items[0]->id);
-                    $stmt->bindParam(':date', $this->newDate);
+        if (!$this->isUnlocked($this->newDate) 
+            && !Validator::isAdmin() 
+            && !Validator::isSuper()) {
+            return ['error' => 'Novi datum mora biti najmanje 25h od sada'];
+        }
+
+        $availableSeats = $this->availability($this->newDate);
+        
+        if ($this->items->items[0]->places > $availableSeats) {
+            return ['error' => "Nema dovoljno mesta za novi datum. Dostupno: {$availableSeats}"];
+        }
+
+        $sql = "UPDATE order_items SET date = :date WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':id', $this->items->items[0]->id, PDO::PARAM_INT);
+        $stmt->bindParam(':date', $this->newDate, PDO::PARAM_STR);
+        
+        try {
+            $stmt->execute();
+            
+            if ($stmt->rowCount() > 0) {
+                $this->updateTotalPrice();
+                
+                if ($sendVoucher) {
                     try {
-                        if($stmt->execute()) {
-                            $this->updateTotalPrice();
-                            if($voucher) {
-                                $mydata = $this->reGenerateVoucher();
-                                $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
-                            } 
-                            $this->logger->logOrderChange($this->id, $_SESSION['user']['id'], 'Ažuriranje', 'Datum polaska',
-                                    $this->items->items[0]->date, $this->newDate);
-                            return ['success' => true]; 
-                        }   
-                    } catch (PDOException $e) {
-                        $this->logger->error("Failed to reschedule order_item", [
-                            'user_id' => $_SESSION['user']['id'],
-                            'error' => $e->getMessage(),
-                            'file' => __FILE__,
-                            'line' => __LINE__
+                        $mydata = $this->reGenerateVoucher();
+                        $this->sendVoucher(
+                            $mydata['email'], 
+                            $mydata['name'], 
+                            $mydata['path'], 
+                            $this->code, 
+                            'update'
+                        );
+                    } catch (Exception $e) {
+                        $this->logger->error('Failed to send voucher in outbound', [
+                            'error' => $e->getMessage()
                         ]);
-                        return [
-                            'error' => 'Došlo je do greške pri pokušaju promene polaska.'
-                        ];
                     }
-                } else {
-                    return [
-                        'error' => 'Nema dovoljno slobodnih mesta za izabrani datum.'
-                    ];
-                }  
-            } else {
-                return ["error" => "Odabrani datum je ili nepostojeći, ili je već prošao. Novi odabrani polazak mora biti najmanje 24 časa od ovog momenta!"];
+                }
+                
+                $this->logger->logOrderChange(
+                    $this->id, 
+                    $_SESSION['user']['id'], 
+                    'Ažuriranje', 
+                    'Datum polaska',
+                    $this->items->items[0]->date, 
+                    $this->newDate
+                );
+                
+                return ['success' => true, 'msg' => 'Datum polaska uspešno promenjen'];
             }
-        } else {
-            return [
-                'error' => 'Nemamo polaske za odabrani datum.'
-            ];
-        } 
+            
+            return ['error' => 'Nije moguće promeniti datum'];
+            
+        } catch (PDOException $e) {
+            $this->logger->error('Failed to reschedule outbound', [
+                'order_item_id' => $this->items->items[0]->id,
+                'new_date' => $this->newDate,
+                'error' => $e->getMessage()
+            ]);
+            
+            return ['error' => 'Greška pri promeni datuma polaska'];
+        }
     }
 
     // RESCHEDULE inbound
 
-    public function inbound($voucher)
+    private function inbound(bool $sendVoucher): array
     {
-        if($this->isDeparture($this->newDateIn)) {
-            if($this->isUnlocked($this->newDateIn) || Validator::isAdmin() || Validator::isSuper()) {
-                if($this->items->items[1]->places <= $this->availability($this->newDateIn)) {
-                    $sql = "UPDATE order_items SET date = :date WHERE id = :id";
-                    $stmt = $this->db->prepare($sql);
+        if (!isset($this->items->items[1])) {
+            return ['error' => 'Nema povratne vožnje'];
+        }
 
-                    $stmt->bindParam(':id', $this->items->items[1]->id);
-                    $stmt->bindParam(':date', $this->newDateIn);
+        if (!$this->isDeparture($this->newDateIn)) {
+            return ['error' => 'Nema polazaka za odabrani datum povratka'];
+        }
+
+        if (!$this->isUnlocked($this->newDateIn) 
+            && !Validator::isAdmin() 
+            && !Validator::isSuper()) {
+            return ['error' => 'Novi datum mora biti najmanje 25h od sada'];
+        }
+
+        $availableSeats = $this->availability($this->newDateIn);
+        
+        if ($this->items->items[1]->places > $availableSeats) {
+            return ['error' => "Nema dovoljno mesta za novi datum. Dostupno: {$availableSeats}"];
+        }
+
+        $sql = "UPDATE order_items SET date = :date WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':id', $this->items->items[1]->id, PDO::PARAM_INT);
+        $stmt->bindParam(':date', $this->newDateIn, PDO::PARAM_STR);
+        
+        try {
+            $stmt->execute();
+            
+            if ($stmt->rowCount() > 0) {
+                $this->updateTotalPrice();
+                
+                if ($sendVoucher) {
                     try {
-                        if($stmt->execute()) {
-                            $this->updateTotalPrice();
-                            if($voucher) {
-                                $mydata = $this->reGenerateVoucher();
-                                $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
-                                
-                            }   
-                            $this->logger->logOrderChange($this->id, $_SESSION['user']['id'], 'Ažuriranje', 'Datum povratka',
-                                    $this->items->items[1]->date, $this->newDateIn);
-                            return ['success' => true];
-                        }
-                    } catch (PDOException $e) {
-                        $this->logger->error('Failed to change the inbound in inbound()', [
-                            'error' => $e->getMessage(),
-                            'file' => __FILE__,
-                            'line' => __FILE__
+                        $mydata = $this->reGenerateVoucher();
+                        $this->sendVoucher(
+                            $mydata['email'], 
+                            $mydata['name'], 
+                            $mydata['path'], 
+                            $this->code, 
+                            'update'
+                        );
+                    } catch (Exception $e) {
+                        $this->logger->error('Failed to send voucher in inbound', [
+                            'error' => $e->getMessage()
                         ]);
-                        return [
-                            'error' => 'Došlo je do greške pri pokušaju promene povratka.',
-                        ];
-                    } 
-                } else {
-                    return [
-                        'error' => 'Nema dovoljno slobodnih mesta za izabrani datum.'
-                    ];
-                }  
-            } else {
-                return ["error" => "Odabrani datum je ili nepostojeći, ili je već prošao. Novi odabrani polazak mora biti najmanje 24 časa od ovog momenta!"];
+                    }
+                }
+                
+                $this->logger->logOrderChange(
+                    $this->id, 
+                    $_SESSION['user']['id'], 
+                    'Ažuriranje', 
+                    'Datum povratka',
+                    $this->items->items[1]->date, 
+                    $this->newDateIn
+                );
+                
+                return ['success' => true, 'msg' => 'Datum povratka uspešno promenjen'];
             }
-        } else { 
-            return [
-                'error' => 'Nemamo polaske za odabrani datum.'
-            ];
-        } 
+            
+            return ['error' => 'Nije moguće promeniti datum'];
+            
+        } catch (PDOException $e) {
+            $this->logger->error('Failed to reschedule inbound', [
+                'order_item_id' => $this->items->items[1]->id,
+                'new_date' => $this->newDateIn,
+                'error' => $e->getMessage()
+            ]);
+            
+            return ['error' => 'Greška pri promeni datuma povratka'];
+        }
     }
 
     // RESCHEDULE date all bounds
-    public function reschedule() 
+    public function reschedule(): array 
     {
         try {
-            if(isset($this->newDate) && !empty($this->newDate) && isset($this->newDateIn) && !empty($this->newDateIn)) {
-                //$this->db->beginTransaction();
+            $hasOutbound = !empty($this->newDate);
+            $hasInbound = !empty($this->newDateIn);
 
+            if (!$hasOutbound && !$hasInbound) {
+                return ['error' => 'Unesite bar jedan datum'];
+            }
+
+            // Ako su oba datuma
+            if ($hasOutbound && $hasInbound) {
                 $outb = $this->outbound(false);
-                if(!isset($outb['success'])) {
-                $this->db->rollBack();
-                return $outb; 
+                
+                if (isset($outb['error'])) {
+                    return $outb; 
                 }
 
                 $inb = $this->inbound(false);
-                    if(!isset($inb['success'])) {
-                    $this->db->rollBack();
+                
+                if (isset($inb['error'])) {
                     return $inb; 
                 }
-                $this->db->commit();
 
-                $mydata = $this->reGenerateVoucher();
-                $this->sendVoucher($mydata['email'], $mydata['name'], $mydata['path'], $this->code, 'update');
+                // Oba uspešna - regeneriši voucher
+                try {
+                    $mydata = $this->reGenerateVoucher();
+                    $this->sendVoucher(
+                        $mydata['email'], 
+                        $mydata['name'], 
+                        $mydata['path'], 
+                        $this->code, 
+                        'update'
+                    );
+                } catch (Exception $e) {
+                    $this->logger->error('Failed to send voucher after reschedule', [
+                        'order_id' => $this->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
 
                 return [
                     'success' => true,
-                    'msg' => 'Uspešno ste izmenili datume vaših vožnji'
+                    'msg' => 'Uspešno ste izmenili datume vožnji'
                 ];
-            } elseif(isset($this->newDate) && !empty($this->newDate) && (!isset($this->newDateIn) || empty($this->newDateIn))) {
-                $outb = $this->outbound(true);
-                return $outb;
-                
-            } elseif(isset($this->newDateIn) && !empty($this->newDateIn) && (empty($this->newDate) || !isset($this->newDate))) {
-                $inb = $this->inbound(true);
-                return $inb;
-            } else { 
-                return ['error' => 'Unesite bar jedan datum'];
             }
+
+            // Samo outbound
+            if ($hasOutbound) {
+                return $this->outbound(true);
+            }
+
+            // Samo inbound
+            if ($hasInbound) {
+                return $this->inbound(true);
+            }
+
+            return ['error' => 'Neočekivana greška'];
+            
         } catch (Exception $e) {
-            /*
-            if($this->db->inTransaction()) {
-                $this->db->rollBack();
-            }
-            */
-            $this->logger->error("Reschedule failed", [
+            $this->logger->error('Reschedule failed', [
                 'user_id' => $_SESSION['user']['id'],
+                'order_item_id' => $this->id,
                 'error' => $e->getMessage(),
                 'file' => __FILE__,
                 'line' => __LINE__
             ]);
+            
             return ['error' => 'Greška pri promeni datuma'];
         }
-        
-        
     }
 
-    // UPDATE PLACES and DATE
+    // UPDATE PLACES and DATE - Refactor until here
     public function rescheduleAndPlaces() 
     {
         //$this->getFromDB($this->id);
