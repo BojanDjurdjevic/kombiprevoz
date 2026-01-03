@@ -1,5 +1,6 @@
 <?php
-// REFACTOR ---------
+// REFACTOR --------- 
+/*
 declare(strict_types=1);
 
 namespace Controllers;
@@ -26,9 +27,7 @@ class TourController {
         $this->tour = new Tour($this->db);
     }
 
-    /**
-     * Provera admin/super privilegija
-     */
+
     private function requireAdmin(): void
     {
         if (!Validator::isAdmin() && !Validator::isSuper()) {
@@ -40,9 +39,7 @@ class TourController {
         }
     }
 
-    /**
-     * GET metoda - pretraga tura
-     */
+
     private function get(): void
     {
         if (!isset($this->data->tours)) {
@@ -186,9 +183,7 @@ class TourController {
         ], JSON_UNESCAPED_UNICODE);
     }
 
-    /**
-     * POST metoda - kreiranje nove ture
-     */
+   
     private function post(): void
     {
         $this->requireAdmin();
@@ -273,9 +268,6 @@ class TourController {
         $this->tour->create();
     }
 
-    /**
-     * PUT metoda - izmena ture
-     */
     private function put(): void
     {
         $this->requireAdmin();
@@ -345,9 +337,6 @@ class TourController {
         $this->tour->update();
     }
 
-    /**
-     * DELETE metoda - brisanje/restore ture
-     */
     private function delete(): void
     {
         $this->requireAdmin();
@@ -392,9 +381,7 @@ class TourController {
         }
     }
 
-    /**
-     * Glavni handler
-     */
+
     public function handleRequest(): void
     {
         $request = $_SERVER['REQUEST_METHOD'];
@@ -435,6 +422,387 @@ class TourController {
                 'message' => $_ENV['APP_ENV'] === 'development' ? $e->getMessage() : null
             ], JSON_UNESCAPED_UNICODE);
         }
+    }
+}
+
+*/
+
+declare(strict_types=1);
+
+namespace Controllers;
+
+use Models\Tour;
+use PDO;
+use Rules\Validator;
+
+if (!defined('APP_ACCESS')) {
+    http_response_code(403);
+    die('Direct access forbidden');
+}
+
+class TourController {
+    private PDO $db;
+    private object $data;
+    private Tour $tour;
+
+    public function __construct(PDO $db, object $data)
+    {
+        $this->db = $db;
+        $this->data = $data;
+        $this->tour = new Tour($this->db);
+    }
+
+    // ======================== GET AKCIJE ========================
+
+    //GET sve ture
+
+    public function getAllTours(): void
+    {
+        $this->tour->getAll();
+    }
+
+    //GET fully booked days
+    public function getFullyBookedDays(): void
+    {
+        if (empty($this->data->tours->days->from) 
+            || empty($this->data->tours->days->to) 
+            || empty($this->data->tours->days->format)) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Nedostaju parametri (from, to, format)'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $this->tour->from_city = (string) $this->data->tours->days->from;
+        $this->tour->to_city = (string) $this->data->tours->days->to;
+        
+        $fullDays = $this->tour->fullyBooked((string) $this->data->tours->days->format);
+        
+        echo json_encode($fullDays, JSON_UNESCAPED_UNICODE);
+    }
+
+    // SEARCH ture
+
+    public function searchTours(): void
+    {
+        if (empty($this->data->tours->search->from) 
+            || empty($this->data->tours->search->to) 
+            || empty($this->data->tours->search->date)
+            || empty($this->data->tours->search->seats)) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Nedostaju obavezni parametri za pretragu'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        // Validacija datuma
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->data->tours->search->date)) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Neispravan format datuma'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        // Validacija seats
+        $seats = filter_var($this->data->tours->search->seats, FILTER_VALIDATE_INT);
+        
+        if ($seats === false || $seats < 1) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Broj mesta mora biti veći od 0'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $this->tour->from_city = (string) $this->data->tours->search->from;
+        $this->tour->to_city = (string) $this->data->tours->search->to;
+        $this->tour->date = (string) $this->data->tours->search->date;
+        $this->tour->requestedSeats = $seats;
+        
+        // Inbound (opciono)
+        $this->tour->inbound = isset($this->data->tours->search->inbound) 
+            && !empty($this->data->tours->search->inbound)
+            ? (string) $this->data->tours->search->inbound
+            : null;
+
+        $this->tour->getBySearch();
+    }
+
+    //GET ture po filterima (admin only)
+    public function getToursByFilter(): void
+    {
+        $this->tour->id = isset($this->data->tours->byFilter->id) 
+            ? filter_var($this->data->tours->byFilter->id, FILTER_VALIDATE_INT) 
+            : null;
+
+        if ($this->tour->id === false) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Neispravan ID ture'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $this->tour->from_city = isset($this->data->tours->byFilter->from_city) 
+            ? (string) $this->data->tours->byFilter->from_city 
+            : null;
+        
+        $this->tour->to_city = isset($this->data->tours->byFilter->to_city) 
+            ? (string) $this->data->tours->byFilter->to_city 
+            : null;
+
+        $this->tour->getByFilters();
+    }
+
+    //GET destination cities
+    public function getDestinationCities(): void
+    {
+        if (empty($this->data->tours->city->name)) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Ime grada je obavezno'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $from = filter_var(
+            $this->data->tours->city->from ?? false,
+            FILTER_VALIDATE_BOOLEAN,
+            FILTER_NULL_ON_FAILURE
+        );
+
+        $this->tour->getToCities(
+            (string) $this->data->tours->city->name, 
+            $from === true
+        );
+    }
+
+    // ======================== POST AKCIJA ========================
+
+    //CREATE nova tura (admin only)
+    public function createTour(): void
+    {
+        // Validacija obaveznih polja
+        $required = ['from', 'to', 'departures', 'time', 'duration', 'price', 'seats'];
+        
+        foreach ($required as $field) {
+            if (!isset($this->data->tours->$field) || empty($this->data->tours->$field)) {
+                http_response_code(400);
+                echo json_encode([
+                    'error' => "Polje '{$field}' je obavezno"
+                ], JSON_UNESCAPED_UNICODE);
+                return;
+            }
+        }
+
+        $duration = filter_var($this->data->tours->duration, FILTER_VALIDATE_INT);
+        $price = filter_var($this->data->tours->price, FILTER_VALIDATE_INT);
+        $seats = filter_var($this->data->tours->seats, FILTER_VALIDATE_INT);
+
+        if ($duration === false || $duration < 1) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Trajanje mora biti veće od 0'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        if ($price === false || $price < 1) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Cena mora biti veća od 0'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        if ($seats === false || $seats < 1 || $seats > 50) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Broj sedišta mora biti između 1 i 50'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        // Validacija time formata (HH:MM)
+        if (!preg_match('/^\d{2}:\d{2}$/', $this->data->tours->time)) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Neispravan format vremena (mora biti HH:MM)'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        // Validacija departures (0-6, comma separated)
+        if (!preg_match('/^[0-6](,[0-6])*$/', $this->data->tours->departures)) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Neispravan format dana polaska (0-6, razdvojeni zarezom)'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        // Setuj property-je
+        $this->tour->from_city = (string) $this->data->tours->from;
+        $this->tour->to_city = (string) $this->data->tours->to;
+        $this->tour->departures = (string) $this->data->tours->departures;
+        $this->tour->time = (string) $this->data->tours->time;
+        $this->tour->duration = $duration;
+        $this->tour->price = $price;
+        $this->tour->seats = $seats;
+
+        $this->tour->create();
+    }
+
+    // ======================== PUT AKCIJA ========================
+    public function updateTour(): void
+    {
+        if (!isset($this->data->tours->id) || empty($this->data->tours->id)) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'ID ture je obavezan'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $tourId = filter_var($this->data->tours->id, FILTER_VALIDATE_INT);
+        
+        if ($tourId === false) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Neispravan ID ture'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $required = ['departures', 'time', 'duration', 'price', 'seats'];
+        
+        foreach ($required as $field) {
+            if (!isset($this->data->tours->$field)) {
+                http_response_code(400);
+                echo json_encode([
+                    'error' => "Polje '{$field}' je obavezno"
+                ], JSON_UNESCAPED_UNICODE);
+                return;
+            }
+        }
+
+        $duration = filter_var($this->data->tours->duration, FILTER_VALIDATE_INT);
+        $price = filter_var($this->data->tours->price, FILTER_VALIDATE_INT);
+        $seats = filter_var($this->data->tours->seats, FILTER_VALIDATE_INT);
+
+        if ($duration === false || $duration < 1 
+            || $price === false || $price < 1 
+            || $seats === false || $seats < 1) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Nevalidne vrednosti za trajanje, cenu ili broj sedišta'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        // Setuj property-je
+        $this->tour->id = $tourId;
+        $this->tour->departures = (string) $this->data->tours->departures;
+        $this->tour->time = (string) $this->data->tours->time;
+        $this->tour->duration = $duration;
+        $this->tour->price = $price;
+        $this->tour->seats = $seats;
+
+        $this->tour->update();
+    }
+
+    // ======================== DELETE AKCIJE ========================
+
+    public function deleteTour(): void
+    {
+        if (!isset($this->data->tours->id) || empty($this->data->tours->id)) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'ID ture je obavezan'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $tourId = filter_var($this->data->tours->id, FILTER_VALIDATE_INT);
+        
+        if ($tourId === false) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Neispravan ID ture'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $this->tour->id = $tourId;
+        $this->tour->to_city = isset($this->data->tours->to_city) 
+            ? (string) $this->data->tours->to_city 
+            : null;
+
+        $this->tour->delete();
+    }
+
+    // RESTORE tura (admin only)
+    public function restoreTour(): void
+    {
+        if (!isset($this->data->tours->id) || empty($this->data->tours->id)) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'ID ture je obavezan'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $tourId = filter_var($this->data->tours->id, FILTER_VALIDATE_INT);
+        
+        if ($tourId === false) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Neispravan ID ture'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $this->tour->id = $tourId;
+        $this->tour->to_city = isset($this->data->tours->to_city) 
+            ? (string) $this->data->tours->to_city 
+            : null;
+
+        $this->tour->restore();
+    }
+
+    // RESTORE all turs (admin only)
+    public function restoreAllTours(): void
+    {
+        $this->tour->restoreAll();
+    }
+
+    // PERMANENT DELETE tura (admin only)
+
+    public function permanentDeleteTour(): void
+    {
+        if (!isset($this->data->tours->id) || empty($this->data->tours->id)) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'ID ture je obavezan'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $tourId = filter_var($this->data->tours->id, FILTER_VALIDATE_INT);
+        
+        if ($tourId === false) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Neispravan ID ture'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        $this->tour->id = $tourId;
+        $this->tour->permanentDelete();
     }
 }
 
