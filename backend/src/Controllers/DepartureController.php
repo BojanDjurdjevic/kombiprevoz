@@ -1,74 +1,141 @@
 <?php
+declare(strict_types=1);
 
 namespace Controllers;
 
-use Middleware\DemoMiddleware;
 use Models\Departure;
-use Models\Order;
-use Models\User;
-use Rules\Validator;
+use PDO;
 
 if (!defined('APP_ACCESS')) {
     http_response_code(403);
     die('Direct access forbidden');
 }
 
+/**
+ * DepartureController
+ * Svaka metoda = jedna akcija
+ */
 class DepartureController {
-    public $db;
-    public $data;
-    public $departure;
+    private PDO $db;
+    private object $data;
+    private Departure $departure;
 
-    private $user;
-    private $order;
-
-    public function __construct($db, $data)
+    public function __construct(PDO $db, object $data)
     {
         $this->db = $db;
         $this->data = $data;
         $this->departure = new Departure($this->db);
-        $this->user = new User($this->db);
-        $this->order = new Order($this->db);
     }
 
-    public function handleRequest()
+    /**
+     * Pomoćna metoda za dodelu podataka
+     */
+    private function assignDepartureData(): void
     {
-        $request = $_SERVER['REQUEST_METHOD'];
-        if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE'])) {
-            DemoMiddleware::handle();
+        $this->departure->id = isset($this->data->departure->id) 
+            ? filter_var($this->data->departure->id, FILTER_VALIDATE_INT) ?: null
+            : null;
+        
+        $this->departure->driver_id = isset($this->data->departure->driver_id) 
+            ? filter_var($this->data->departure->driver_id, FILTER_VALIDATE_INT) ?: null
+            : null;
+        
+        $this->departure->tour_id = isset($this->data->departure->tour_id) 
+            ? filter_var($this->data->departure->tour_id, FILTER_VALIDATE_INT) ?: null
+            : null;
+        
+        $this->departure->code = $this->data->departure->code ?? null;
+        $this->departure->path = $this->data->departure->path ?? null;
+        $this->departure->date = $this->data->departure->date ?? null;
+    }
+
+    // ======================== GET METHODS ========================
+
+    /**
+     * GET orders for specific departure
+     * Akcija: { "departure": { "id": N } }
+     */
+    public function getOrdersOfDeparture(): void
+    {
+        $this->assignDepartureData();
+
+        if (empty($this->departure->id)) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'ID polaska je obavezan'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
         }
 
-        if(isset($this->data->departure->id)) $this->departure->id = $this->data->departure->id; else $this->departure->id = null;
-        if(isset($this->data->departure->driver_id)) $this->departure->driver_id = $this->data->departure->driver_id; else $this->departure->driver_id = null;
-        if(isset($this->data->departure->tour_id)) $this->departure->tour_id = $this->data->departure->tour_id; else $this->departure->tour_id = null;
-        if(isset($this->data->departure->code)) $this->departure->code = $this->data->departure->code; else $this->departure->code = null;
-        if(isset($this->data->departure->path)) $this->departure->path = $this->data->departure->path; else $this->departure->path = null;
-        if(isset($this->data->departure->date)) $this->departure->date = $this->data->departure->date; else $this->departure->date = null;
+        $this->departure->getOrdersOfDep();
+    }
 
-        switch($request) {
-            case 'GET':
-                if(isset($this->data->departure->id) && !empty($this->data->departure->id)) {
-                    if(Validator::isDriver() || Validator::isAdmin() || Validator::isSuper()) $this->departure->getOrdersOfDep();
-                    else echo json_encode(['user' => 'Niste autorizovani da vidite vožnje!']);
-                } else {
-                    if(Validator::isDriver() || Validator::isAdmin() || Validator::isSuper()) $this->departure->getByFilter();
-                    else echo json_encode(['user' => 'Niste autorizovani da vidite vožnje!']);
-                } 
-                break;
-            case 'POST':
-                if(isset($this->data->drive->create)) {
-                    
-                }
-                break;
-            case 'PUT':
-                if(isset($this->data->drive->update)) {
-                    
-                }
-                break;
-            case 'DELETE':
-                if(isset($this->data->drive->delete)) {
-                    
-                }
-                break;
-        }  
+    /**
+     * GET departures by filters
+     * Akcija: { "departure": { "driver_id": N, "tour_id": N, "date": "...", "code": "..." } }
+     */
+    public function getDeparturesByFilter(): void
+    {
+        $this->assignDepartureData();
+
+        // Validacija datuma ako postoji
+        if (!empty($this->departure->date)) {
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->departure->date)) {
+                http_response_code(400);
+                echo json_encode([
+                    'error' => 'Neispravan format datuma (mora biti YYYY-MM-DD)'
+                ], JSON_UNESCAPED_UNICODE);
+                return;
+            }
+        }
+
+        $this->departure->getByFilter();
+    }
+
+    // ======================== POST METHOD (za buduću implementaciju) ========================
+
+    /**
+     * CREATE new departure
+     * Akcija: { "drive": { "create": true, ... } }
+     */
+    public function createDeparture(): void
+    {
+        // Implementacija kada bude potrebno
+        http_response_code(501);
+        echo json_encode([
+            'error' => 'CREATE departure nije implementiran'
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    // ======================== PUT METHOD (za buduću implementaciju) ========================
+
+    /**
+     * UPDATE departure
+     * Akcija: { "drive": { "update": true, "id": N, ... } }
+     */
+    public function updateDeparture(): void
+    {
+        // Implementacija kada bude potrebno
+        http_response_code(501);
+        echo json_encode([
+            'error' => 'UPDATE departure nije implementiran'
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    // ======================== DELETE METHOD (za buduću implementaciju) ========================
+
+    /**
+     * DELETE departure
+     * Akcija: { "drive": { "delete": true, "id": N } }
+     */
+    public function deleteDeparture(): void
+    {
+        //Implementacija kada bude potrebno
+        http_response_code(501);
+        echo json_encode([
+            'error' => 'DELETE departure nije implementiran'
+        ], JSON_UNESCAPED_UNICODE);
     }
 }
+
+?>

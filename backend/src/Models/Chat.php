@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Models;
 
@@ -14,51 +15,53 @@ if (!defined('APP_ACCESS')) {
 }
 
 class Chat {
-    public $ticket_id;
-    public $ticket_number;
-    public $ticket_status;
-    public $customer_name;
-    public $customer_email;
-    public $reservation_number;
-    public $customer_phone;
-    public $initial_message;
-    public $last_message_id;
-    public $last_checked;
+    // Ticket properties
+    public ?int $ticket_id = null;
+    public ?string $ticket_number = null;
+    public ?string $ticket_status = null;
+    public ?string $customer_name = null;
+    public ?string $customer_email = null;
+    public ?string $reservation_number = null;
+    public ?string $customer_phone = null;
+    public ?string $initial_message = null;
+    public ?int $last_message_id = null;
+    public ?string $last_checked = null;
 
+    // Message properties
+    public ?int $sender_id = null;
+    public ?string $sender_type = null;
+    public ?string $message = null;
 
-    public $sender_id;
-    public $sender_type;
-    public $message;
+    // Admin properties
+    public ?int $assigned_to = null;
+    public ?int $limit = null;
+    public ?int $offset = null;
+    public ?string $reader_type = null;
+    public ?int $admin_id = null;
+    public ?int $user_id = null;
+    public ?string $user_type = null;
+    public ?int $closed_by = null;
 
+    private PDO $db;
 
-    public $assigned_to;
-    public $limit;
-    public $offset;
-    public $reader_type;
-    public $admin_id;
-    public $user_id;
-    public $user_type;
-    public $closed_by;
-
-
-
-    private $db;
-    public $logger;
-
-    
-
-    public function __construct($db) {
+    public function __construct(PDO $db) 
+    {
         $this->db = $db;
-        $this->logger = new Logger($this->db);
     }
 
-    // CHAT HELPERS:
+    // ======================== HELPER METHODS ========================
 
+    /**
+     * Generisanje unique broja tiketa
+     */
     private function generateTicketNumber(): string 
     {
         return 'TKT-' . strtoupper(substr(uniqid(), -8));
     }
 
+    /**
+     * Dodavanje poruke u tiket
+     */
     private function addMessage(int $ticketId, string $senderType, ?int $senderId, string $message): int 
     {
         $stmt = $this->db->prepare(
@@ -66,127 +69,191 @@ class Chat {
             VALUES (?, ?, ?, ?, NOW())"
         );
         $stmt->execute([$ticketId, $senderType, $senderId, $message]);
-        return (int)$this->db->lastInsertId();
+        
+        return (int) $this->db->lastInsertId();
     }
 
+    /**
+     * Dobijanje tiketa po ID-u
+     */
     private function getTicket(int $ticketId): ?object 
     {
-        $stmt = $this->db->prepare("SELECT * FROM chat_tickets WHERE id = ?");
+        $stmt = $this->db->prepare("SELECT * FROM chat_tickets WHERE id = ? LIMIT 1");
         $stmt->execute([$ticketId]);
         $result = $stmt->fetch(PDO::FETCH_OBJ);
+        
         return $result ?: null;
     }
 
+    /**
+     * Ažuriranje statusa tiketa
+     */
     private function updateTicketStatus(int $ticketId, string $status, ?int $userId): void 
     {
         $stmt = $this->db->prepare(
-            "UPDATE chat_tickets SET status = ?, updated_at = NOW() WHERE id = ?"
+            "UPDATE chat_tickets 
+            SET status = ?, updated_at = NOW() 
+            WHERE id = ?"
         );
         $stmt->execute([$status, $ticketId]);
 
-        $this->logger->audit("Chat ticket ID $ticketId status changed to: $status", $userId);
+        Logger::audit("Chat ticket ID $ticketId status changed to: $status", $userId);
     }
 
+    /**
+     * Dobijanje typing statusa
+     */
     private function getTypingStatus(int $ticketId): ?object 
     {
         $stmt = $this->db->prepare(
             "SELECT * FROM chat_typing 
-            WHERE ticket_id = ? AND updated_at > DATE_SUB(NOW(), INTERVAL 3 SECOND)"
+            WHERE ticket_id = ? 
+            AND updated_at > DATE_SUB(NOW(), INTERVAL 3 SECOND)
+            LIMIT 1"
         );
         $stmt->execute([$ticketId]);
         $result = $stmt->fetch(PDO::FETCH_OBJ);
+        
         return $result ?: null;
     }
 
+    /**
+     * Success response helper
+     */
     private function success(array $data): array 
     {
-        return ['success' => true, 'data' => $data, 'code' => 200];
+        return [
+            'success' => true, 
+            'data' => $data, 
+            'code' => 200
+        ];
     }
 
+    /**
+     * Error response helper
+     */
     private function error(string $message, int $code): array 
     {
-        return ['success' => false, 'error' => $message, 'code' => $code];
+        return [
+            'success' => false, 
+            'error' => $message, 
+            'code' => $code
+        ];
     }
 
-    //Invite Admin to chat:
+    /**
+     * Slanje email notifikacije admin-u
+     */
+    private function sendAdminNotification(string $ticketNumber, string $customerName): void
+    {
+        $html = "
+            <p>Poštovani/a {{ name }}</p>
+            <br>
+            <p>Imate novi Chat na čekanju, broj tiketa: {{ code }}</p>
+            <br>
+            <p>Molimo Vas da uđete na admin panel na link:</p>
+            <p>" . ($_ENV['APP_URL'] ?? 'http://localhost:5173') . "/admin</p>
+            <br>
+            <p>Srdačan pozdrav od KombiPrevoz tima!</p>
+        ";
 
-    public function sendEmail($html, $code, $email, $name) 
+        try {
+            $this->sendEmail($html, $ticketNumber, $_ENV['ADMIN_EMAIL'] ?? 'admin@example.com', 'Admin');
+        } catch (\Exception $e) {
+            Logger::error('Failed to send admin notification email', [
+                'ticket_number' => $ticketNumber,
+                'error' => $e->getMessage(),
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+        }
+    }
+
+    /**
+     * PHPMailer setup i slanje email-a
+     */
+    private function sendEmail(string $html, string $code, string $email, string $name): void
     {
         $template = Validator::mailerTemplate($html, $code, $name);
+        
         $mail = new PHPMailer(true);
-        //$mail->SMTPDebug = SMTP::DEBUG_SERVER;
         $mail->isSMTP();
         $mail->SMTPAuth = true;
-
         $mail->Host = "smtp.gmail.com";
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
         $mail->Port = 465;
         $mail->Username = $_ENV["SMTP_USER"];
         $mail->Password = $_ENV["SMTP_PASS"];
-
-        $mail->setFrom("noreply-kombiprevoz@gmail.com", "Bojan");
+        $mail->setFrom("noreply-kombiprevoz@gmail.com", "KombiPrevoz");
         $mail->addAddress($email, $name);
-
         $mail->CharSet = 'UTF-8';
         $mail->Encoding = 'base64';
-
         $mail->isHTML(true);
         $mail->Subject = 'Novi chat tiket na čekanju!';
         $mail->setLanguage('sr');
-        $mail->Body = <<<END
-
-        $template
-
-        END;
+        $mail->Body = $template;
 
         try {
             $mail->send();
-            
-        } catch (PDOException $e) {
-            Logger::error('Failed email to SuperAdmin, MessageDB: [' . $e->getMessage() . '] ', [
+        } catch (\Exception $e) {
+            Logger::error('PHPMailer failed to send email', [
+                'email' => $email,
+                'error' => $e->getMessage(),
                 'file' => __FILE__,
-                'line' => __LINE__]
-            );
+                'line' => __LINE__
+            ]);
         }
-    
     }
 
-    // CREATE NEW TICKET
+    // ======================== PUBLIC METHODS ========================
 
-    public function createTicket() 
+    /**
+     * Kreiranje novog tiketa
+     */
+    public function createTicket(): array 
     {
         try {
-            if(empty($this->customer_name) || empty($this->customer_email)) {
+            if (empty($this->customer_name) || empty($this->customer_email)) {
                 return $this->error('Ime i email korisnika su obavezni za početak konverzacije!', 400);
             }
 
-            if(!filter_var($this->customer_email, FILTER_VALIDATE_EMAIL)) {
+            if (!filter_var($this->customer_email, FILTER_VALIDATE_EMAIL)) {
                 return $this->error('Nevažeća email adresa!', 400);
             }
 
             $ticketNumber = $this->generateTicketNumber();
 
-            $sql = "INSERT INTO chat_tickets SET ticket_number = :ticket_number, customer_name = :customer_name,
-                    customer_email = :customer_email, customer_phone = :customer_phone,
-                    reservation_number = :reservation_number, status = :status"
-            ;
+            $sql = "INSERT INTO chat_tickets SET 
+                    ticket_number = :ticket_number, 
+                    customer_name = :customer_name,
+                    customer_email = :customer_email, 
+                    customer_phone = :customer_phone,
+                    reservation_number = :reservation_number, 
+                    status = :status,
+                    created_at = NOW()";
+            
             $stmt = $this->db->prepare($sql);
 
-            $reservationNum = (isset($this->reservation_number) && mb_strtoupper($this->reservation_number) !== 'NO'
-                                && !empty($this->reservation_number)) ? $this->reservation_number : null;
-            $my_status = "open"; 
+            $reservationNum = (isset($this->reservation_number) 
+                && mb_strtoupper($this->reservation_number) !== 'NO'
+                && !empty($this->reservation_number)) 
+                ? $this->reservation_number 
+                : null;
+            
+            $status = "open";
 
-            $stmt->bindParam(":ticket_number", $ticketNumber);
-            $stmt->bindParam(":reservation_number", $reservationNum, PDO::PARAM_INT);
-            $stmt->bindParam(":customer_name", $this->customer_name);
-            $stmt->bindParam(":customer_email", $this->customer_email);
-            $stmt->bindParam(":customer_phone", $this->customer_phone);
-            $stmt->bindParam(":status", $my_status, PDO::PARAM_STR);
+            $stmt->bindParam(":ticket_number", $ticketNumber, PDO::PARAM_STR);
+            $stmt->bindParam(":reservation_number", $reservationNum, PDO::PARAM_STR);
+            $stmt->bindParam(":customer_name", $this->customer_name, PDO::PARAM_STR);
+            $stmt->bindParam(":customer_email", $this->customer_email, PDO::PARAM_STR);
+            $stmt->bindParam(":customer_phone", $this->customer_phone, PDO::PARAM_STR);
+            $stmt->bindParam(":status", $status, PDO::PARAM_STR);
 
             $stmt->execute();
 
-            $ticketID = $this->db->lastInsertId();
+            $ticketID = (int) $this->db->lastInsertId();
 
+            // Welcome poruka
             $welcomeMessage = "Zdravo {$this->customer_name}! 👋\n\n" .
                  "Hvala što ste nas kontaktirali. Vaš tiket broj: {$ticketNumber}.\n\n" .
                  "Molimo Vas da sačekate dok admin ne preuzme vašu konverzaciju. " .
@@ -195,85 +262,95 @@ class Chat {
         
             $this->addMessage($ticketID, 'admin', null, $welcomeMessage);
 
-            if(!empty($this->initial_message)) {
+            // Initial poruka od korisnika
+            if (!empty($this->initial_message)) {
                 $this->addMessage($ticketID, 'customer', null, $this->initial_message);
             }
 
-            $this->logger->info("Chat ticket created: $ticketNumber (ID: $ticketID) by {$this->customer_email}");
-            $this->logger->audit("Chat ticket $ticketNumber created", null);
+            Logger::info("Chat ticket created: $ticketNumber (ID: $ticketID) by {$this->customer_email}");
+            Logger::audit("Chat ticket $ticketNumber created", null);
 
-            $html = "
-                        <p>Poštovani/a {{ name }}</p>
-                        <br>
-                        <p>Imate novi Chat na čekanju, broj tiketa: {{ code }}</p>
-                        <br>
-                        <p> molimo Vas da uđete na admin panel na link: </p>
-                        <p>http://localhost:5173/admin</p>
-                        <br>
-                        <p>Srdačan pozdrav od KombiPrevoz tima!</p>
-                    ";
-
-            $this->sendEmail($html,$ticketNumber, 'pininfarina164@gmail.com', 'Bojane');
+            // Slanje notifikacije admin-u
+            $this->sendAdminNotification($ticketNumber, $this->customer_name);
 
             return $this->success([
-                "ticket_id"=> (int)$ticketID,
-                "ticket_number"=> $ticketNumber,
+                "ticket_id" => $ticketID,
+                "ticket_number" => $ticketNumber,
             ]);
 
         } catch (PDOException $e) {
-            $this->logger->error( "Chat ticket create failed: " . $e->getMessage(), [
-                'emali' => $this->customer_email ?? 'unknown'
+            Logger::error("Chat ticket create failed: " . $e->getMessage(), [
+                'email' => $this->customer_email ?? 'unknown',
+                'file' => __FILE__,
+                'line' => __LINE__
             ]);
+            
             return $this->error('Greška pri kreiranju tiketa!', 500);
         }
     }
 
-    // SEND MESSAGE
-
-    public function sendMessage() 
+    /**
+     * Slanje poruke u tiket
+     */
+    public function sendMessage(): array 
     {
         try {
-            if(empty($this->ticket_id) || empty($this->sender_type) || empty($this->message)) {
-                return $this->error('Nedostaju obavezni parametri',400);
+            if (empty($this->ticket_id) || empty($this->sender_type) || empty($this->message)) {
+                return $this->error('Nedostaju obavezni parametri', 400);
             }
 
             $ticket = $this->getTicket($this->ticket_id);
-            if(!$ticket) {
-                return $this->error('Tiket ne postoji ili nije otvoren',404);
+            
+            if (!$ticket) {
+                return $this->error('Tiket ne postoji', 404);
             }
-            if($ticket->status == 'closed') {
-                $this->error('Tiket je zatvoren', 403);
+            
+            if ($ticket->status === 'closed') {
+                return $this->error('Tiket je zatvoren', 403);
             }
 
-            $messageID = $this->addMessage($this->ticket_id, $this->sender_type, $this->sender_id, $this->message);
+            $messageID = $this->addMessage(
+                $this->ticket_id, 
+                $this->sender_type, 
+                $this->sender_id, 
+                $this->message
+            );
 
-            $sql = "UPDATE chat_tickets
-                    SET last_message_at = NOW(), updated_at = NOW()
-                    WHERE id = :id"
-            ;
-            $stmt = $this->db->prepare($sql);
-            $stmt->bindParam(":id", $this->ticket_id);
-            $stmt->execute();
+            // Update tiketa
+            $stmt = $this->db->prepare(
+                "UPDATE chat_tickets
+                SET last_message_at = NOW(), updated_at = NOW()
+                WHERE id = ?"
+            );
+            $stmt->execute([$this->ticket_id]);
 
-            if($this->sender_type == "admin" && $ticket->status == "open") {
+            // Ako admin šalje prvu poruku, postavi status na in_progress
+            if ($this->sender_type === "admin" && $ticket->status === "open") {
                 $this->updateTicketStatus($this->ticket_id, 'in_progress', $this->sender_id);
             }
 
-            Logger::info("Message sent in ticket #{$ticket->ticket_number} by $this->sender_type");
+            Logger::info("Message sent in ticket #{$ticket->ticket_number} by {$this->sender_type}");
 
             return $this->success([
-                "message_id"=> (int)$messageID,
+                "message_id" => $messageID,
                 "created_at" => date("Y-m-d H:i:s")
             ]);
+            
         } catch (PDOException $e) {
-            $this->logger->error("Sending message failed: " . $e->getMessage());
-            return $this->error("Greška pri slanju poruke!",500);
+            Logger::error("Sending message failed: " . $e->getMessage(), [
+                'ticket_id' => $this->ticket_id,
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            
+            return $this->error("Greška pri slanju poruke!", 500);
         }
     }
 
-    // POLL MSGS
-
-    public function pollMessages() 
+    /**
+     * Long polling za nove poruke
+     */
+    public function pollMessages(): array 
     {
         $ticketID = $this->ticket_id ?? 0;
         $lastMessageID = $this->last_message_id ?? 0;
@@ -302,6 +379,7 @@ class Chat {
                     ]);
                 }
 
+                // Provera da li je tiket zatvoren
                 $ticket = $this->getTicket($ticketID);
                 if ($ticket && $ticket->status === 'closed') {
                     return $this->success([
@@ -310,24 +388,29 @@ class Chat {
                     ]);
                 }
 
-                $typing = $this->getTypingStatus($ticketID);
-
-                usleep(300000); 
+                usleep(300000); // 300ms
             }
 
             return $this->success([
                 'messages' => [],
                 'timeout' => true
             ]);
+            
         } catch (PDOException $e) {
-            Logger::error("Poll messages failed: " . $e->getMessage());
+            Logger::error("Poll messages failed: " . $e->getMessage(), [
+                'ticket_id' => $ticketID,
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            
             return $this->error('Greška pri preuzimanju poruka', 500);
         }
     }
 
-    // POLL TICKETS
-
-    public function pollNewTickets() 
+    /**
+     * Long polling za nove tikete (admin)
+     */
+    public function pollNewTickets(): array 
     {
         $lastChecked = $this->last_checked ?? date('Y-m-d H:i:s', strtotime('-1 hour'));
         $timeout = 5;
@@ -349,9 +432,10 @@ class Chat {
                         ORDER BY t.updated_at DESC";
                 
                 $stmt = $this->db->prepare($sql);
-                $stmt->bindParam(":created_at", $lastChecked);
-                $stmt->bindParam(":updated_at", $lastChecked);
+                $stmt->bindParam(":created_at", $lastChecked, PDO::PARAM_STR);
+                $stmt->bindParam(":updated_at", $lastChecked, PDO::PARAM_STR);
                 $stmt->execute();
+                
                 $tickets = $stmt->fetchAll(PDO::FETCH_OBJ);
 
                 if (!empty($tickets)) {
@@ -371,14 +455,19 @@ class Chat {
             ]);
 
         } catch (PDOException $e) {
-            Logger::error("Poll tickets failed: " . $e->getMessage());
+            Logger::error("Poll tickets failed: " . $e->getMessage(), [
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            
             return $this->error('Greška pri preuzimanju tiketa', 500);
         }
     }
 
-    // ---------------- GET ALL TICKETS ------------------//
-
-    public function getAllTickets()
+    /**
+     * Dobijanje svih tiketa (admin)
+     */
+    public function getAllTickets(): array
     {
         try {
             $where = ['1=1'];
@@ -415,13 +504,18 @@ class Chat {
             ]);
 
         } catch (PDOException $e) {
-            Logger::error("Get all tickets failed: " . $e->getMessage());
+            Logger::error("Get all tickets failed: " . $e->getMessage(), [
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            
             return $this->error('Greška pri preuzimanju tiketa', 500);
         }
     }
 
-    // ---------------- GET TICKETS MSGS ------------------//
-
+    /**
+     * Dobijanje poruka tiketa
+     */
     public function getTicketMessages(): array 
     {
         try {
@@ -441,7 +535,6 @@ class Chat {
             $stmt->bindParam(":ticket_id", $ticketId, PDO::PARAM_INT);
             $stmt->bindParam(":limit", $limit, PDO::PARAM_INT);
             $stmt->bindParam(":offset", $offset, PDO::PARAM_INT);
-
             $stmt->execute();
 
             return $this->success([
@@ -449,12 +542,19 @@ class Chat {
             ]);
 
         } catch (PDOException $e) {
-            Logger::error("Get ticket messages failed: " . $e->getMessage());
+            Logger::error("Get ticket messages failed: " . $e->getMessage(), [
+                'ticket_id' => $ticketId ?? null,
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            
             return $this->error('Greška pri preuzimanju poruka', 500);
         }
     }
 
-    // ---------------- SET MSGS as IS_READ ------------------//
+    /**
+     * Označavanje poruka kao pročitanih
+     */
     public function markAsRead(): array 
     {
         try {
@@ -465,7 +565,7 @@ class Chat {
                 return $this->error('Nedostaju parametri', 400);
             }
 
-            // Mark as read from the other side
+            // Označava poruke sa druge strane
             $senderType = ($readerType === 'admin') ? 'customer' : 'admin';
 
             $stmt = $this->db->prepare(
@@ -478,12 +578,19 @@ class Chat {
             return $this->success(['marked' => $stmt->rowCount()]);
 
         } catch (PDOException $e) {
-            Logger::error("Mark as read failed: " . $e->getMessage());
+            Logger::error("Mark as read failed: " . $e->getMessage(), [
+                'ticket_id' => $ticketId ?? null,
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            
             return $this->error('Greška pri označavanju poruka', 500);
         }
     }
 
-    // ---------------- ADMIN ASSIGN TICKETS ------------------//
+    /**
+     * Dodela tiketa admin-u
+     */
     public function assignTicket(): array 
     {
         try {
@@ -499,7 +606,7 @@ class Chat {
                 return $this->error('Tiket ne postoji', 404);
             }
 
-            $stmt = $this->db->prepare("SELECT name FROM users WHERE id = ?");
+            $stmt = $this->db->prepare("SELECT name FROM users WHERE id = ? LIMIT 1");
             $stmt->execute([$adminId]);
             $admin = $stmt->fetch(PDO::FETCH_OBJ);
 
@@ -520,12 +627,20 @@ class Chat {
             return $this->success(['assigned' => true]);
 
         } catch (PDOException $e) {
-            Logger::error("Assign ticket failed: " . $e->getMessage());
+            Logger::error("Assign ticket failed: " . $e->getMessage(), [
+                'ticket_id' => $ticketId ?? null,
+                'admin_id' => $adminId ?? null,
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            
             return $this->error('Greška pri preuzimanju tiketa', 500);
         }
     }
 
-    // ---------------- CLOSE THE TICKET ------------------//
+    /**
+     * Zatvaranje tiketa
+     */
     public function closeTicket(): array 
     {
         try {
@@ -553,12 +668,19 @@ class Chat {
             return $this->success(['closed' => true]);
 
         } catch (PDOException $e) {
-            Logger::error("Close ticket failed: " . $e->getMessage());
+            Logger::error("Close ticket failed: " . $e->getMessage(), [
+                'ticket_id' => $ticketId ?? null,
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            
             return $this->error('Greška pri zatvaranju tiketa', 500);
         }
     }
 
-    // ---------------- SET TYPING INDICATE ------------------//
+    /**
+     * Ažuriranje typing indikatora
+     */
     public function updateTyping(): array 
     {
         try {
@@ -580,12 +702,19 @@ class Chat {
             return $this->success(['typing_updated' => true]);
 
         } catch (PDOException $e) {
-            Logger::error("Update typing failed: " . $e->getMessage());
+            Logger::error("Update typing failed: " . $e->getMessage(), [
+                'ticket_id' => $ticketId ?? null,
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            
             return $this->error('Greška pri ažuriranju typing statusa', 500);
         }
     }
 
-    // ---------------- REAAD TYPING IND ------------------//
+    /**
+     * Dobijanje typing indikatora
+     */
     public function getTyping(): array 
     {
         try {
@@ -593,7 +722,9 @@ class Chat {
 
             $stmt = $this->db->prepare(
                 "SELECT * FROM chat_typing 
-                WHERE ticket_id = ? AND updated_at > DATE_SUB(NOW(), INTERVAL 3 SECOND)"
+                WHERE ticket_id = ? 
+                AND updated_at > DATE_SUB(NOW(), INTERVAL 3 SECOND)
+                LIMIT 1"
             );
             $stmt->execute([$ticketId]);
             $typing = $stmt->fetch(PDO::FETCH_OBJ);
@@ -601,7 +732,12 @@ class Chat {
             return $this->success(['typing' => $typing]);
 
         } catch (PDOException $e) {
-            Logger::error("Get typing failed: " . $e->getMessage());
+            Logger::error("Get typing failed: " . $e->getMessage(), [
+                'ticket_id' => $ticketId ?? null,
+                'file' => __FILE__,
+                'line' => __LINE__
+            ]);
+            
             return $this->error('Greška pri preuzimanju typing statusa', 500);
         }
     }

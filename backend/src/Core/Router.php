@@ -10,6 +10,7 @@ use Controllers\DepartureController;
 use Controllers\OrderController;
 use Controllers\TourController;
 use Controllers\UserController;
+use Guards\DemoGuard;
 use Middleware\DemoMiddleware;
 use Models\User;
 use PDO;
@@ -974,17 +975,21 @@ class Router {
 
     // ======================== DEPARTURE ROUTES ========================
 
+    /**
+     * Departure routing - detektuje HTTP metodu i akciju
+     */
     private function handleDepartures(): void
     {
+        // Provera autentifikacije
         if (!isset($_SESSION['user'])) {
             http_response_code(401);
             echo json_encode([
-                'user' => 404,
                 'error' => 'Vaša sesija je istekla!'
             ], JSON_UNESCAPED_UNICODE);
             return;
         }
 
+        // Provera autorizacije - samo Driver/Admin/Super
         if (!Validator::isDriver() && !Validator::isAdmin() && !Validator::isSuper()) {
             http_response_code(403);
             echo json_encode([
@@ -993,16 +998,268 @@ class Router {
             return;
         }
 
+        $method = $_SERVER['REQUEST_METHOD'];
         $controller = new DepartureController($this->db, $this->data);
-        $controller->handleRequest();
+
+        // Demo middleware za POST, PUT, DELETE
+        if (in_array($method, ['POST', 'PUT', 'DELETE'])) {
+            DemoMiddleware::handle();
+        }
+
+        try {
+            switch ($method) {
+                case 'GET':
+                    $this->handleDeparturesGet($controller);
+                    break;
+                
+                case 'POST':
+                    $this->handleDeparturesPost($controller);
+                    break;
+                
+                case 'PUT':
+                    $this->handleDeparturesPut($controller);
+                    break;
+                
+                case 'DELETE':
+                    $this->handleDeparturesDelete($controller);
+                    break;
+                
+                default:
+                    http_response_code(405);
+                    echo json_encode([
+                        'error' => 'Metoda nije dozvoljena'
+                    ], JSON_UNESCAPED_UNICODE);
+            }
+        } catch (\Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'error' => 'Neočekivana greška',
+                'message' => $_ENV['APP_ENV'] === 'development' ? $e->getMessage() : null
+            ], JSON_UNESCAPED_UNICODE);
+        }
     }
 
+    /**
+     * GET akcije za departure
+     */
+    private function handleDeparturesGet(DepartureController $controller): void
+    {
+        // GET orders of specific departure
+        if (isset($this->data->departure->id) && !empty($this->data->departure->id)) {
+            $controller->getOrdersOfDeparture();
+            return;
+        }
+
+        // GET departures by filters (default)
+        $controller->getDeparturesByFilter();
+    }
+
+    /**
+     * POST akcije za departure (admin only)
+     */
+    private function handleDeparturesPost(DepartureController $controller): void
+    {
+        $this->requireAdmin();
+
+        if (isset($this->data->drive->create)) {
+            $controller->createDeparture();
+            return;
+        }
+
+        http_response_code(400);
+        echo json_encode([
+            'error' => 'Nevalidna POST akcija'
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * PUT akcije za departure (admin only)
+     */
+    private function handleDeparturesPut(DepartureController $controller): void
+    {
+        $this->requireAdmin();
+
+        if (isset($this->data->drive->update)) {
+            $controller->updateDeparture();
+            return;
+        }
+
+        http_response_code(400);
+        echo json_encode([
+            'error' => 'Nevalidna PUT akcija'
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * DELETE akcije za departure (admin only)
+     */
+    private function handleDeparturesDelete(DepartureController $controller): void
+    {
+        $this->requireAdmin();
+
+        if (isset($this->data->drive->delete)) {
+            $controller->deleteDeparture();
+            return;
+        }
+
+        http_response_code(400);
+        echo json_encode([
+            'error' => 'Nevalidna DELETE akcija'
+        ], JSON_UNESCAPED_UNICODE);
+    }
     // ======================== CHAT ROUTES ========================
 
+    /**
+     * Chat routing - detektuje HTTP metodu i akciju
+     */
     private function handleChats(): void
     {
+        // Demo admin provera - nema pristup live chat-u
+        if (Validator::isAdmin() && Validator::isDemo()) {
+            DemoGuard::denyIfDemo('Demo Admin nema pristup live chat-u.');
+        }
+
+        $method = $_SERVER['REQUEST_METHOD'];
         $controller = new ChatController($this->db, $this->data);
-        $controller->handleRequest();
+
+        try {
+            switch ($method) {
+                case 'GET':
+                    $this->handleChatsGet($controller);
+                    break;
+                
+                case 'POST':
+                    $this->handleChatsPost($controller);
+                    break;
+                
+                case 'PUT':
+                    // Trenutno nema PUT akcija za chat
+                    http_response_code(405);
+                    echo json_encode([
+                        'error' => 'PUT metoda nije implementirana za chat'
+                    ], JSON_UNESCAPED_UNICODE);
+                    break;
+                
+                case 'DELETE':
+                    // Trenutno nema DELETE akcija za chat
+                    http_response_code(405);
+                    echo json_encode([
+                        'error' => 'DELETE metoda nije implementirana za chat'
+                    ], JSON_UNESCAPED_UNICODE);
+                    break;
+                
+                default:
+                    http_response_code(405);
+                    echo json_encode([
+                        'error' => 'Metoda nije dozvoljena'
+                    ], JSON_UNESCAPED_UNICODE);
+            }
+        } catch (\Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'error' => 'Neočekivana greška',
+                'message' => $_ENV['APP_ENV'] === 'development' ? $e->getMessage() : null
+            ], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+    /**
+     * GET akcije za chat
+     */
+    private function handleChatsGet(ChatController $controller): void
+    {
+        // POLL messages (long polling)
+        if (isset($this->data->chat->poll_messages) && $this->data->chat->poll_messages) {
+            $controller->pollMessages();
+            return;
+        }
+
+        // GET ticket messages
+        if (isset($this->data->chat->messages) && $this->data->chat->messages) {
+            $controller->getTicketMessages();
+            return;
+        }
+
+        // GET typing indicator
+        if (isset($this->data->chat->get_typing) && $this->data->chat->get_typing) {
+            $controller->getTypingIndicator();
+            return;
+        }
+
+        // GET all tickets (admin only)
+        if (isset($this->data->chat->admin->tickets) && $this->data->chat->admin->tickets) {
+            $this->requireAdmin();
+            $controller->getAllTickets();
+            return;
+        }
+
+        // POLL new tickets (admin only, long polling)
+        if (isset($this->data->chat->admin->poll_tickets) && $this->data->chat->admin->poll_tickets) {
+            $this->requireAdmin();
+            $controller->pollNewTickets();
+            return;
+        }
+
+        http_response_code(400);
+        echo json_encode([
+            'error' => 'Nevalidni parametri za GET zahtev'
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * POST akcije za chat
+     */
+    private function handleChatsPost(ChatController $controller): void
+    {
+        // CREATE ticket
+        if (isset($this->data->chat->create_ticket) && $this->data->chat->create_ticket) {
+            $controller->createTicket();
+            return;
+        }
+
+        // SEND message
+        if (isset($this->data->chat->send_message) && $this->data->chat->send_message) {
+            $controller->sendMessage();
+            return;
+        }
+
+        // UPDATE typing indicator
+        if (isset($this->data->chat->typing) && $this->data->chat->typing) {
+            $controller->updateTypingIndicator();
+            return;
+        }
+
+        // MARK messages as read
+        if (isset($this->data->chat->mark_read) && $this->data->chat->mark_read) {
+            $controller->markMessagesAsRead();
+            return;
+        }
+
+        // ASSIGN ticket (admin only)
+        if (isset($this->data->chat->admin->assign) && $this->data->chat->admin->assign) {
+            $this->requireAdmin();
+            $controller->assignTicket();
+            return;
+        }
+
+        // CLOSE ticket (admin only)
+        if (isset($this->data->chat->admin->close) && $this->data->chat->admin->close) {
+            $this->requireAdmin();
+            $controller->closeTicket();
+            return;
+        }
+
+        // REOPEN ticket (admin only)
+        if (isset($this->data->chat->admin->reopen) && $this->data->chat->admin->reopen) {
+            $this->requireAdmin();
+            $controller->reopenTicket();
+            return;
+        }
+
+        http_response_code(400);
+        echo json_encode([
+            'error' => 'Nevalidna POST akcija'
+        ], JSON_UNESCAPED_UNICODE);
     }
 
     // ======================== HELPER METHODS ========================
