@@ -229,10 +229,158 @@ class Router {
 
     // ======================== CITY ROUTES ========================
 
+    /**
+     * City routing - detektuje HTTP metodu i akciju
+     */
     private function handleCities(): void
     {
+        $method = $_SERVER['REQUEST_METHOD'];
         $controller = new CityController($this->db, $this->data);
-        $controller->handleRequest();
+
+        // Demo middleware za POST, PUT, DELETE
+        if (in_array($method, ['POST', 'PUT', 'DELETE'])) {
+            DemoMiddleware::handle();
+        }
+
+        try {
+            switch ($method) {
+                case 'GET':
+                    $this->handleCitiesGet($controller);
+                    break;
+                
+                case 'POST':
+                    $this->handleCitiesPost($controller);
+                    break;
+                
+                case 'PUT':
+                    $this->handleCitiesPut($controller);
+                    break;
+                
+                case 'DELETE':
+                    $this->handleCitiesDelete($controller);
+                    break;
+                
+                default:
+                    http_response_code(405);
+                    echo json_encode([
+                        'error' => 'Metoda nije dozvoljena'
+                    ], JSON_UNESCAPED_UNICODE);
+            }
+        } catch (\Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'error' => 'Neočekivana greška',
+                'message' => $_ENV['APP_ENV'] === 'development' ? $e->getMessage() : null
+            ], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+    /**
+     * GET akcije za gradove
+     */
+    private function handleCitiesGet(CityController $controller): void
+    {
+        // GET full cities with deleted photos (admin)
+        if (isset($this->data->cities->countryID)) {
+            $controller->getFullCitiesByCountry();
+            return;
+        }
+
+        // GET cities by country (alternative parameter)
+        if (isset($this->data->cities->byID)) {
+            $controller->getCitiesByCountryIdAlt();
+            return;
+        }
+
+        // GET cities by country_id
+        if (isset($this->data->cities->country_id)) {
+            $controller->getCitiesByCountry();
+            return;
+        }
+
+        // GET single city by id
+        if (isset($this->data->cities->id)) {
+            $controller->getCityById();
+            return;
+        }
+
+        // GET all cities (default)
+        $controller->getAllCities();
+    }
+
+    /**
+     * POST akcije za gradove (admin only)
+     */
+    private function handleCitiesPost(CityController $controller): void
+    {
+        $this->requireAdmin();
+
+        // CREATE city
+        if (isset($this->data->cities) && $this->data->cities === "create") {
+            $controller->createCity();
+            return;
+        }
+
+        // UPDATE city - add photos
+        if (isset($this->data->cities) && $this->data->cities === "update") {
+            $controller->addPhotosToCity();
+            return;
+        }
+
+        http_response_code(400);
+        echo json_encode([
+            'error' => 'Nevalidna POST akcija'
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * PUT akcije za gradove (admin only)
+     */
+    private function handleCitiesPut(CityController $controller): void
+    {
+        $this->requireAdmin();
+
+        // DELETE city photos (soft delete)
+        if (isset($this->data->cities->ids)) {
+            $controller->deleteCityPhotos();
+            return;
+        }
+
+        // RESTORE city photos
+        if (isset($this->data->cities->ids_restore)) {
+            $controller->restoreCityPhotos();
+            return;
+        }
+
+        http_response_code(400);
+        echo json_encode([
+            'error' => 'Nevalidna PUT akcija'
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * DELETE akcije za gradove (admin only)
+     */
+    private function handleCitiesDelete(CityController $controller): void
+    {
+        $this->requireAdmin();
+
+        if (!isset($this->data->cities->id)) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'ID grada je obavezan'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        // RESTORE city
+        if (isset($this->data->cities->restore) && $this->data->cities->restore) {
+            $controller->restoreCity();
+            return;
+        }
+
+        // DELETE city (soft delete)
+        $controller->deleteCity();
     }
 
     // ======================== TOUR ROUTES ========================
