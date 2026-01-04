@@ -80,27 +80,445 @@ class Router {
 
     // ======================== USER ROUTES ========================
 
+    /**
+     * User routing - detektuje HTTP metodu i akciju
+     */
     private function handleUsers(): void
     {
+        $method = $_SERVER['REQUEST_METHOD'];
         $controller = new UserController($this->db, $this->data);
-        $controller->handleRequest();
+
+        // Dodela podataka iz $data u User objekat (kroz controller)
+        $this->assignUserDataToController($controller);
+
+        // Demo middleware samo za PUT i DELETE
+        if (in_array($method, ['PUT', 'DELETE'])) {
+            DemoMiddleware::handle();
+        }
+
+        try {
+            switch ($method) {
+                case 'GET':
+                    $this->handleUsersGet($controller);
+                    break;
+                
+                case 'POST':
+                    $this->handleUsersPost($controller);
+                    break;
+                
+                case 'PUT':
+                    $this->handleUsersPut($controller);
+                    break;
+                
+                case 'DELETE':
+                    $this->handleUsersDelete($controller);
+                    break;
+                
+                default:
+                    http_response_code(405);
+                    echo json_encode([
+                        'error' => 'Metoda nije dozvoljena'
+                    ], JSON_UNESCAPED_UNICODE);
+            }
+        } catch (\Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'error' => 'Neočekivana greška',
+                'message' => $_ENV['APP_ENV'] === 'development' ? $e->getMessage() : null
+            ], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+    /**
+     * Pomoćna metoda za dodelu podataka kontroleru
+     */
+    private function assignUserDataToController(UserController $controller): void
+    {
+        // Pozivamo privatnu metodu kontrolera preko reflection (ili preko javne metode ako je napravimo)
+        // Za sada, kontroler sam dodeljuje podatke u konstruktoru
+        // Alternativa: napraviti public metodu assignUserData() u UserController-u
+    }
+
+    /**
+     * GET akcije za korisnike
+     */
+    private function handleUsersGet(UserController $controller): void
+    {
+        // GET user by email (admin)
+        if (isset($this->data->users->byEmail) && !empty($this->data->users->byEmail)) {
+            $this->requireAdmin();
+            $controller->getUserByEmail();
+            return;
+        }
+
+        // GET user logs (admin)
+        if (isset($this->data->users->getLogs) && !empty($this->data->users->getLogs)) {
+            $this->requireAdmin();
+            $controller->getUserLogs();
+            return;
+        }
+
+        // GET akcije koje zahtevaju "user" parametar
+        if (isset($this->data->user) && !empty($this->data->user)) {
+            
+            // GET all users (admin)
+            if (isset($this->data->all) && !empty($this->data->all)) {
+                $this->requireAdmin();
+                $controller->getAllUsers();
+                return;
+            }
+
+            // GET user by ID (admin)
+            if (isset($this->data->byID) && !empty($this->data->byID)) {
+                $this->requireAdmin();
+                $controller->getUserById();
+                return;
+            }
+
+            // GET users by name (admin)
+            if (isset($this->data->byName) && !empty($this->data->byName)) {
+                $this->requireAdmin();
+                $controller->getUsersByName();
+                return;
+            }
+
+            // GET users by city (admin)
+            if (isset($this->data->byCity) && !empty($this->data->byCity)) {
+                $this->requireAdmin();
+                $controller->getUsersByCity();
+                return;
+            }
+
+            // CHECK reset token
+            if (isset($this->data->token) && !empty($this->data->token)) {
+                $controller->checkResetToken();
+                return;
+            }
+        }
+
+        http_response_code(400);
+        echo json_encode([
+            'error' => 'Nevalidni parametri za GET zahtev'
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * POST akcije za korisnike
+     */
+    private function handleUsersPost(UserController $controller): void
+    {
+        // REGISTER user (self-registration)
+        if (isset($this->data->users->signin) && !empty($this->data->users->signin)) {
+            $controller->registerUser();
+            return;
+        }
+
+        // CREATE user by admin
+        if (isset($this->data->users->byAdmin) && !empty($this->data->users->byAdmin)) {
+            $this->requireAdmin();
+            $controller->createUserByAdmin();
+            return;
+        }
+
+        // LOGIN
+        if (isset($this->data->users->login) && !empty($this->data->users->login)) {
+            $controller->loginUser();
+            return;
+        }
+
+        // LOGOUT
+        if (isset($this->data->logout) && !empty($this->data->logout)) {
+            $controller->logoutUser();
+            return;
+        }
+
+        http_response_code(400);
+        echo json_encode([
+            'error' => 'Nevalidna POST akcija'
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * PUT akcije za korisnike
+     */
+    private function handleUsersPut(UserController $controller): void
+    {
+        // UPDATE profile
+        if (isset($this->data->updateProfile) && !empty($this->data->updateProfile)) {
+            $controller->updateProfile();
+            return;
+        }
+
+        // UPDATE password
+        if (isset($this->data->updatePass) && !empty($this->data->updatePass)) {
+            $controller->updatePassword();
+            return;
+        }
+
+        // REQUEST password reset
+        if (isset($this->data->resetPass) && !empty($this->data->resetPass)) {
+            $controller->requestPasswordReset();
+            return;
+        }
+
+        // PROCESS password reset (with token)
+        if (isset($this->data->token) && !empty($this->data->token)) {
+            $controller->processPasswordReset();
+            return;
+        }
+
+        // UPDATE by admin
+        if (isset($this->data->updateByAdmin) && !empty($this->data->updateByAdmin)) {
+            $this->requireAdmin();
+            $controller->updateUserByAdmin();
+            return;
+        }
+
+        http_response_code(400);
+        echo json_encode([
+            'error' => 'Nevalidna PUT akcija'
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * DELETE akcije za korisnike
+     */
+    private function handleUsersDelete(UserController $controller): void
+    {
+        // RESTORE user (admin)
+        if (isset($this->data->restore) && !empty($this->data->restore)) {
+            $this->requireAdmin();
+            $controller->restoreUser();
+            return;
+        }
+
+        // DELETE user
+        if (isset($this->data->delete) && !empty($this->data->delete)) {
+            $controller->deleteUser();
+            return;
+        }
+
+        http_response_code(400);
+        echo json_encode([
+            'error' => 'Nevalidna DELETE akcija'
+        ], JSON_UNESCAPED_UNICODE);
     }
 
     // ======================== ORDER ROUTES ========================
 
+    /**
+     * Order routing - detektuje HTTP metodu i akciju
+     */
     private function handleOrders(): void
     {
+        // Provera autentifikacije
         if (!isset($_SESSION['user'])) {
             http_response_code(401);
             echo json_encode([
-                'user' => 404,
                 'error' => 'Vaša sesija je istekla, molimo Vas da se ulogujete ponovo!'
             ], JSON_UNESCAPED_UNICODE);
             return;
         }
 
+        $method = $_SERVER['REQUEST_METHOD'];
         $controller = new OrderController($this->db, $this->data, $this->sid);
-        $controller->handleRequest();
+
+        // Demo middleware za POST, PUT, DELETE
+        if (in_array($method, ['POST', 'PUT', 'DELETE'])) {
+            DemoMiddleware::handle();
+        }
+
+        try {
+            switch ($method) {
+                case 'GET':
+                    $this->handleOrdersGet($controller);
+                    break;
+                
+                case 'POST':
+                    $this->handleOrdersPost($controller);
+                    break;
+                
+                case 'PUT':
+                    $this->handleOrdersPut($controller);
+                    break;
+                
+                case 'DELETE':
+                    $this->handleOrdersDelete($controller);
+                    break;
+                
+                default:
+                    http_response_code(405);
+                    echo json_encode([
+                        'error' => 'Metoda nije dozvoljena'
+                    ], JSON_UNESCAPED_UNICODE);
+            }
+        } catch (\Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'error' => 'Neočekivana greška',
+                'message' => $_ENV['APP_ENV'] === 'development' ? $e->getMessage() : null
+            ], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+    /**
+     * GET akcije za rezervacije
+     */
+    private function handleOrdersGet(OrderController $controller): void
+    {
+        if (!isset($this->data->orders) || empty($this->data->orders)) {
+            http_response_code(400);
+            echo json_encode([
+                'error' => 'Nedostaju parametri za pretragu'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        // GET by user_id (pojedinačni user)
+        if (isset($this->data->orders->user_id) 
+            && !empty($this->data->orders->user_id)
+            && !isset($this->data->orders->adminOrders) 
+            && !isset($this->data->orders->filters)) {
+            
+            $controller->getOrdersByUser();
+            return;
+        }
+
+        // GET all orders (admin/driver)
+        if (isset($this->data->orders->adminOrders->all) 
+            && !empty($this->data->orders->adminOrders->all)) {
+            
+            $this->requireAdminOrDriver();
+            $controller->getAllOrders();
+            return;
+        }
+
+        // GET by filters (admin)
+        if (isset($this->data->orders->filters) && !empty($this->data->orders->filters)) {
+            $this->requireAdmin();
+            $controller->getOrdersByFilters();
+            return;
+        }
+
+        // GET by date range (admin/driver)
+        if (isset($this->data->orders->from_date) || isset($this->data->orders->to_date)) {
+            $this->requireAdminOrDriver();
+            $controller->getOrdersByDateRange();
+            return;
+        }
+
+        // GET by tour_id and date (admin/driver)
+        if (isset($this->data->orders->tour_id) 
+            && !empty($this->data->orders->tour_id)
+            && isset($this->data->orders->date) 
+            && !empty($this->data->orders->date)) {
+            
+            $this->requireAdminOrDriver();
+            $controller->getOrdersByTourAndDate();
+            return;
+        }
+
+        // GET by tour_id only (admin/driver)
+        if (isset($this->data->orders->tour_id) && !isset($this->data->orders->date)) {
+            $this->requireAdminOrDriver();
+            $controller->getOrdersByTour();
+            return;
+        }
+
+        http_response_code(400);
+        echo json_encode([
+            'error' => 'Nevalidni parametri za pretragu'
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * POST akcije za rezervacije
+     */
+    private function handleOrdersPost(OrderController $controller): void
+    {
+        // CREATE order
+        if (isset($this->data->orders->create) && !empty($this->data->orders->create)) {
+            $controller->createOrder();
+            return;
+        }
+
+        http_response_code(400);
+        echo json_encode([
+            'error' => 'Nevalidna POST akcija'
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * PUT akcije za rezervacije
+     */
+    private function handleOrdersPut(OrderController $controller): void
+    {
+        // UPDATE order
+        if (isset($this->data->orders->update)) {
+            $controller->updateOrder();
+            return;
+        }
+
+        // ASSIGN driver (admin)
+        if (isset($this->data->orders->selected) 
+            && !empty($this->data->orders->selected)
+            && isset($this->data->orders->driver) 
+            && !empty($this->data->orders->driver)) {
+            
+            $this->requireAdmin();
+            $controller->assignDriver();
+            return;
+        }
+
+        // REGENERATE voucher (admin)
+        if (isset($this->data->orders->voucher) && !empty($this->data->orders->voucher)) {
+            $this->requireAdmin();
+            $controller->regenerateVoucher();
+            return;
+        }
+
+        http_response_code(400);
+        echo json_encode([
+            'error' => 'Nevalidna PUT akcija'
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * DELETE akcije za rezervacije
+     */
+    private function handleOrdersDelete(OrderController $controller): void
+    {
+        // RESTORE order (admin)
+        if (isset($this->data->orders->restore) && !empty($this->data->orders->restore)) {
+            $this->requireAdmin();
+            $controller->restoreOrder();
+            return;
+        }
+
+        // DELETE order
+        if (isset($this->data->orders->delete) && !empty($this->data->orders->delete)) {
+            $controller->deleteOrder();
+            return;
+        }
+
+        http_response_code(400);
+        echo json_encode([
+            'error' => 'Nevalidna DELETE akcija'
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * Helper za admin ili driver proveru
+     */
+    private function requireAdminOrDriver(): void
+    {
+        if (!Validator::isAdmin() && !Validator::isSuper() && !Validator::isDriver()) {
+            http_response_code(403);
+            echo json_encode([
+                'error' => 'Nemate dozvolu za ovu akciju'
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
     }
 
     // ======================== COUNTRY ROUTES ========================
