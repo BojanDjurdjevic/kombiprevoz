@@ -38,7 +38,7 @@ class Router {
      */
     public function route(): void
     {
-        if (isset($this->data->users) && !empty($this->data->users)) {
+        if (isset($this->data->users) || isset($this->data->user)) {
             $this->handleUsers();
             return;
         }
@@ -208,6 +208,10 @@ class Router {
      */
     private function handleUsersPost(UserController $controller): void
     {
+        if(isset($this->data->user)) {
+            $this->checkAuth($this->db);
+            return;
+        }
         // REGISTER user (self-registration)
         if (isset($this->data->users->signin) && !empty($this->data->users->signin)) {
             $controller->registerUser();
