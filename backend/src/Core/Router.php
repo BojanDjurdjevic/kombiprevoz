@@ -105,10 +105,126 @@ class Router {
 
     // ======================== COUNTRY ROUTES ========================
 
+    /**
+     * Country routing - detektuje HTTP metodu i akciju
+     */
     private function handleCountries(): void
     {
+        $method = $_SERVER['REQUEST_METHOD'];
         $controller = new CountryController($this->db, $this->data);
-        $controller->handleRequest();
+
+        // Demo middleware za POST, PUT, DELETE
+        if (in_array($method, ['POST', 'PUT', 'DELETE'])) {
+            DemoMiddleware::handle();
+        }
+
+        try {
+            switch ($method) {
+                case 'GET':
+                    $this->handleCountriesGet($controller);
+                    break;
+                
+                case 'POST':
+                    $this->handleCountriesPost($controller);
+                    break;
+                
+                case 'PUT':
+                    $this->handleCountriesPut($controller);
+                    break;
+                
+                case 'DELETE':
+                    $this->handleCountriesDelete($controller);
+                    break;
+                
+                default:
+                    http_response_code(405);
+                    echo json_encode([
+                        'error' => 'Metoda nije dozvoljena'
+                    ], JSON_UNESCAPED_UNICODE);
+            }
+        } catch (\Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'error' => 'Neočekivana greška',
+                'message' => $_ENV['APP_ENV'] === 'development' ? $e->getMessage() : null
+            ], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+    /**
+     * GET akcije za države
+     */
+    private function handleCountriesGet(CountryController $controller): void
+    {
+        // GET single country by ID
+        if (isset($this->data->country->country_id) && !empty($this->data->country->country_id)) {
+            $controller->getCountryById();
+            return;
+        }
+
+        // GET all countries (default)
+        $controller->getAllCountries();
+    }
+
+    /**
+     * POST akcije za države (admin only)
+     */
+    private function handleCountriesPost(CountryController $controller): void
+    {
+        $this->requireAdmin();
+
+        // CREATE country
+        if (isset($this->data->country) && $this->data->country === "create") {
+            $controller->createCountry();
+            return;
+        }
+
+        // UPDATE country (POST metoda za file upload)
+        if (isset($this->data->country) && $this->data->country === "update") {
+            $controller->updateCountry();
+            return;
+        }
+
+        http_response_code(400);
+        echo json_encode([
+            'error' => 'Nevalidna POST akcija'
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * PUT akcije za države (admin only)
+     */
+    private function handleCountriesPut(CountryController $controller): void
+    {
+        $this->requireAdmin();
+
+        if (isset($this->data->country) && $this->data->country === "update") {
+            $controller->updateCountry();
+            return;
+        }
+
+        http_response_code(400);
+        echo json_encode([
+            'error' => 'Nevalidna PUT akcija'
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * DELETE akcije za države (admin only)
+     */
+    private function handleCountriesDelete(CountryController $controller): void
+    {
+        $this->requireAdmin();
+
+        if (isset($this->data->country->country_id) && !empty($this->data->country->country_id)) {
+            $controller->deleteCountry();
+            return;
+        }
+
+        http_response_code(400);
+        echo json_encode([
+            'error' => 'ID države je obavezan za brisanje'
+        ], JSON_UNESCAPED_UNICODE);
     }
 
     // ======================== CITY ROUTES ========================
@@ -120,6 +236,10 @@ class Router {
     }
 
     // ======================== TOUR ROUTES ========================
+
+    /**
+     * Tour routing - detektuje HTTP metodu i akciju, zatim poziva odgovarajuću controller metodu
+     */
     private function handleTours(): void
     {
         $method = $_SERVER['REQUEST_METHOD'];
@@ -319,8 +439,11 @@ class Router {
         $controller->handleRequest();
     }
 
-    // ======================== HELPER METHODS -> auths and roles ========================
+    // ======================== HELPER METHODS ========================
 
+    /**
+     * Provera admin/super privilegija
+     */
     private function requireAdmin(): void
     {
         if (!Validator::isAdmin() && !Validator::isSuper()) {
@@ -332,7 +455,9 @@ class Router {
         }
     }
 
-
+    /**
+     * Statička metoda za proveru autentifikacije
+     */
     public static function checkAuth(PDO $db): bool
     {
         return User::isLoged($db);
