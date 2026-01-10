@@ -80,6 +80,7 @@ class UserController {
      */
     public function getAllUsers(): void
     {
+        $this->assignUserData();
         $this->user->getAll();
     }
 
@@ -89,6 +90,7 @@ class UserController {
      */
     public function getUserById(): void
     {
+        $this->assignUserData();
         $this->user->getByID();
     }
 
@@ -98,6 +100,7 @@ class UserController {
      */
     public function getUsersByName(): void
     {
+        $this->assignUserData();
         $this->user->getByName();
     }
 
@@ -107,6 +110,7 @@ class UserController {
      */
     public function getUsersByCity(): void
     {
+        $this->assignUserData();
         $this->user->getByCity();
     }
 
@@ -116,6 +120,7 @@ class UserController {
      */
     public function getUserByEmail(): void
     {
+        $this->assignUserData();
         $result = $this->user->getByEmail();
 
         if ($result['success']) {
@@ -146,6 +151,7 @@ class UserController {
      */
     public function getUserLogs(): void
     {
+        $this->assignUserData();
         $logs = $this->user->getLogs();
         
         http_response_code(200);
@@ -161,6 +167,7 @@ class UserController {
      */
     public function checkResetToken(): void
     {
+        $this->assignUserData();
         if (empty($this->user->token)) {
             http_response_code(400);
             echo json_encode([
@@ -180,6 +187,7 @@ class UserController {
      */
     public function registerUser(): void
     {
+        $this->assignUserData();
         // Validacija obaveznih polja
         if (empty($this->user->name) || empty($this->user->email) 
             || empty($this->user->pass) || empty($this->user->address) 
@@ -210,6 +218,7 @@ class UserController {
      */
     public function createUserByAdmin(): void
     {
+        $this->assignUserData();
         // Validacija obaveznih polja
         if (empty($this->user->name) || empty($this->user->email) 
             || empty($this->user->address) || empty($this->user->city) 
@@ -250,6 +259,7 @@ class UserController {
      */
     public function loginUser(): void
     {
+        $this->assignUserData();
         if (empty($this->user->email) || empty($this->user->pass)) {
             http_response_code(400);
             echo json_encode([
@@ -287,6 +297,7 @@ class UserController {
      */
     public function updateProfile(): void
     {
+        $this->assignUserData();
         if (!($this->user->isOwner() || Validator::isAdmin() || Validator::isSuper())) {
             http_response_code(403);
             echo json_encode([
@@ -313,6 +324,7 @@ class UserController {
      */
     public function updatePassword(): void
     {
+        $this->assignUserData();
         if (!$this->user->isOwner()) {
             http_response_code(403);
             echo json_encode([
@@ -346,6 +358,7 @@ class UserController {
      */
     public function requestPasswordReset(): void
     {
+        $this->assignUserData();
         if (empty($this->user->email)) {
             http_response_code(400);
             echo json_encode([
@@ -372,6 +385,7 @@ class UserController {
      */
     public function processPasswordReset(): void
     {
+        $this->assignUserData();
         if (empty($this->user->token)) {
             http_response_code(400);
             echo json_encode([
@@ -405,6 +419,7 @@ class UserController {
      */
     public function updateUserByAdmin(): void
     {
+        $this->assignUserData();
         // Validacija ID-a
         if (empty($this->user->id)) {
             http_response_code(400);
@@ -437,6 +452,7 @@ class UserController {
      */
     public function deleteUser(): void
     {
+        $this->assignUserData();
         if (empty($this->user->id)) {
             http_response_code(400);
             echo json_encode([
@@ -462,6 +478,7 @@ class UserController {
      */
     public function restoreUser(): void
     {
+        $this->assignUserData();
         if (empty($this->user->id)) {
             http_response_code(400);
             echo json_encode([
