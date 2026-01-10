@@ -433,6 +433,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
                 if(res.data.success) {
                     user.successMsg = res.data.msg
                     //router.push('/rezervacije')
+                    actions.value.getUserOrders()
                 }
                 return true
             } catch(error) {
