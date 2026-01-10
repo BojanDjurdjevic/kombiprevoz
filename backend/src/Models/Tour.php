@@ -561,7 +561,7 @@ class Tour {
         if (!empty($this->inbound)) {
             $sql = "SELECT * FROM tours 
                     WHERE ((from_city = :from_city AND to_city = :to_city) 
-                    OR (from_city = :to_city AND to_city = :from_city))
+                    OR (from_city = :from_city2 AND to_city = :to_city2))
                     AND deleted = 0";
         } else {
             $sql = "SELECT * FROM tours 
@@ -572,8 +572,16 @@ class Tour {
 
         try {
             $stmt = $this->db->prepare($sql);
-            $stmt->bindParam(':from_city', $this->from_city, PDO::PARAM_STR);
-            $stmt->bindParam(':to_city', $this->to_city, PDO::PARAM_STR);
+            if (!empty($this->inbound)) {
+                $stmt->bindParam(':from_city', $this->from_city, PDO::PARAM_STR);
+                $stmt->bindParam(':to_city', $this->to_city, PDO::PARAM_STR);
+                $stmt->bindParam(':from_city2', $this->to_city, PDO::PARAM_STR);
+                $stmt->bindParam(':to_city2', $this->from_city, PDO::PARAM_STR); 
+            } else {
+                $stmt->bindParam(':from_city', $this->from_city, PDO::PARAM_STR);
+                $stmt->bindParam(':to_city', $this->to_city, PDO::PARAM_STR);
+            }
+            
             $stmt->execute();
             
             $num = $stmt->rowCount();

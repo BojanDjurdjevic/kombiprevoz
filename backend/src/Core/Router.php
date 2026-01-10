@@ -154,7 +154,7 @@ class Router {
 
         // GET user logs (admin)
         if (isset($this->data->users->getLogs) && !empty($this->data->users->getLogs)) {
-            $this->requireAdmin();
+            //$this->requireAdmin();
             $controller->getUserLogs();
             return;
         }

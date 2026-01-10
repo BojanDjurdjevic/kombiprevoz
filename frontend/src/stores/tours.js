@@ -164,7 +164,7 @@ export const useTourStore = defineStore('tours', () => {
             item.add_from = item.add_from.trim()
             item.add_to = item.add_to.trim()
         })
-        if(!user.user.is_demo) {
+        if(!user.user?.is_demo) {
             orders.addedOrders.orders.create = bookedTours.value
             orders.addedOrders.orders.user_id = user.user.id
         } else {

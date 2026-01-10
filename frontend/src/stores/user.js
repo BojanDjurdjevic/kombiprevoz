@@ -171,6 +171,7 @@ export const useUserStore = defineStore('user', () => {
                     const redirectPath = route.query.redirect || '/'
                     router.push(redirectPath)
                     showSucc(res, 6000)
+                    actions.value.getUserLogs()
                     orders.actions.getUserOrders(orders.addedOrders.orders)
                 } else {
                     console.log(res.data)
@@ -264,6 +265,7 @@ export const useUserStore = defineStore('user', () => {
                     showSucc(res, 9000)
                     user.value = res.data.user
                     console.log(user.value)
+                    actions.value.getUserLogs()
                 }
             } catch (error) {
                 console.dir(error)
