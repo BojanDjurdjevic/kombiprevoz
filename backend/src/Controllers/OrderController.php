@@ -373,8 +373,16 @@ class OrderController {
         }
 
         if ($hasReschedule) {
+            Logger::error('outDate type: ' . gettype($this->data->orders->reschedule->outDate));
+            Logger::error('outDate value: ' . var_export($this->data->orders->reschedule->outDate, true));
+            Logger::error('inDate type: ' . gettype($this->data->orders->reschedule->inDate));
+            Logger::error('inDate value: ' . var_export($this->data->orders->reschedule->inDate, true));
+
             $outDate = $this->data->orders->reschedule->outDate ?? null;
             $inDate = $this->data->orders->reschedule->inDate ?? null;
+
+            Logger::error('$outDate after assignment: ' . var_export($outDate, true));
+            Logger::error('$inDate after assignment: ' . var_export($inDate, true));
 
             if ($outDate && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $outDate)) {
                 http_response_code(400);

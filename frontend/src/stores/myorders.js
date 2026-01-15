@@ -31,6 +31,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
         let m = d.getMonth()
         let month = months[m]
         let dates = String(d.getDate())
+        dates = dates.length === 1 ? "0" + dates : dates 
         let formated
         if(view) formated = dates + "." + month + "." + year 
         else formated = year  + "-" + month + "-" + dates
@@ -488,22 +489,10 @@ export const useMyOrdersStore = defineStore('myorders', () => {
                 console.log(res.data)
                 if(res.data.success) user.showSucc(res, 3000)
                 await actions.value.getUserOrders(addedOrders.value.orders)
-                //await nextTick()
                 
                 router.push({
                     name: 'rezervacije'
-                }) /*
-                setTimeout(() => {
-                    myorders.value.orders.forEach(item => {
-                        if(item.id == old.id) {
-                            oneOrder.value = item
-                        }
-                    })
-                    console.log(oneOrder.value)
-                    router.push({
-                        name: 'uredi'
-                    })
-                }, 3000) */
+                })
             } catch (error) {
                 console.dir(error, {depth: null})
                 user.showErr(error, 3000)
@@ -597,6 +586,8 @@ export const useMyOrdersStore = defineStore('myorders', () => {
                 return
             }
 
+            onRequestDate(requestDate.value)
+            onRequestDateIn(requestDateIn.value)
             const dto = {
                 orders: {
                     user_id: user.user.id,
@@ -609,6 +600,7 @@ export const useMyOrdersStore = defineStore('myorders', () => {
                     }
                 }
             }
+            console.log(dto)
             try {
                 const res = await api.orderItemUpdate(dto)
                 console.log(res.data)

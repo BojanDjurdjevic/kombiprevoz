@@ -484,7 +484,7 @@ class Router {
 
         http_response_code(400);
         echo json_encode([
-            'error' => 'Nevalidna PUT akcija'
+            'error' => 'Nevalidna update akcija'
         ], JSON_UNESCAPED_UNICODE);
     }
 
