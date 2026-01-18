@@ -40,20 +40,25 @@ defineProps({ order: Object })
     </template>
 
     <v-card>
-      <v-card-title>Novi datum</v-card-title>
+      <v-card-title>Izaberi nove datume</v-card-title>
 
       <v-card-text>
         <v-date-input
-          label="Polazak"
+          label="Unesi novi polazak"
           :allowed-dates="search.isDateAllowed"
           @update:model-value="orders.onRequestDate"
         />
+        <v-card-text>
+          Trenutni datum polaska: {{ orders.currentDate }}
+        </v-card-text>
         <v-date-input
-          
-          label="Povratak"
+          label="Unesi novi povratak"
           :allowed-dates="search.isDateInAllowed"
           @update:model-value="orders.onRequestDateIn"
         />
+        <v-card-text>
+          Trenutni datum pvratka: {{ orders.currentDateIn }}
+        </v-card-text>
       </v-card-text>
 
       <v-card-actions>
