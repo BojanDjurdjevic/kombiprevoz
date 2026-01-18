@@ -21,6 +21,13 @@ const search = useSearchStore();
 
   <v-divider class="my-4" />
 
+  <v-container class="text-center">
+    <v-btn
+      color="red-darken-4"
+      variant="text"
+    >Izmeni datume</v-btn>
+  </v-container>
+
   <v-container v-if="!user.user.is_demo">
     <v-row dense>
       <v-col

@@ -670,13 +670,15 @@ class Order {
         if ($hasSecondItem) {
             $item2 = $myOrder['items'][1]['order'];
             $driver2 = $myOrder['items'][1]['driver'];
+            $fromCity2 = $this->escapeForPDF($tourObj[1]['from_city']);
+            $toCity2 = $this->escapeForPDF($tourObj[1]['to_city']);
             
             $html = str_replace('{{ view }}', 'visible', $html);
             $html = str_replace('{{ places2 }}', (string)$item2['places'], $html);
             $html = str_replace('{{ address2 }}', $this->escapeForPDF($item2['pickup']), $html);
-            $html = str_replace('{{ city2 }}', $toCity, $html);
+            $html = str_replace('{{ city2 }}',  $fromCity2, $html);
             $html = str_replace('{{ address_to2 }}', $this->escapeForPDF($item2['dropoff']), $html);
-            $html = str_replace('{{ city_to2 }}', $fromCity, $html);
+            $html = str_replace('{{ city_to2 }}', $toCity2, $html);
             $html = str_replace('{{ date2 }}', Validator::formatDateForFront($item2['date']), $html);
             $html = str_replace('{{ time2 }}', $this->escapeForPDF($tourObj[0]['time']), $html);
             $html = str_replace('{{ price2 }}', (string)$item2['price'], $html);

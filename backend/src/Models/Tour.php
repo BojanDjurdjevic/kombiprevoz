@@ -454,6 +454,8 @@ class Tour {
                 'fullyBookedIn' => false
             ];
         }
+
+        Logger::error('TourID for Outbound: ', ['TourID' => $this->id]);
         
         // Inbound tour (povratna tura)
         $this->id = null;
@@ -491,6 +493,8 @@ class Tour {
         $stmt->bindParam(':format', $format, PDO::PARAM_STR);
         
         $allowedIn = $this->getDays();
+
+        Logger::error("Allowed: ", ['outAllowed' => $allowed, 'inAllowed' => $allowedIn, 'outID' => $this->id]);
         
         try {
             $stmt->execute();
