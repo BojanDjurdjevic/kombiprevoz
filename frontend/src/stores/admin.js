@@ -1147,12 +1147,6 @@ export const useAdminStore = defineStore("admin", () => {
           from: cityFrom.value.name,
           to: cityTo.value.name,
           departures: departures, 
-          /*
-          time: tourTime.value,
-          duration: hours.value,
-          price: price.value,
-          seats: pax.value
-          */
           time: changeTime.value,
           duration: changeDuration.value,
           price: changePrice.value,

@@ -627,7 +627,7 @@ class TourController {
         }
 
         // Validacija time formata (HH:MM)
-        if (!preg_match('/^\d{2}:\d{2}$/', $this->data->tours->time)) {
+        if (!preg_match('/^\d{2}:\d{2}:\d{2}$/', $this->data->tours->time)) {
             http_response_code(400);
             echo json_encode([
                 'error' => 'Neispravan format vremena (mora biti HH:MM)'
