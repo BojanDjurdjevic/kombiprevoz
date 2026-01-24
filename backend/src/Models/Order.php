@@ -162,6 +162,52 @@ class Order {
         }
     }
 
+    private function availabilityWithTourId(string $date, int $tourId): int
+{
+    $sql = "SELECT COALESCE(SUM(oi.places), 0) as occupied, t.seats 
+            FROM tours t
+            LEFT JOIN order_items oi ON oi.tour_id = t.id 
+                AND oi.date = :date 
+                AND oi.deleted = 0
+            LEFT JOIN orders o ON oi.order_id = o.id 
+                AND o.deleted = 0
+            WHERE t.id = :tour_id 
+            AND t.deleted = 0";
+    
+    try {
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':date', $date, PDO::PARAM_STR);
+        $stmt->bindParam(':tour_id', $tourId, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        $result = $stmt->fetch(PDO::FETCH_OBJ);
+        
+        if (!$result) {
+            return 0;
+        }
+        
+        $available = (int)$result->seats - (int)$result->occupied;
+        
+        $this->logger->error('Availability check', [
+            'tour_id' => $tourId,
+            'date' => $date,
+            'total_seats' => $result->seats,
+            'occupied' => $result->occupied,
+            'available' => $available
+        ]);
+        
+        return max(0, $available);
+        
+    } catch (PDOException $e) {
+        $this->logger->error('Failed to check availability', [
+            'tour_id' => $tourId,
+            'date' => $date,
+            'error' => $e->getMessage()
+        ]);
+        return 0;
+    }
+}
+
     // CHECK if the DEADLINE (48H) for changes is NOT passed:
     public function checkDeadline(): bool 
     {
@@ -301,6 +347,58 @@ class Order {
                 'error' => $e->getMessage(),
                 'file' => __FILE__,
                 'line' => __LINE__
+            ]);
+            return false;
+        }
+    }
+
+    private function isDepartureWithTourId(string $date, int $tourId): bool
+    {
+        // Validate date
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            return false;
+        }
+
+        // Check departure days
+        $sql = "SELECT departures FROM tours WHERE id = :id AND deleted = 0";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':id', $tourId, PDO::PARAM_INT);
+
+        try {
+            $stmt->execute();
+            $row = $stmt->fetch(PDO::FETCH_OBJ);
+            
+            if (!$row) {
+                $this->logger->error('Tour not found in isDepartureWithTourId', [
+                    'tour_id' => $tourId
+                ]);
+                return false;
+            }
+
+            $days = explode(',', $row->departures);
+            $depDays = array_map('intval', $days);
+            
+            // Dan u nedelji (0=Nedelja, 6=Subota)
+            $orderDayOfWeek = (int)date('w', strtotime($date));
+
+            $result = in_array($orderDayOfWeek, $depDays, true);
+            
+            // DEBUG log
+            $this->logger->error('Departure check', [
+                'tour_id' => $tourId,
+                'date' => $date,
+                'day_of_week' => $orderDayOfWeek,
+                'allowed_days' => $depDays,
+                'result' => $result
+            ]);
+
+            return $result;
+            
+        } catch (PDOException $e) {
+            $this->logger->error('Failed in isDepartureWithTourId()', [
+                'tour_id' => $tourId,
+                'date' => $date,
+                'error' => $e->getMessage()
             ]);
             return false;
         }
@@ -2256,9 +2354,19 @@ class Order {
 
     private function outbound(bool $sendVoucher): array 
     {
+        $outboundTourId = $this->items->items[0]->tour_id ?? null;
+        $this->logger->error('outbound tourID: ', ['tourId' => $outboundTourId]);
+    
+        if (empty($outboundTourId)) {
+            return ['error' => 'Nevalidna povratna vožnja'];
+        }
+
+        if (!$this->isDepartureWithTourId($this->newDate, $outboundTourId)) {
+            return ['error' => 'Nema polazaka za odabrani datum povratka'];
+        } /*
         if (!$this->isDeparture($this->newDate)) {
             return ['error' => 'Nema polazaka za odabrani datum'];
-        }
+        } */
 
         if (!$this->isUnlocked($this->newDate) 
             && !Validator::isAdmin() 
@@ -2333,7 +2441,14 @@ class Order {
             return ['error' => 'Nema povratne vožnje'];
         }
 
-        if (!$this->isDeparture($this->newDateIn)) {
+        $inboundTourId = $this->items->items[1]->tour_id ?? null;
+        $this->logger->error('inbound tourID: ', ['tourId' => $inboundTourId]);
+    
+        if (empty($inboundTourId)) {
+            return ['error' => 'Nevalidna povratna vožnja'];
+        }
+
+        if (!$this->isDepartureWithTourId($this->newDateIn, $inboundTourId)) {
             return ['error' => 'Nema polazaka za odabrani datum povratka'];
         }
 

@@ -1,7 +1,8 @@
 <script setup>
 defineProps({
   code: String,
-  total: [String, Number]
+  total: [String, Number],
+  voucher: String
 })
 </script>
 
@@ -14,6 +15,12 @@ defineProps({
 
     <h2 class="text-green-darken-3">
       Ukupno: {{ total }} EUR
+      <v-btn
+        icon="mdi-eye"
+        color="indigo-darken-3"
+        :href="'http://localhost:8080/' + voucher"
+        target="_blank"
+      />
     </h2>
   </v-container>
 </template>

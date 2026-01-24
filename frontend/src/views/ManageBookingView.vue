@@ -18,6 +18,7 @@ const search = useSearchStore();
   <OrderHeader
     :code="user.user.is_demo ? orders.oneOrder.id : orders.oneOrder.code"
     :total=" orders.oneOrder.total"
+    :voucher="orders.oneOrder.voucher"
   />
 
   <v-divider class="my-4" />

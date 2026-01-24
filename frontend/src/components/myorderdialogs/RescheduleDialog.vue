@@ -44,20 +44,22 @@ defineProps({ order: Object })
 
       <v-card-text>
         <v-date-input
+          v-if="!orders.oneOrder.items[0].deleted"
           label="Unesi novi polazak"
           :allowed-dates="search.isDateAllowed"
           @update:model-value="orders.onRequestDate"
         />
-        <v-card-text>
+        <v-card-text v-if="!orders.oneOrder.items[0].deleted">
           Trenutni datum polaska: {{ orders.currentDate }}
         </v-card-text>
         <v-date-input
+          v-if="!orders.oneOrder.items[1].deleted"
           label="Unesi novi povratak"
           :allowed-dates="search.isDateInAllowed"
           @update:model-value="orders.onRequestDateIn"
         />
-        <v-card-text>
-          Trenutni datum pvratka: {{ orders.currentDateIn }}
+        <v-card-text v-if="!orders.oneOrder.items[1].deleted">
+          Trenutni datum povratka: {{ orders.currentDateIn }}
         </v-card-text>
       </v-card-text>
 

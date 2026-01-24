@@ -220,10 +220,18 @@ export const useMyOrdersStore = defineStore('myorders', () => {
     const requestDateIn = ref(null)
     const requestDateInView = ref(null)
     function onRequestDate(value) {
+        if(!value) {
+            requestDate.value = ''
+            return
+        }
         requestDate.value = dateFormat(value, false)
         requestDateView.value = dateFormat(value, true)
     }
     function onRequestDateIn(value) {
+        if(!value) {
+            requestDateIn.value = ''
+            return
+        }
         requestDateIn.value = dateFormat(value, false)
         requestDateInView.value = dateFormat(value, true)
     }
