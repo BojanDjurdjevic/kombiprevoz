@@ -670,8 +670,8 @@ class Order {
         if ($hasSecondItem) {
             $item2 = $myOrder['items'][1]['order'];
             $driver2 = $myOrder['items'][1]['driver'];
-            $fromCity2 = $this->escapeForPDF($tourObj[1]['from_city']);
-            $toCity2 = $this->escapeForPDF($tourObj[1]['to_city']);
+            $fromCity2 = $toCity;  //$this->escapeForPDF($tourObj[1]['from_city']);
+            $toCity2 = $fromCity; //$this->escapeForPDF($tourObj[1]['to_city']);
             
             $html = str_replace('{{ view }}', 'visible', $html);
             $html = str_replace('{{ places2 }}', (string)$item2['places'], $html);

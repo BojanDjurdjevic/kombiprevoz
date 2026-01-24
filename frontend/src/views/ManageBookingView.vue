@@ -6,6 +6,7 @@ import { VNumberInput } from "vuetify/labs/VNumberInput";
 import { VDateInput } from "vuetify/labs/VDateInput";
 import OrderHeader from "@/components/myorder/OrderHeader.vue";
 import OrderCard from "@/components/myorder/OrderCard.vue";
+import RescheduleDialog from "@/components/myorderdialogs/RescheduleDialog.vue";
 const orders = useMyOrdersStore();
 const user = useUserStore();
 const search = useSearchStore();
@@ -22,10 +23,7 @@ const search = useSearchStore();
   <v-divider class="my-4" />
 
   <v-container class="text-center">
-    <v-btn
-      color="red-darken-4"
-      variant="text"
-    >Izmeni datume</v-btn>
+    <RescheduleDialog :order="orders.oneOrder.items[0]" />
   </v-container>
 
   <v-container v-if="!user.user.is_demo">

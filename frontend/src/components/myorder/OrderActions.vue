@@ -5,6 +5,7 @@ import RescheduleDialog from "../myorderdialogs/RescheduleDialog.vue";
 import DeleteDialog from "../myorderdialogs/DeleteDialog.vue";
 import OrderHistoryDialog from "../myorderdialogs/OrderHistoryDialog.vue";
 import { useUserStore } from "@/stores/user";
+import { useMyOrdersStore } from "@/stores/myorders";
 
 defineProps({
   order: Object
@@ -17,8 +18,8 @@ const user = useUserStore()
   <v-card-actions class="d-flex flex-column ga-2">
 
     <EditAddressDialog :order="order" />
-    <EditPlacesDialog :order="order" />
-    <RescheduleDialog :order="order" /> <!--
+    <EditPlacesDialog :order="order" /> <!--
+    <RescheduleDialog :order="order"  /> 
     <DeleteDialog :orderId="!user.user.is_demo ? order.id : order.tour_id" />-->
     <DeleteDialog :order="order" />
     <OrderHistoryDialog v-if="!user.user.is_demo" :order="order" />

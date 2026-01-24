@@ -26,7 +26,7 @@ defineProps({ order: Object })
         color="indigo-darken-4"
         @click="orders.prepareDates(order.from, order.to, order.id)"
       >
-        Promeni datum
+        Promeni datume
       </v-btn>
       <v-btn
         v-else
@@ -35,7 +35,7 @@ defineProps({ order: Object })
         color="indigo-darken-4"
         @click="orders.prepareDemoDates(order)"
       >
-        Promeni datum
+        Promeni datume
       </v-btn>
     </template>
 
