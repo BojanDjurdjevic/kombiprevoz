@@ -16,6 +16,7 @@ import RequestPassResetView from '@/views/RequestPassResetView.vue'
 import MyProfileView from '@/views/MyProfileView.vue'
 import AdminDashView from '@/views/AdminDashView.vue'
 import DisclaimerView from '@/views/DisclaimerView.vue'
+import Vehicles from '@/views/Vehicles.vue'
 
 const router = createRouter({
   
@@ -83,6 +84,11 @@ const router = createRouter({
       meta: {
         requireAuth: true
       }
+    },
+    {
+      path: '/vozila',
+      name: 'vozila',
+      component: Vehicles
     },
     {
       path: '/uredi',
