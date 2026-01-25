@@ -35,7 +35,7 @@ class ChatController {
      */
     private function assignChatData(): void
     {
-        $this->chat->ticket_id = $this->data->chat->ticket_id ?? null;
+        $this->chat->ticket_id = (int)$this->data->chat->ticket_id ?? null;
         $this->chat->ticket_number = $this->data->chat->ticket_number ?? null;
         $this->chat->ticket_status = $this->data->chat->ticket_status ?? null;
         $this->chat->customer_name = $this->data->chat->customer_name ?? null;
@@ -43,7 +43,7 @@ class ChatController {
         $this->chat->reservation_number = $this->data->chat->reservation_number ?? null;
         $this->chat->customer_phone = $this->data->chat->customer_phone ?? null;
         $this->chat->initial_message = $this->data->chat->initial_message ?? null;
-        $this->chat->last_message_id = $this->data->chat->last_message_id ?? null;
+        $this->chat->last_message_id = (int)$this->data->chat->last_message_id ?? null;
         $this->chat->last_checked = $this->data->chat->last_checked ?? null;
         $this->chat->sender_id = $this->data->chat->sender_id ?? null;
         $this->chat->sender_type = $this->data->chat->sender_type ?? null;
