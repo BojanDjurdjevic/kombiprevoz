@@ -63,7 +63,7 @@ class ChatController {
      */
     private function sendResponse(array $result): void
     {
-        if ($result['code'] !== 200) {
+        if ($result['code'] != 200) {
             http_response_code($result['code']);
             echo json_encode($result['error'], JSON_UNESCAPED_UNICODE);
         } else {

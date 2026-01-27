@@ -154,11 +154,11 @@ class Chat {
             <p>Molimo Vas da uđete na admin panel na link:</p>
             <p>" . ($_ENV['APP_URL'] ?? 'http://localhost:5173') . "/admin</p>
             <br>
-            <p>Srdačan pozdrav od KombiPrevoz tima!</p>
+            <p>Srdačan pozdrav od KombiTransfer tima!</p>
         ";
 
         try {
-            $this->sendEmail($html, $ticketNumber, $_ENV['ADMIN_EMAIL'] ?? 'admin@example.com', 'Admin');
+            $this->sendEmail($html, $ticketNumber, $_ENV['ADMIN_EMAIL'] ?? 'pininfarina164@gmail.com', 'Admin');
         } catch (\Exception $e) {
             Logger::error('Failed to send admin notification email', [
                 'ticket_number' => $ticketNumber,
@@ -184,7 +184,7 @@ class Chat {
         $mail->Port = 465;
         $mail->Username = $_ENV["SMTP_USER"];
         $mail->Password = $_ENV["SMTP_PASS"];
-        $mail->setFrom("noreply-kombiprevoz@gmail.com", "KombiPrevoz");
+        $mail->setFrom("noreply-kombitransfer@gmail.com", "KombiTransfer");
         $mail->addAddress($email, $name);
         $mail->CharSet = 'UTF-8';
         $mail->Encoding = 'base64';
